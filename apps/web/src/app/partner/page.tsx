@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -8,8 +9,6 @@ import {
   CheckCircle, MapPin, Zap, Shield, Wallet, BarChart3, 
   Phone, Mail, ArrowRight, Sparkles, Hotel, Home, Store
 } from 'lucide-react';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
 
 const benefits = [
   {
@@ -147,8 +146,6 @@ export default function PartnerPage() {
 
   return (
     <div className="min-h-screen bg-naploo-dark">
-      <Navbar />
-
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden">
         {/* Background Effects */}
@@ -623,8 +620,6 @@ export default function PartnerPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

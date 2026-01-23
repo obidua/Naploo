@@ -1,7 +1,6 @@
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { GlassCard } from '@/components/ui/GlassCard';
 
 const milestones = [
@@ -35,9 +34,7 @@ const team = [
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-naploo-dark text-white">
-      <Navbar />
-
+    <div className="min-h-screen bg-naploo-dark text-white">
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0">
@@ -298,8 +295,6 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
-    </main>
+    </div>
   );
 }

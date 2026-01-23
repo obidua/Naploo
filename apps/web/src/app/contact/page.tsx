@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { 
   Phone, Mail, MapPin, Clock, Send, MessageSquare,
   Twitter, Instagram, Linkedin, Youtube, ArrowRight
 } from 'lucide-react';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
 
 const contactMethods = [
   {
@@ -108,8 +106,6 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-naploo-dark">
-      <Navbar />
-
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         {/* Background Effects */}
@@ -368,8 +364,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }
