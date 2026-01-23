@@ -437,7 +437,6 @@ Proprietary - © 2026 BIDUA Industries Pvt Ltd. All rights reserved.
 
 - **Website:** [bidua.in](https://bidua.in)
 - **Email:** biduaindustries@gmail.com
-- **Phone:** +91 9512921903
 
 ---
 
