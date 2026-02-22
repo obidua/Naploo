@@ -1,3 +1,20 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Help Center | Naploo Support",
+  description: "Get help with Naploo. Booking assistance, account issues, refunds, and general support. 24/7 customer care.",
+  keywords: "naploo help, customer support, booking help, naploo assistance",
+  openGraph: {
+    title: "Help Center | Naploo Support",
+    description: "Get help with Naploo. Booking assistance, account issues, refunds, and general support. 24/7 customer care.",
+    url: "https://naploo.com/help",
+    siteName: "Naploo",
+    type: "website",
+  },
+  alternates: { canonical: "https://naploo.com/help" },
+
+};
+
 import React from 'react';
 import Link from 'next/link';
 import { Search, MessageCircle, Phone, Mail, Book, ChevronRight, HelpCircle, CreditCard, MapPin, Clock, Shield, Settings } from 'lucide-react';
@@ -51,16 +68,11 @@ const popularArticles = [
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-naploo-dark text-white">
+    <div className="min-h-screen bg-white text-slate-800">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-16 overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl" />
-          <div className="absolute inset-0 grid-pattern opacity-30" />
-        </div>
-
+      <section className="relative pt-32 pb-16 overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700">
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-sm text-emerald-400 mb-6">
+          <span className="inline-block px-4 py-2 bg-emerald-500/20 border border-emerald-400/30 rounded-full text-sm text-white mb-6">
             <HelpCircle className="w-4 h-4 inline mr-2" />
             Help Center
           </span>
@@ -69,18 +81,18 @@ export default function HelpPage() {
             <br />
             <span className="gradient-text">Help You?</span>
           </h1>
-          <p className="text-lg sm:text-xl text-white/60 max-w-2xl mx-auto mb-8">
+          <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-8">
             Find answers to common questions or get in touch with our support team.
           </p>
 
           {/* Search */}
           <div className="max-w-xl mx-auto">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
               <input
                 type="text"
                 placeholder="Search for help..."
-                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-primary-500/50"
+                className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/60 focus:outline-none focus:border-white/50"
               />
             </div>
           </div>
@@ -88,18 +100,18 @@ export default function HelpPage() {
       </section>
 
       {/* Quick Contact */}
-      <section className="relative py-8 border-b border-white/10">
+      <section className="relative py-8 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center gap-6">
-            <a href="tel:+919876543210" className="flex items-center gap-3 px-6 py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-              <Phone className="w-5 h-5 text-primary-400" />
+            <a href="tel:+919876543210" className="flex items-center gap-3 px-6 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+              <Phone className="w-5 h-5 text-primary-600" />
               <span>+91 98765 43210</span>
             </a>
-            <a href="mailto:support@naploo.com" className="flex items-center gap-3 px-6 py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-              <Mail className="w-5 h-5 text-primary-400" />
+            <a href="mailto:support@naploo.com" className="flex items-center gap-3 px-6 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+              <Mail className="w-5 h-5 text-primary-600" />
               <span>support@naploo.com</span>
             </a>
-            <button className="flex items-center gap-3 px-6 py-3 bg-primary-500/20 text-primary-400 rounded-xl hover:bg-primary-500/30 transition-colors">
+            <button className="flex items-center gap-3 px-6 py-3 bg-primary-50 text-primary-600 rounded-xl hover:bg-primary-100 transition-colors">
               <MessageCircle className="w-5 h-5" />
               <span>Live Chat</span>
             </button>
@@ -108,19 +120,19 @@ export default function HelpPage() {
       </section>
 
       {/* Help Categories */}
-      <section className="relative py-16">
+      <section className="relative py-16 bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-white mb-8">Browse by Topic</h2>
+          <h2 className="text-2xl font-bold text-slate-800 mb-8">Browse by Topic</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {helpCategories.map((category) => (
-              <div key={category.title} className="glass-card rounded-xl p-6">
+              <div key={category.title} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500/20 to-violet-500/20 flex items-center justify-center">
-                    <category.icon className="w-5 h-5 text-primary-400" />
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500/10 to-violet-500/10 flex items-center justify-center">
+                    <category.icon className="w-5 h-5 text-primary-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">{category.title}</h3>
-                    <p className="text-sm text-white/50">{category.desc}</p>
+                    <h3 className="font-semibold text-slate-800">{category.title}</h3>
+                    <p className="text-sm text-slate-400">{category.desc}</p>
                   </div>
                 </div>
                 <ul className="space-y-2">
@@ -128,7 +140,7 @@ export default function HelpPage() {
                     <li key={article}>
                       <Link
                         href="#"
-                        className="flex items-center gap-2 text-sm text-white/60 hover:text-primary-400 transition-colors"
+                        className="flex items-center gap-2 text-sm text-slate-500 hover:text-primary-600 transition-colors"
                       >
                         <ChevronRight className="w-4 h-4" />
                         {article}
@@ -143,18 +155,18 @@ export default function HelpPage() {
       </section>
 
       {/* Popular Articles */}
-      <section className="relative py-16 bg-white/[0.02]">
+      <section className="relative py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-white mb-8">Popular Articles</h2>
+          <h2 className="text-2xl font-bold text-slate-800 mb-8">Popular Articles</h2>
           <div className="space-y-3">
             {popularArticles.map((article) => (
               <Link
                 key={article.title}
                 href="#"
-                className="flex items-center justify-between p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors group"
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
               >
-                <span className="text-white group-hover:text-primary-400 transition-colors">{article.title}</span>
-                <span className="text-sm text-white/40">{article.views} views</span>
+                <span className="text-slate-800 group-hover:text-primary-600 transition-colors">{article.title}</span>
+                <span className="text-sm text-slate-400">{article.views} views</span>
               </Link>
             ))}
           </div>
@@ -162,19 +174,17 @@ export default function HelpPage() {
       </section>
 
       {/* Contact CTA */}
-      <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 via-violet-600/20 to-cyan-600/20" />
-        
+      <section className="relative py-24 overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700">
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Still Need Help?
           </h2>
-          <p className="text-lg text-white/60 max-w-xl mx-auto mb-8">
+          <p className="text-lg text-white/80 max-w-xl mx-auto mb-8">
             Our support team is available 24/7 to assist you.
           </p>
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary-500 to-violet-600 text-white font-semibold rounded-xl hover:shadow-glow-lg transition-all"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-700 font-semibold rounded-xl hover:bg-gray-100 transition-all"
           >
             Contact Support
             <ChevronRight className="w-5 h-5" />

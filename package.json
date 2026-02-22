@@ -1,0 +1,28 @@
+{
+  "name": "naploo-ecosystem",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --parallel dev:services dev:apps",
+    "dev:services": "bun run --filter './services/*' dev",
+    "dev:apps": "bun run --filter './apps/*' dev",
+    "build": "bun run --filter '*' build",
+    "build:apps": "bun run --filter './apps/*' build",
+    "build:services": "bun run --filter './services/*' build",
+    "start": "bun run --parallel start:services start:apps",
+    "db:generate": "bun run --filter '@naploo/db' generate",
+    "db:migrate": "bun run --filter '@naploo/db' migrate",
+    "db:push": "bun run --filter '@naploo/db' push",
+    "db:studio": "bun run --filter '@naploo/db' studio",
+    "lint": "bun run --filter '*' lint",
+    "clean": "rm -rf node_modules apps/*/node_modules services/*/node_modules packages/*/node_modules"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

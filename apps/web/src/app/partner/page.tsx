@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import ImageSlider from '@/components/ui/ImageSlider';
 import { useState } from 'react';
 import { 
   Building2, TrendingUp, Users, Clock, Settings, ChevronRight, 
@@ -127,6 +128,15 @@ const stats = [
   { value: '14 Days', label: 'Setup Time' }
 ];
 
+// Hero images for slider
+const heroImages = [
+  '/Pods_Images/For Website main images/Main Pods Image.png',
+  '/Pods_Images/For Website main images/Main Pod Image2.png',
+  '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+  '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+  '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+];
+
 export default function PartnerPage() {
   const [formData, setFormData] = useState({
     name: '',
@@ -145,19 +155,19 @@ export default function PartnerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-naploo-dark">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden">
+      <section className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700">
         {/* Background Effects */}
         <div className="absolute inset-0 mesh-gradient opacity-30" />
         <div className="absolute inset-0 grid-pattern opacity-10" />
-        <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-naploo-primary/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-naploo-accent/20 rounded-full blur-[100px]" />
+        <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-white/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-white/10 rounded-full blur-[100px]" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-naploo-primary/20 backdrop-blur-sm border border-naploo-primary/30 px-4 py-2 rounded-full text-naploo-primary mb-6">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 px-4 py-2 rounded-full text-white mb-6">
                 <Building2 className="w-4 h-4" />
                 <span className="text-sm font-medium">Partnership Program</span>
               </div>
@@ -167,7 +177,7 @@ export default function PartnerPage() {
                 <span className="block gradient-text">Revenue Machine</span>
               </h1>
 
-              <p className="text-lg text-white/70 mb-8 max-w-lg">
+              <p className="text-lg text-white/80 mb-8 max-w-lg">
                 Partner with Naploo and earn passive income from your unused spaces. 
                 Zero investment, full support, and guaranteed monthly payouts.
               </p>
@@ -176,8 +186,8 @@ export default function PartnerPage() {
               <div className="flex flex-wrap gap-6 mb-8">
                 {stats.map((stat, index) => (
                   <div key={index} className="text-center">
-                    <div className="text-2xl md:text-3xl font-bold gradient-text">{stat.value}</div>
-                    <div className="text-sm text-white/50">{stat.label}</div>
+                    <div className="text-2xl md:text-3xl font-bold text-white">{stat.value}</div>
+                    <div className="text-sm text-white/60">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -185,14 +195,14 @@ export default function PartnerPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <a 
                   href="#partner-form" 
-                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-naploo-primary to-naploo-violet text-white px-8 py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300"
+                  className="inline-flex items-center justify-center gap-2 bg-white text-primary-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg"
                 >
                   Become a Partner
                   <ArrowRight className="w-5 h-5" />
                 </a>
                 <a 
                   href="#how-it-works" 
-                  className="inline-flex items-center justify-center gap-2 glass-card px-8 py-4 rounded-xl text-white font-semibold hover:bg-white/10 transition-all duration-300"
+                  className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/20 px-8 py-4 rounded-xl text-white font-semibold hover:bg-white/20 transition-all duration-300"
                 >
                   How It Works
                 </a>
@@ -202,22 +212,23 @@ export default function PartnerPage() {
             {/* Hero Image */}
             <div className="relative">
               <div className="relative max-w-lg mx-auto">
-                <div className="absolute inset-0 bg-gradient-to-tr from-naploo-primary/30 to-naploo-accent/30 rounded-3xl blur-3xl" />
-                <div className="relative glass-card rounded-3xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-white/5 rounded-3xl blur-3xl" />
+                <div className="relative bg-white/10 border border-white/20 rounded-3xl overflow-hidden">
                   <div className="aspect-[4/3] relative">
-                    <Image
-                      src="/Pods_Images/For Website main images/Main Pods Image.png"
+                    <ImageSlider
+                      images={heroImages}
                       alt="Partner with Naploo"
-                      fill
-                      className="object-cover"
+                      className="h-full w-full"
+                      autoPlay={true}
+                      interval={4000}
                     />
                   </div>
                   {/* Floating Stats Card */}
-                  <div className="absolute bottom-8 left-8 right-8 glass-card p-4 rounded-xl">
+                  <div className="absolute bottom-8 left-8 right-8 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-white/60 text-sm">Monthly Earnings</p>
-                        <p className="text-2xl font-bold gradient-text">₹80,000+</p>
+                        <p className="text-white/70 text-sm">Monthly Earnings</p>
+                        <p className="text-2xl font-bold text-white">₹80,000+</p>
                       </div>
                       <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
                         <TrendingUp className="w-6 h-6 text-green-400" />
@@ -232,18 +243,16 @@ export default function PartnerPage() {
       </section>
 
       {/* Partner Types Section */}
-      <section className="py-20 relative">
-        <div className="absolute inset-0 dot-pattern opacity-10" />
-        
+      <section className="py-20 relative bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-naploo-accent/20 text-naploo-accent rounded-full text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-2 bg-violet-50 border border-violet-200 text-violet-600 rounded-full text-sm font-medium mb-4">
               Partner Types
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
               Who Can <span className="gradient-text">Partner</span> With Us?
             </h2>
-            <p className="text-white/60 max-w-2xl mx-auto">
+            <p className="text-slate-500 max-w-2xl mx-auto">
               Whether you own a hotel, homestay, or commercial space, we have partnership options tailored for you.
             </p>
           </div>
@@ -251,7 +260,7 @@ export default function PartnerPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {partnerTypes.map((type, index) => (
               <div key={index} className="group">
-                <div className="glass-card rounded-2xl overflow-hidden hover:border-naploo-primary/50 transition-all duration-300">
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden hover:border-primary-500/50 transition-all duration-300">
                   <div className="relative h-48 overflow-hidden">
                     <Image
                       src={type.image}
@@ -259,22 +268,22 @@ export default function PartnerPage() {
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-naploo-dark to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-4 left-4">
-                      <div className="w-12 h-12 bg-naploo-primary/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                        <type.icon className="w-6 h-6 text-naploo-primary" />
+                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                        <type.icon className="w-6 h-6 text-white" />
                       </div>
                     </div>
                   </div>
                   
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-2">{type.title}</h3>
-                    <p className="text-white/60 text-sm mb-4">{type.description}</p>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2">{type.title}</h3>
+                    <p className="text-slate-500 text-sm mb-4">{type.description}</p>
                     
                     <ul className="space-y-2">
                       {type.benefits.map((benefit, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-white/70">
-                          <CheckCircle className="w-4 h-4 text-naploo-accent flex-shrink-0" />
+                        <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
+                          <CheckCircle className="w-4 h-4 text-primary-600 flex-shrink-0" />
                           {benefit}
                         </li>
                       ))}
@@ -288,34 +297,31 @@ export default function PartnerPage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-20 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-naploo-primary/50 to-transparent" />
-        <div className="absolute inset-0 mesh-gradient opacity-20" />
-        
+      <section className="py-20 relative overflow-hidden bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-naploo-primary/20 text-naploo-primary rounded-full text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-2 bg-primary-50 border border-primary-200 text-primary-600 rounded-full text-sm font-medium mb-4">
               Why Partner With Us
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
               Benefits of <span className="gradient-text">Partnership</span>
             </h2>
-            <p className="text-white/60 max-w-2xl mx-auto">
+            <p className="text-slate-500 max-w-2xl mx-auto">
               Join 500+ property owners who are earning passive income with zero investment
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {benefits.map((benefit, index) => (
-              <div key={index} className="glass-card rounded-2xl p-6 hover:border-naploo-primary/50 transition-all duration-300 group">
+              <div key={index} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 hover:border-primary-500/50 transition-all duration-300 group">
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-naploo-primary/20 to-naploo-violet/20 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                    <benefit.icon className="w-7 h-7 text-naploo-primary" />
+                  <div className="w-14 h-14 bg-gradient-to-br from-primary-50 to-violet-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                    <benefit.icon className="w-7 h-7 text-primary-600" />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-naploo-accent mb-1">{benefit.highlight}</div>
-                    <h3 className="text-lg font-bold text-white mb-2">{benefit.title}</h3>
-                    <p className="text-white/60 text-sm">{benefit.description}</p>
+                    <div className="text-xs font-semibold text-primary-600 mb-1">{benefit.highlight}</div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">{benefit.title}</h3>
+                    <p className="text-slate-500 text-sm">{benefit.description}</p>
                   </div>
                 </div>
               </div>
@@ -325,18 +331,16 @@ export default function PartnerPage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 relative">
-        <div className="absolute inset-0 grid-pattern opacity-5" />
-        
+      <section id="how-it-works" className="py-20 relative bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-naploo-violet/20 text-naploo-violet rounded-full text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-2 bg-violet-50 border border-violet-200 text-violet-600 rounded-full text-sm font-medium mb-4">
               Partnership Process
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
               How It <span className="gradient-text">Works</span>
             </h2>
-            <p className="text-white/60 max-w-2xl mx-auto">
+            <p className="text-slate-500 max-w-2xl mx-auto">
               Get started in 4 simple steps and start earning within 2 weeks
             </p>
           </div>
@@ -346,15 +350,15 @@ export default function PartnerPage() {
               <div key={index} className="relative">
                 {/* Connector Line */}
                 {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-12 left-1/2 w-full h-px bg-gradient-to-r from-naploo-primary/50 to-naploo-violet/50" />
+                  <div className="hidden md:block absolute top-12 left-1/2 w-full h-px bg-gradient-to-r from-primary-300 to-violet-300" />
                 )}
                 
-                <div className="glass-card rounded-2xl p-6 text-center relative z-10">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-naploo-primary to-naploo-violet rounded-2xl flex items-center justify-center">
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 text-center relative z-10">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-primary-500 to-violet-600 rounded-2xl flex items-center justify-center">
                     <span className="text-2xl font-bold text-white">{step.step}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">{step.title}</h3>
-                  <p className="text-white/60 text-sm">{step.description}</p>
+                  <h3 className="text-lg font-bold text-slate-800 mb-2">{step.title}</h3>
+                  <p className="text-slate-500 text-sm">{step.description}</p>
                 </div>
               </div>
             ))}
@@ -363,22 +367,20 @@ export default function PartnerPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/4 w-[400px] h-[400px] bg-naploo-primary/10 rounded-full blur-[100px]" />
-        
+      <section className="py-20 relative overflow-hidden bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-naploo-accent/20 text-naploo-accent rounded-full text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-2 bg-violet-50 border border-violet-200 text-violet-600 rounded-full text-sm font-medium mb-4">
               Partner Stories
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
               What Our <span className="gradient-text">Partners</span> Say
             </h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <div key={index} className="glass-card rounded-2xl p-6">
+              <div key={index} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="relative w-14 h-14 rounded-full overflow-hidden">
                     <Image
@@ -389,8 +391,8 @@ export default function PartnerPage() {
                     />
                   </div>
                   <div>
-                    <h4 className="text-white font-semibold">{testimonial.name}</h4>
-                    <p className="text-white/50 text-sm">{testimonial.role}</p>
+                    <h4 className="text-slate-800 font-semibold">{testimonial.name}</h4>
+                    <p className="text-slate-400 text-sm">{testimonial.role}</p>
                   </div>
                 </div>
                 
@@ -400,7 +402,7 @@ export default function PartnerPage() {
                   ))}
                 </div>
                 
-                <p className="text-white/70 italic">&quot;{testimonial.quote}&quot;</p>
+                <p className="text-slate-600 italic">&quot;{testimonial.quote}&quot;</p>
               </div>
             ))}
           </div>
@@ -408,78 +410,75 @@ export default function PartnerPage() {
       </section>
 
       {/* Partner Form Section */}
-      <section id="partner-form" className="py-20 relative">
-        <div className="absolute inset-0 mesh-gradient opacity-20" />
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-naploo-accent/50 to-transparent" />
-        
+      <section id="partner-form" className="py-20 relative bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <span className="inline-block px-4 py-2 bg-naploo-primary/20 text-naploo-primary rounded-full text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-2 bg-primary-50 border border-primary-200 text-primary-600 rounded-full text-sm font-medium mb-4">
                 Get Started
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
                 Ready to <span className="gradient-text">Partner</span> With Us?
               </h2>
-              <p className="text-white/60 mb-8">
+              <p className="text-slate-500 mb-8">
                 Fill out the form and our partnership team will reach out to you within 24 hours.
               </p>
 
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-naploo-primary/20 rounded-xl flex items-center justify-center">
-                    <Phone className="w-6 h-6 text-naploo-primary" />
+                  <div className="w-12 h-12 bg-primary-50 border border-primary-200 rounded-xl flex items-center justify-center">
+                    <Phone className="w-6 h-6 text-primary-600" />
                   </div>
                   <div>
-                    <p className="text-white/50 text-sm">Call Us</p>
-                    <p className="text-white font-semibold">+91 98765 43210</p>
+                    <p className="text-slate-400 text-sm">Call Us</p>
+                    <p className="text-slate-800 font-semibold">+91 98765 43210</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-naploo-accent/20 rounded-xl flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-naploo-accent" />
+                  <div className="w-12 h-12 bg-violet-50 border border-violet-200 rounded-xl flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-violet-600" />
                   </div>
                   <div>
-                    <p className="text-white/50 text-sm">Email Us</p>
-                    <p className="text-white font-semibold">partners@naploo.com</p>
+                    <p className="text-slate-400 text-sm">Email Us</p>
+                    <p className="text-slate-800 font-semibold">partners@naploo.com</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-naploo-violet/20 rounded-xl flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-naploo-violet" />
+                  <div className="w-12 h-12 bg-violet-50 border border-violet-200 rounded-xl flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-violet-600" />
                   </div>
                   <div>
-                    <p className="text-white/50 text-sm">Visit Us</p>
-                    <p className="text-white font-semibold">Delhi NCR, India</p>
+                    <p className="text-slate-400 text-sm">Visit Us</p>
+                    <p className="text-slate-800 font-semibold">Delhi NCR, India</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Form */}
-            <div className="glass-card rounded-2xl p-8">
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-white/70 text-sm mb-2">Full Name</label>
+                    <label className="block text-slate-600 text-sm mb-2">Full Name</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
                       placeholder="John Doe"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-white/70 text-sm mb-2">Phone Number</label>
+                    <label className="block text-slate-600 text-sm mb-2">Phone Number</label>
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
                       placeholder="+91 98765 43210"
                       required
                     />
@@ -487,12 +486,12 @@ export default function PartnerPage() {
                 </div>
 
                 <div>
-                  <label className="block text-white/70 text-sm mb-2">Email Address</label>
+                  <label className="block text-slate-600 text-sm mb-2">Email Address</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
                     placeholder="john@example.com"
                     required
                   />
@@ -500,75 +499,75 @@ export default function PartnerPage() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-white/70 text-sm mb-2">Property Type</label>
+                    <label className="block text-slate-600 text-sm mb-2">Property Type</label>
                     <select
                       value={formData.propertyType}
                       onChange={(e) => setFormData({...formData, propertyType: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-naploo-primary/50 transition"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:border-primary-500 transition"
                       required
                     >
-                      <option value="" className="bg-naploo-dark">Select Type</option>
-                      <option value="hotel" className="bg-naploo-dark">Hotel</option>
-                      <option value="homestay" className="bg-naploo-dark">Homestay</option>
-                      <option value="hostel" className="bg-naploo-dark">Hostel</option>
-                      <option value="mall" className="bg-naploo-dark">Mall / Shopping Center</option>
-                      <option value="airport" className="bg-naploo-dark">Airport</option>
-                      <option value="coworking" className="bg-naploo-dark">Co-working Space</option>
-                      <option value="other" className="bg-naploo-dark">Other</option>
+                      <option value="" className="bg-white">Select Type</option>
+                      <option value="hotel" className="bg-white">Hotel</option>
+                      <option value="homestay" className="bg-white">Homestay</option>
+                      <option value="hostel" className="bg-white">Hostel</option>
+                      <option value="mall" className="bg-white">Mall / Shopping Center</option>
+                      <option value="airport" className="bg-white">Airport</option>
+                      <option value="coworking" className="bg-white">Co-working Space</option>
+                      <option value="other" className="bg-white">Other</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-white/70 text-sm mb-2">City</label>
+                    <label className="block text-slate-600 text-sm mb-2">City</label>
                     <select
                       value={formData.city}
                       onChange={(e) => setFormData({...formData, city: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-naploo-primary/50 transition"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:border-primary-500 transition"
                       required
                     >
-                      <option value="" className="bg-naploo-dark">Select City</option>
-                      <option value="delhi" className="bg-naploo-dark">Delhi NCR</option>
-                      <option value="mumbai" className="bg-naploo-dark">Mumbai</option>
-                      <option value="bangalore" className="bg-naploo-dark">Bangalore</option>
-                      <option value="hyderabad" className="bg-naploo-dark">Hyderabad</option>
-                      <option value="chennai" className="bg-naploo-dark">Chennai</option>
-                      <option value="kolkata" className="bg-naploo-dark">Kolkata</option>
-                      <option value="pune" className="bg-naploo-dark">Pune</option>
-                      <option value="other" className="bg-naploo-dark">Other</option>
+                      <option value="" className="bg-white">Select City</option>
+                      <option value="delhi" className="bg-white">Delhi NCR</option>
+                      <option value="mumbai" className="bg-white">Mumbai</option>
+                      <option value="bangalore" className="bg-white">Bangalore</option>
+                      <option value="hyderabad" className="bg-white">Hyderabad</option>
+                      <option value="chennai" className="bg-white">Chennai</option>
+                      <option value="kolkata" className="bg-white">Kolkata</option>
+                      <option value="pune" className="bg-white">Pune</option>
+                      <option value="other" className="bg-white">Other</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-white/70 text-sm mb-2">Available Space (sq ft)</label>
+                  <label className="block text-slate-600 text-sm mb-2">Available Space (sq ft)</label>
                   <input
                     type="text"
                     value={formData.spaceSize}
                     onChange={(e) => setFormData({...formData, spaceSize: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
                     placeholder="e.g., 500 sq ft"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-white/70 text-sm mb-2">Message (Optional)</label>
+                  <label className="block text-slate-600 text-sm mb-2">Message (Optional)</label>
                   <textarea
                     value={formData.message}
                     onChange={(e) => setFormData({...formData, message: e.target.value})}
                     rows={4}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition resize-none"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition resize-none"
                     placeholder="Tell us about your property..."
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-naploo-primary to-naploo-violet text-white py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-primary-500 to-violet-600 text-white py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   Submit Application
                   <ArrowRight className="w-5 h-5" />
                 </button>
 
-                <p className="text-white/40 text-xs text-center">
+                <p className="text-slate-400 text-xs text-center">
                   By submitting, you agree to our Terms of Service and Privacy Policy
                 </p>
               </form>
@@ -578,13 +577,13 @@ export default function PartnerPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 relative">
+      <section className="py-20 relative bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-naploo-primary/20 text-naploo-primary rounded-full text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-2 bg-primary-50 border border-primary-200 text-primary-600 rounded-full text-sm font-medium mb-4">
               FAQs
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
               Frequently Asked <span className="gradient-text">Questions</span>
             </h2>
           </div>
@@ -612,9 +611,9 @@ export default function PartnerPage() {
                 a: 'Yes, with a 30-day notice period. We will remove the pods at no cost to you.'
               }
             ].map((faq, index) => (
-              <div key={index} className="glass-card rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-2">{faq.q}</h3>
-                <p className="text-white/60">{faq.a}</p>
+              <div key={index} className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">{faq.q}</h3>
+                <p className="text-slate-500">{faq.a}</p>
               </div>
             ))}
           </div>

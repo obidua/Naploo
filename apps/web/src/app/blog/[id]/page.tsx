@@ -105,10 +105,10 @@ export default function BlogPostPage() {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-naploo-dark text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-slate-800 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Article Not Found</h1>
-          <p className="text-white/60 mb-8">The article you&apos;re looking for doesn&apos;t exist.</p>
+          <h1 className="text-4xl font-bold text-slate-800 mb-4">Article Not Found</h1>
+          <p className="text-slate-500 mb-8">The article you&apos;re looking for doesn&apos;t exist.</p>
           <Link
             href="/blog"
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 rounded-xl text-white"
@@ -122,31 +122,31 @@ export default function BlogPostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-naploo-dark text-white">
+    <div className="min-h-screen bg-white text-slate-800">
       {/* Hero Section */}
       <section className="relative pt-24 pb-16 overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-violet-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-violet-500/5 rounded-full blur-3xl" />
         </div>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link
             href="/blog"
-            className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Blog
           </Link>
 
-          <span className="inline-block px-3 py-1 bg-primary-500/20 text-primary-400 rounded-full text-sm mb-4">
+          <span className="inline-block px-3 py-1 bg-primary-50 text-primary-600 rounded-full text-sm mb-4">
             {post.category}
           </span>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-white mb-6">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-slate-800 mb-6">
             {post.title}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm text-white/60 mb-8">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 mb-8">
             <span className="flex items-center gap-2">
               <User className="w-4 h-4" />
               {post.author}
@@ -162,10 +162,10 @@ export default function BlogPostPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
+            <button className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
               <Share2 className="w-5 h-5" />
             </button>
-            <button className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
+            <button className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
               <Bookmark className="w-5 h-5" />
             </button>
           </div>
@@ -190,23 +190,23 @@ export default function BlogPostPage() {
       <section className="relative py-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <article 
-            className="prose prose-invert prose-lg max-w-none
-              prose-headings:font-display prose-headings:text-white
-              prose-p:text-white/70 prose-p:leading-relaxed
-              prose-li:text-white/70
-              prose-strong:text-white
-              prose-a:text-primary-400 prose-a:no-underline hover:prose-a:underline"
+            className="prose prose-slate prose-lg max-w-none
+              prose-headings:font-display prose-headings:text-slate-800
+              prose-p:text-slate-600 prose-p:leading-relaxed
+              prose-li:text-slate-600
+              prose-strong:text-slate-800
+              prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
           {/* Tags */}
-          <div className="mt-12 pt-8 border-t border-white/10">
+          <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="flex items-center gap-3 flex-wrap">
-              <Tag className="w-5 h-5 text-white/40" />
+              <Tag className="w-5 h-5 text-slate-400" />
               {post.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-3 py-1 bg-white/5 rounded-full text-sm text-white/60"
+                  className="px-3 py-1 bg-gray-100 rounded-full text-sm text-slate-500"
                 >
                   {tag}
                 </span>
@@ -219,11 +219,11 @@ export default function BlogPostPage() {
       {/* CTA */}
       <section className="relative py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="glass-card rounded-2xl p-8 text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">
+          <div className="bg-violet-50 border border-violet-100 rounded-2xl p-8 text-center">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">
               Ready to Experience Naploo?
             </h2>
-            <p className="text-white/60 mb-6">
+            <p className="text-slate-500 mb-6">
               Book your first pod and discover the future of rest.
             </p>
             <Link

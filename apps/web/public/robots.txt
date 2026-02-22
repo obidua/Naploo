@@ -1,0 +1,17 @@
+# Naploo Robots.txt
+# https://naploo.com
+
+User-agent: *
+Allow: /
+
+# Disallow private pages
+Disallow: /profile
+Disallow: /profile/*
+Disallow: /api/
+Disallow: /_next/
+
+# Sitemap
+Sitemap: https://naploo.com/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1

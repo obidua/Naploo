@@ -1,6 +1,31 @@
 # Naploo™ UI/UX Design System
 
-> Complete design specifications and guidelines for the Naploo™ ecosystem
+> Complete design specifications and guidelines for the Naploo™ ecosystem  
+> **Last Updated:** February 22, 2026
+
+---
+
+## ⚠️ Implementation Status
+
+> This design system is **implemented in the customer website** (`apps/web`). The shared UI package (`packages/ui`) is still empty — components currently live inside `apps/web/src/components/`.
+
+### Implemented Components
+
+| Component | File | Description |
+|-----------|------|-------------|
+| Button | `components/ui/Button.tsx` | Primary, secondary, outline variants |
+| GlassCard | `components/ui/GlassCard.tsx` | Glassmorphism card component |
+| HeroPodSlider | `components/ui/HeroPodSlider.tsx` | Hero section image slider |
+| ImageSlider | `components/ui/ImageSlider.tsx` | Generic image carousel |
+| Input | `components/ui/Input.tsx` | Form input with validation |
+| Navbar | `components/layout/Navbar.tsx` | Main navigation header |
+| Footer | `components/layout/Footer.tsx` | Site footer |
+| LayoutWrapper | `components/layout/LayoutWrapper.tsx` | Page layout wrapper |
+| MobileBottomNav | `components/layout/MobileBottomNav.tsx` | Mobile bottom navigation |
+| PWAInstallPrompt | `components/PWAInstallPrompt.tsx` | PWA install banner |
+| FilterSection | `components/pods/FilterSection.tsx` | Pod filtering controls |
+| PodCard | `components/pods/PodCard.tsx` | Pod listing card |
+| PropertyCard | `components/pods/PropertyCard.tsx` | Property listing card |
 
 ---
 
@@ -65,66 +90,52 @@
 ### 2.1 Primary Colors
 
 ```css
-/* Primary Blue - Trust, Technology, Calm */
---color-primary-50:  #eff6ff;
---color-primary-100: #dbeafe;
---color-primary-200: #bfdbfe;
---color-primary-300: #93c5fd;
---color-primary-400: #60a5fa;
---color-primary-500: #3b82f6;  /* ← Main Primary */
---color-primary-600: #2563eb;
---color-primary-700: #1d4ed8;
---color-primary-800: #1e40af;
---color-primary-900: #1e3a8a;
---color-primary-950: #172554;
+/* Primary Indigo - Trust, Technology, Premium */
+--color-primary-50:  #eef2ff;
+--color-primary-100: #e0e7ff;
+--color-primary-200: #c7d2fe;
+--color-primary-300: #a5b4fc;
+--color-primary-400: #818cf8;
+--color-primary-500: #6366f1;  /* ← Main Primary (Indigo) */
+--color-primary-600: #4f46e5;
+--color-primary-700: #4338ca;
+--color-primary-800: #3730a3;
+--color-primary-900: #312e81;
+--color-primary-950: #1e1b4b;
 ```
 
 ### 2.2 Secondary Colors
 
 ```css
-/* Secondary Purple - Premium, Luxury */
---color-secondary-50:  #faf5ff;
---color-secondary-100: #f3e8ff;
---color-secondary-200: #e9d5ff;
---color-secondary-300: #d8b4fe;
---color-secondary-400: #c084fc;
---color-secondary-500: #a855f7;  /* ← Main Secondary */
---color-secondary-600: #9333ea;
---color-secondary-700: #7e22ce;
---color-secondary-800: #6b21a8;
---color-secondary-900: #581c87;
+/* Secondary Violet - Premium, Luxury */
+--color-secondary: #8b5cf6;  /* ← Main Secondary (Violet) */
+
+/* Accent Cyan - Technology, Fresh */
+--color-accent: #06b6d4;  /* ← Accent Color */
+
+/* Naploo Brand Gradient */
+--gradient-start: #6366f1;  /* Indigo */
+--gradient-middle: #8b5cf6; /* Violet */
+--gradient-end: #06b6d4;    /* Cyan */
+
+/* Dark Theme */
+--naploo-dark: #0f0f23;
+--naploo-dark-50: #1a1a2e;
+--naploo-dark-100: #16213e;
+--naploo-dark-200: #1f2937;
 ```
 
 ### 2.3 Semantic Colors
 
 ```css
-/* Success - Green */
---color-success-50:  #f0fdf4;
---color-success-100: #dcfce7;
---color-success-500: #22c55e;  /* ← Main Success */
---color-success-600: #16a34a;
---color-success-700: #15803d;
+/* Success - Emerald (as defined in naploo config) */
+--color-success: #10b981;
 
 /* Warning - Amber */
---color-warning-50:  #fffbeb;
---color-warning-100: #fef3c7;
---color-warning-500: #f59e0b;  /* ← Main Warning */
---color-warning-600: #d97706;
---color-warning-700: #b45309;
+--color-warning: #f59e0b;
 
 /* Error - Red */
---color-error-50:  #fef2f2;
---color-error-100: #fee2e2;
---color-error-500: #ef4444;  /* ← Main Error */
---color-error-600: #dc2626;
---color-error-700: #b91c1c;
-
-/* Info - Blue */
---color-info-50:  #eff6ff;
---color-info-100: #dbeafe;
---color-info-500: #3b82f6;  /* ← Main Info */
---color-info-600: #2563eb;
---color-info-700: #1d4ed8;
+--color-error: #ef4444;
 ```
 
 ### 2.4 Neutral Colors
@@ -831,26 +842,35 @@ npm install lucide-react
 ### 10.1 Tailwind Config
 
 ```javascript
-// tailwind.config.js
+// tailwind.config.js (Actual - from apps/web/tailwind.config.js)
 module.exports = {
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50: '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
+          950: '#1e1b4b',
         },
-        secondary: {
-          // ... purple scale
+        naploo: {
+          primary: '#6366f1',
+          secondary: '#8b5cf6',
+          accent: '#06b6d4',
+          dark: { DEFAULT: '#0f0f23', 50: '#1a1a2e', 100: '#16213e', 200: '#1f2937', 300: '#374151' },
+          light: { DEFAULT: '#f8fafc', 50: '#ffffff', 100: '#f1f5f9', 200: '#e2e8f0' },
+          gradient: { start: '#6366f1', middle: '#8b5cf6', end: '#06b6d4' },
+          success: '#10b981',
+          warning: '#f59e0b',
+          error: '#ef4444',
         },
       },
       fontFamily: {
@@ -858,37 +878,43 @@ module.exports = {
         display: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
-      fontSize: {
-        '2xs': ['0.625rem', { lineHeight: '1rem' }],
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'hero-pattern': 'url("/patterns/hero-bg.svg")',
+        'grid-pattern': 'url("/patterns/grid.svg")',
+        'noise': 'url("/patterns/noise.png")',
+      },
+      animation: {
+        'float': 'float 6s ease-in-out infinite',
+        'float-slow': 'float 8s ease-in-out infinite',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'gradient': 'gradient 8s linear infinite',
+        'shimmer': 'shimmer 2s linear infinite',
+        'glow': 'glow 2s ease-in-out infinite alternate',
+        'slide-up': 'slideUp 0.5s ease-out',
+        'slide-down': 'slideDown 0.5s ease-out',
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'scale-in': 'scaleIn 0.3s ease-out',
+        'spin-slow': 'spin 8s linear infinite',
+        'bounce-slow': 'bounce 3s infinite',
+      },
+      boxShadow: {
+        'glow': '0 0 20px rgba(99, 102, 241, 0.3)',
+        'glow-lg': '0 0 40px rgba(99, 102, 241, 0.4)',
+        'glow-cyan': '0 0 20px rgba(6, 182, 212, 0.3)',
+        'inner-glow': 'inset 0 0 20px rgba(99, 102, 241, 0.1)',
+        'glass': '0 8px 32px rgba(0, 0, 0, 0.1)',
+        'glass-lg': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        'neon': '0 0 5px theme(colors.primary.400), 0 0 20px theme(colors.primary.600)',
       },
       borderRadius: {
         '4xl': '2rem',
-      },
-      animation: {
-        'fade-in': 'fadeIn 200ms ease-out',
-        'slide-up': 'slideUp 300ms ease-out',
-        'scale-in': 'scaleIn 200ms ease-out',
-      },
-      keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        scaleIn: {
-          '0%': { opacity: '0', transform: 'scale(0.95)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
-        },
+        '5xl': '2.5rem',
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/typography'),
-  ],
+  plugins: [],
 };
 ```
 
@@ -934,8 +960,10 @@ module.exports = {
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  COLORS                                                          │
-│  Primary:   #3b82f6    Secondary: #a855f7                       │
-│  Success:   #22c55e    Warning:   #f59e0b    Error: #ef4444    │
+│  Primary:   #6366f1 (Indigo)   Secondary: #8b5cf6 (Violet)     │
+│  Accent:    #06b6d4 (Cyan)                                      │
+│  Success:   #10b981    Warning: #f59e0b    Error: #ef4444      │
+│  Dark BG:   #0f0f23                                              │
 │                                                                  │
 │  TYPOGRAPHY                                                      │
 │  Font: Inter / Plus Jakarta Sans                                │
@@ -947,14 +975,26 @@ module.exports = {
 │  Scale: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96           │
 │                                                                  │
 │  RADIUS                                                          │
-│  SM: 6px   MD: 8px   LG: 12px   XL: 16px   Full: 9999px        │
+│  SM: 6px   MD: 8px   LG: 12px   XL: 16px   4XL: 32px          │
 │                                                                  │
 │  BREAKPOINTS                                                     │
 │  SM: 640px   MD: 768px   LG: 1024px   XL: 1280px   2XL: 1536px │
+│                                                                  │
+│  CUSTOM EFFECTS                                                  │
+│  Glow Shadow: rgba(99, 102, 241, 0.3)                           │
+│  Glass Shadow: rgba(0, 0, 0, 0.1)                               │
+│  Neon: primary-400 + primary-600                                │
+│                                                                  │
+│  ANIMATIONS                                                      │
+│  float, gradient, shimmer, glow, slide-up, slide-down,          │
+│  fade-in, scale-in, spin-slow, bounce-slow, pulse-slow          │
+│                                                                  │
+│  ICONS: Lucide React                                             │
+│  STATE: Zustand                                                  │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-*Design System Version 1.0.0 | Last Updated: 22 January 2026*
+*Design System Version 2.0.0 | Last Updated: February 22, 2026*

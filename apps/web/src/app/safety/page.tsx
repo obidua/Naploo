@@ -1,3 +1,20 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Safety & Hygiene | Naploo Sleep Pods",
+  description: "Naploo safety standards. Medical-grade sanitization, 24/7 security, emergency protocols, and hygiene certifications.",
+  keywords: "naploo safety, pod hygiene, sleep pod safety, sanitization, 24/7 security",
+  openGraph: {
+    title: "Safety & Hygiene | Naploo Sleep Pods",
+    description: "Naploo safety standards. Medical-grade sanitization, 24/7 security, emergency protocols, and hygiene certifications.",
+    url: "https://naploo.com/safety",
+    siteName: "Naploo",
+    type: "website",
+  },
+  alternates: { canonical: "https://naploo.com/safety" },
+
+};
+
 import React from 'react';
 import Link from 'next/link';
 import { Shield, AlertTriangle, Phone, Camera, Lock, Users, Heart, CheckCircle } from 'lucide-react';
@@ -54,16 +71,11 @@ const emergencyContacts = [
 
 export default function SafetyPage() {
   return (
-    <div className="min-h-screen bg-naploo-dark text-white">
+    <div className="min-h-screen bg-white text-slate-800">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl" />
-          <div className="absolute inset-0 grid-pattern opacity-30" />
-        </div>
-
+      <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700">
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-sm text-emerald-400 mb-6">
+          <span className="inline-block px-4 py-2 bg-emerald-500/20 border border-emerald-400/30 rounded-full text-sm text-white mb-6">
             <Shield className="w-4 h-4 inline mr-2" />
             Your Safety First
           </span>
@@ -72,28 +84,28 @@ export default function SafetyPage() {
             <br />
             <span className="gradient-text">We&apos;ve Got You</span>
           </h1>
-          <p className="text-lg sm:text-xl text-white/60 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto">
             Your safety and comfort are our top priorities. Learn about the measures we take to ensure a secure experience.
           </p>
         </div>
       </section>
 
       {/* Safety Features */}
-      <section className="relative py-16">
+      <section className="relative py-16 bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">Safety Features</h2>
-            <p className="text-white/60">Built-in security at every level</p>
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">Safety Features</h2>
+            <p className="text-slate-500">Built-in security at every level</p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {safetyFeatures.map((feature) => (
-              <div key={feature.title} className="glass-card rounded-xl p-6">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-emerald-400" />
+              <div key={feature.title} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-4">
+                  <feature.icon className="w-6 h-6 text-emerald-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-white/60">{feature.desc}</p>
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">{feature.title}</h3>
+                <p className="text-slate-500">{feature.desc}</p>
               </div>
             ))}
           </div>
@@ -101,19 +113,19 @@ export default function SafetyPage() {
       </section>
 
       {/* Safety Tips */}
-      <section className="relative py-16 bg-white/[0.02]">
+      <section className="relative py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">Safety Tips</h2>
-            <p className="text-white/60">Follow these guidelines for a safe stay</p>
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">Safety Tips</h2>
+            <p className="text-slate-500">Follow these guidelines for a safe stay</p>
           </div>
 
-          <div className="glass-card rounded-2xl p-8">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
             <ul className="space-y-4">
               {safetyTips.map((tip, index) => (
                 <li key={index} className="flex items-start gap-4">
-                  <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-white/80">{tip}</span>
+                  <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-600">{tip}</span>
                 </li>
               ))}
             </ul>
@@ -122,11 +134,11 @@ export default function SafetyPage() {
       </section>
 
       {/* Emergency Contacts */}
-      <section className="relative py-16">
+      <section className="relative py-16 bg-violet-50/50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">Emergency Contacts</h2>
-            <p className="text-white/60">Save these numbers for emergencies</p>
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">Emergency Contacts</h2>
+            <p className="text-slate-500">Save these numbers for emergencies</p>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
@@ -134,15 +146,15 @@ export default function SafetyPage() {
               <a
                 key={contact.label}
                 href={`tel:${contact.number}`}
-                className="glass-card rounded-xl p-6 flex items-center justify-between hover:ring-2 hover:ring-emerald-500/50 transition-all"
+                className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 flex items-center justify-between hover:ring-2 hover:ring-emerald-500/50 transition-all"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                    <Phone className="w-5 h-5 text-emerald-400" />
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <span className="font-medium text-white">{contact.label}</span>
+                  <span className="font-medium text-slate-800">{contact.label}</span>
                 </div>
-                <span className="text-emerald-400 font-mono">{contact.number}</span>
+                <span className="text-emerald-600 font-mono">{contact.number}</span>
               </a>
             ))}
           </div>
@@ -150,19 +162,17 @@ export default function SafetyPage() {
       </section>
 
       {/* CTA */}
-      <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 via-primary-600/20 to-violet-600/20" />
-        
+      <section className="relative py-24 overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700">
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Have a Safety Concern?
           </h2>
-          <p className="text-lg text-white/60 max-w-xl mx-auto mb-8">
+          <p className="text-lg text-white/80 max-w-xl mx-auto mb-8">
             Our team is available 24/7 to address any safety-related issues.
           </p>
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-primary-600 text-white font-semibold rounded-xl hover:shadow-glow-lg transition-all"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-700 font-semibold rounded-xl hover:bg-gray-100 transition-all"
           >
             Report an Issue
             <Shield className="w-5 h-5" />

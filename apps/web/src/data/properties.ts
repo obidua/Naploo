@@ -14,7 +14,10 @@ export const properties: Property[] = [
     description: 'Luxury boutique hotel in the heart of Pink City with modern amenities and traditional Rajasthani hospitality.',
     images: [
       '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
-      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png'
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png'
     ],
     amenities: ['WiFi', 'AC', 'Restaurant', 'Parking', 'Room Service', '24/7 Reception'],
     podsCount: 8,
@@ -33,7 +36,10 @@ export const properties: Property[] = [
     description: 'Charming lakeside homestay with stunning views of Lake Pichola and personalized home-cooked meals.',
     images: [
       '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
-      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png'
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png'
     ],
     amenities: ['Lake View', 'Home Cooked Food', 'WiFi', 'AC', 'Rooftop'],
     podsCount: 4,
@@ -52,7 +58,10 @@ export const properties: Property[] = [
     description: 'Heritage hotel offering a royal experience with fort views and traditional Marwari architecture.',
     images: [
       '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png',
-      '/Pods_Images/E-sports series/"E-sports"series -Horizontal single bed main.png'
+      '/Pods_Images/E-sports series/"E-sports"series -Horizontal single bed main.png',
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png'
     ],
     amenities: ['Fort View', 'Pool', 'Spa', 'Restaurant', 'WiFi', 'AC'],
     podsCount: 12,
@@ -71,7 +80,10 @@ export const properties: Property[] = [
     description: 'Peaceful mountain retreat with panoramic views of Aravalli hills and nature trails.',
     images: [
       '/Pods_Images/EXPLORETHE WORLD series/"EXPLORETHE WORLD"series -Horizontal single:double bed main.png',
-      '/Pods_Images/wooden series/"wooden"series -Horizontal single bed:Vertical single bed main.png'
+      '/Pods_Images/wooden series/"wooden"series -Horizontal single bed:Vertical single bed main.png',
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png'
     ],
     amenities: ['Mountain View', 'Trekking', 'Bonfire', 'WiFi', 'Organic Food'],
     podsCount: 3,
@@ -90,7 +102,10 @@ export const properties: Property[] = [
     description: 'Desert luxury hotel with camel safari experiences and traditional Rajasthani cultural programs.',
     images: [
       '/Pods_Images/Made in India T1/Main.jpg',
-      '/Pods_Images/Online Red Studio : Small Room Lounge/Online Red Studio : Small Room Lounge main.png'
+      '/Pods_Images/Online Red Studio : Small Room Lounge/Online Red Studio : Small Room Lounge main.png',
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png'
     ],
     amenities: ['Desert Safari', 'Pool', 'Cultural Shows', 'Restaurant', 'AC', 'WiFi'],
     podsCount: 10,
@@ -109,7 +124,10 @@ export const properties: Property[] = [
     description: 'Traditional haveli homestay with spiritual vibes and authentic vegetarian cuisine near the holy lake.',
     images: [
       '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
-      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png'
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png'
     ],
     amenities: ['Lake View', 'Yoga', 'Veg Food', 'WiFi', 'Temple Tours'],
     podsCount: 5,
@@ -128,7 +146,10 @@ export const properties: Property[] = [
     description: 'Modern city hotel in the heart of Delhi with excellent connectivity to metro and business district.',
     images: [
       '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
-      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png'
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png'
     ],
     amenities: ['Metro Access', 'Restaurant', 'Business Center', 'WiFi', 'AC', 'Gym'],
     podsCount: 15,
@@ -147,7 +168,10 @@ export const properties: Property[] = [
     description: 'Scenic lakeside homestay offering boating, fishing, and peaceful getaway from city life.',
     images: [
       '/Pods_Images/wooden series/"wooden"series -Horizontal single bed:Vertical single bed main.png',
-      '/Pods_Images/EXPLORETHE WORLD series/"EXPLORETHE WORLD"series -Horizontal single:double bed main.png'
+      '/Pods_Images/EXPLORETHE WORLD series/"EXPLORETHE WORLD"series -Horizontal single:double bed main.png',
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png'
     ],
     amenities: ['Lake View', 'Boating', 'Fishing', 'WiFi', 'Home Food', 'Parking'],
     podsCount: 4,

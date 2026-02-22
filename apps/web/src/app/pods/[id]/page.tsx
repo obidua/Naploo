@@ -44,14 +44,14 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   return (
     <main className="min-h-screen pt-24 pb-20">
       {/* Breadcrumb */}
-      <div className="border-b border-white/10">
+      <div className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-2 text-sm text-white/50">
-            <Link href="/" className="hover:text-white transition-colors">Home</Link>
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Link href="/" className="hover:text-slate-800 transition-colors">Home</Link>
             <span>/</span>
-            <Link href="/pods" className="hover:text-white transition-colors">Explore</Link>
+            <Link href="/pods" className="hover:text-slate-800 transition-colors">Explore</Link>
             <span>/</span>
-            <span className="text-white">{property.name}</span>
+            <span className="text-slate-800">{property.name}</span>
           </div>
         </div>
       </div>
@@ -62,7 +62,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
             {/* Left Column - Images & Details */}
             <div className="lg:col-span-2 space-y-6">
               {/* Main Image Gallery */}
-              <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-white/10">
+              <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border border-gray-200">
                 <Image
                   src={property.images[selectedImage] || property.images[0]}
                   alt={property.name}
@@ -70,7 +70,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                   className="object-cover"
                   priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-naploo-dark-DEFAULT/80 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 
                 {/* Type Badge */}
                 <div className={`absolute top-4 left-4 px-4 py-2 rounded-full text-sm font-medium ${
@@ -99,27 +99,27 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
               <div>
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                    <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
                       {property.name}
                     </h1>
-                    <div className="flex items-center gap-2 text-white/60">
+                    <div className="flex items-center gap-2 text-slate-500">
                       <span>📍</span>
                       <span>{property.address}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 px-3 py-2 bg-amber-500/20 rounded-xl">
+                  <div className="flex items-center gap-1 px-3 py-2 bg-amber-50 rounded-xl">
                     <span className="text-amber-400">★</span>
-                    <span className="font-semibold text-white">{property.rating}</span>
-                    <span className="text-white/50">({property.reviews})</span>
+                    <span className="font-semibold text-slate-800">{property.rating}</span>
+                    <span className="text-slate-400">({property.reviews})</span>
                   </div>
                 </div>
 
-                <p className="text-white/70 leading-relaxed mb-6">{property.description}</p>
+                <p className="text-slate-600 leading-relaxed mb-6">{property.description}</p>
 
                 {/* Amenities */}
                 <div className="flex flex-wrap gap-2 mb-6">
                   {property.amenities.map((amenity) => (
-                    <span key={amenity} className="px-3 py-1.5 bg-white/10 rounded-lg text-sm text-white/80">
+                    <span key={amenity} className="px-3 py-1.5 bg-gray-100 rounded-lg text-sm text-slate-600">
                       {amenity}
                     </span>
                   ))}
@@ -129,19 +129,19 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <GlassCard className="p-4 text-center">
                     <div className="text-2xl font-bold gradient-text">{property.podsCount}</div>
-                    <div className="text-sm text-white/60">Sleep Pods</div>
+                    <div className="text-sm text-slate-500">Sleep Pods</div>
                   </GlassCard>
                   <GlassCard className="p-4 text-center">
                     <div className="text-2xl font-bold gradient-text">{property.roomsCount}</div>
-                    <div className="text-sm text-white/60">Rooms</div>
+                    <div className="text-sm text-slate-500">Rooms</div>
                   </GlassCard>
                   <GlassCard className="p-4 text-center">
                     <div className="text-2xl font-bold gradient-text">₹{property.podStartPrice}</div>
-                    <div className="text-sm text-white/60">Pod/Hour</div>
+                    <div className="text-sm text-slate-500">Pod/Hour</div>
                   </GlassCard>
                   <GlassCard className="p-4 text-center">
                     <div className="text-2xl font-bold gradient-text">₹{property.roomStartPrice}</div>
-                    <div className="text-sm text-white/60">Room/Night</div>
+                    <div className="text-sm text-slate-500">Room/Night</div>
                   </GlassCard>
                 </div>
               </div>
@@ -154,7 +154,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                     className={`flex-1 py-3 rounded-xl font-medium transition-all ${
                       activeTab === 'pods'
                         ? 'bg-gradient-to-r from-primary-500 to-violet-600 text-white'
-                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                        : 'bg-gray-100 text-slate-500 hover:bg-gray-200 hover:text-slate-800'
                     }`}
                   >
                     🛸 Book Pods (Hourly)
@@ -164,7 +164,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                     className={`flex-1 py-3 rounded-xl font-medium transition-all ${
                       activeTab === 'rooms'
                         ? 'bg-gradient-to-r from-primary-500 to-violet-600 text-white'
-                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                        : 'bg-gray-100 text-slate-500 hover:bg-gray-200 hover:text-slate-800'
                     }`}
                   >
                     🏠 Book Rooms (24hrs)
@@ -174,7 +174,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 {/* Pods Tab Content */}
                 {activeTab === 'pods' && (
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white mb-4">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">
                       Available Pods ({propertyPods.length})
                     </h3>
                     
@@ -187,7 +187,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                             className={`p-4 rounded-xl border cursor-pointer transition-all ${
                               selectedPod === pod.id
                                 ? 'border-primary-500 bg-primary-500/10'
-                                : 'border-white/10 bg-white/5 hover:border-white/20'
+                                : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                             }`}
                           >
                             <div className="flex gap-4">
@@ -201,24 +201,24 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between mb-1">
-                                  <h4 className="font-medium text-white truncate">{pod.name}</h4>
+                                  <h4 className="font-medium text-slate-800 truncate">{pod.name}</h4>
                                   <span className={`px-2 py-0.5 rounded text-xs ${
                                     pod.available 
-                                      ? 'bg-emerald-500/20 text-emerald-400' 
-                                      : 'bg-red-500/20 text-red-400'
+                                      ? 'bg-emerald-50 text-emerald-600' 
+                                      : 'bg-red-50 text-red-600'
                                   }`}>
                                     {pod.available ? 'Available' : 'Occupied'}
                                   </span>
                                 </div>
-                                <p className="text-xs text-white/50 mb-2">{pod.series}</p>
+                                <p className="text-xs text-slate-400 mb-2">{pod.series}</p>
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-1">
                                     <span className="text-amber-400 text-sm">★</span>
-                                    <span className="text-sm text-white">{pod.rating}</span>
+                                    <span className="text-sm text-slate-800">{pod.rating}</span>
                                   </div>
                                   <div className="text-right">
                                     <span className="text-lg font-bold gradient-text">₹{pod.price}</span>
-                                    <span className="text-xs text-white/50">/hr</span>
+                                    <span className="text-xs text-slate-500">/hr</span>
                                   </div>
                                 </div>
                               </div>
@@ -227,15 +227,15 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-white/50">
+                      <div className="text-center py-8 text-slate-500">
                         No pods available at this property
                       </div>
                     )}
 
                     {/* Duration Selection */}
                     {selectedPod && selectedPodData && (
-                      <div className="mt-6 pt-6 border-t border-white/10">
-                        <h4 className="text-white font-medium mb-4">Select Duration</h4>
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <h4 className="text-slate-800 font-medium mb-4">Select Duration</h4>
                         <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                           {podDurations.map((d) => (
                             <button
@@ -244,7 +244,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                               className={`relative py-3 px-2 rounded-lg text-center transition-all ${
                                 selectedDuration === d.hours
                                   ? 'bg-primary-500 text-white'
-                                  : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                                  : 'bg-gray-100 text-slate-500 hover:bg-gray-200 hover:text-slate-800'
                               }`}
                             >
                               {d.popular && (
@@ -265,7 +265,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 {/* Rooms Tab Content */}
                 {activeTab === 'rooms' && (
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white mb-4">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">
                       Available Rooms ({property.roomsCount})
                     </h3>
                     
@@ -277,25 +277,25 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                           className={`p-4 rounded-xl border cursor-pointer transition-all ${
                             selectedRoom === room.id
                               ? 'border-primary-500 bg-primary-500/10'
-                              : 'border-white/10 bg-white/5 hover:border-white/20'
+                              : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                           }`}
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div>
-                              <h4 className="font-semibold text-white">{room.name}</h4>
-                              <div className="flex items-center gap-3 text-sm text-white/50 mt-1">
+                              <h4 className="font-semibold text-slate-800">{room.name}</h4>
+                              <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
                                 <span>👥 {room.occupancy}</span>
                                 <span>📐 {room.size}</span>
                               </div>
                             </div>
                             <div className="text-right">
                               <span className="text-2xl font-bold gradient-text">₹{room.price}</span>
-                              <div className="text-xs text-white/50">/night</div>
+                              <div className="text-xs text-slate-500">/night</div>
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {room.amenities.map((amenity) => (
-                              <span key={amenity} className="px-2 py-1 bg-white/5 rounded text-xs text-white/60">
+                              <span key={amenity} className="px-2 py-1 bg-gray-100 rounded text-xs text-slate-500">
                                 {amenity}
                               </span>
                             ))}
@@ -311,22 +311,22 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
             {/* Right Column - Booking Card */}
             <div className="lg:sticky lg:top-24 space-y-6 h-fit">
               <GlassCard className="p-6">
-                <h3 className="text-xl font-semibold text-white mb-6">Complete Your Booking</h3>
+                <h3 className="text-xl font-semibold text-slate-800 mb-6">Complete Your Booking</h3>
                 
                 {/* Booking Type */}
                 <div className="mb-4">
-                  <label className="block text-sm text-white/60 mb-2">Booking Type</label>
-                  <div className="px-4 py-3 bg-white/5 rounded-xl text-white">
+                  <label className="block text-sm text-slate-500 mb-2">Booking Type</label>
+                  <div className="px-4 py-3 bg-gray-50 rounded-xl text-slate-800">
                     {activeTab === 'pods' ? '🛸 Pod (Hourly Booking)' : '🏠 Room (24hr Booking)'}
                   </div>
                 </div>
 
                 {/* Selected Item */}
                 <div className="mb-4">
-                  <label className="block text-sm text-white/60 mb-2">
+                  <label className="block text-sm text-slate-500 mb-2">
                     {activeTab === 'pods' ? 'Selected Pod' : 'Selected Room'}
                   </label>
-                  <div className="px-4 py-3 bg-white/5 rounded-xl text-white">
+                  <div className="px-4 py-3 bg-gray-50 rounded-xl text-slate-800">
                     {activeTab === 'pods' 
                       ? (selectedPodData?.name || 'Select a pod above')
                       : (roomCategories.find(r => r.id === selectedRoom)?.name || 'Select a room above')
@@ -337,8 +337,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 {/* Duration (for pods) */}
                 {activeTab === 'pods' && selectedPod && (
                   <div className="mb-4">
-                    <label className="block text-sm text-white/60 mb-2">Duration</label>
-                    <div className="px-4 py-3 bg-white/5 rounded-xl text-white">
+                    <label className="block text-sm text-slate-500 mb-2">Duration</label>
+                    <div className="px-4 py-3 bg-gray-50 rounded-xl text-slate-800">
                       {selectedDuration} Hours
                     </div>
                   </div>
@@ -347,26 +347,26 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 {/* Date & Time Inputs */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm text-white/60 mb-2">Date</label>
+                    <label className="block text-sm text-slate-500 mb-2">Date</label>
                     <input
                       type="date"
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-500/50"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-white/60 mb-2">
+                    <label className="block text-sm text-slate-500 mb-2">
                       {activeTab === 'pods' ? 'Start Time' : 'Check-in'}
                     </label>
                     <input
                       type="time"
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-500/50"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                     />
                   </div>
                 </div>
 
                 {/* Price Breakdown */}
-                <div className="border-t border-white/10 pt-4 mb-6">
-                  <div className="flex justify-between text-white/60 mb-2">
+                <div className="border-t border-gray-200 pt-4 mb-6">
+                  <div className="flex justify-between text-slate-500 mb-2">
                     <span>Base Price</span>
                     <span>
                       {activeTab === 'pods' && selectedPodData
@@ -377,11 +377,11 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                       }
                     </span>
                   </div>
-                  <div className="flex justify-between text-white/60 mb-2">
+                  <div className="flex justify-between text-slate-500 mb-2">
                     <span>Service Fee</span>
                     <span>₹50</span>
                   </div>
-                  <div className="flex justify-between text-white/60 mb-4">
+                  <div className="flex justify-between text-slate-500 mb-4">
                     <span>GST (18%)</span>
                     <span>
                       {activeTab === 'pods' && selectedPodData
@@ -392,7 +392,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                       }
                     </span>
                   </div>
-                  <div className="flex justify-between text-lg font-bold text-white pt-4 border-t border-white/10">
+                  <div className="flex justify-between text-lg font-bold text-slate-800 pt-4 border-t border-gray-200">
                     <span>Total</span>
                     <span className="gradient-text">
                       {activeTab === 'pods' && selectedPodData
@@ -411,7 +411,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                   className={`w-full py-4 rounded-xl font-semibold text-white transition-all ${
                     (activeTab === 'pods' ? selectedPod : selectedRoom)
                       ? 'bg-gradient-to-r from-primary-500 to-violet-600 hover:from-primary-600 hover:to-violet-700 shadow-glow hover:shadow-glow-lg'
-                      : 'bg-white/10 cursor-not-allowed'
+                      : 'bg-gray-200 cursor-not-allowed'
                   }`}
                 >
                   {(activeTab === 'pods' ? selectedPod : selectedRoom)
@@ -421,7 +421,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 </button>
 
                 {/* Trust Badges */}
-                <div className="mt-6 flex items-center justify-center gap-4 text-xs text-white/40">
+                <div className="mt-6 flex items-center justify-center gap-4 text-xs text-slate-400">
                   <span>🔒 Secure Payment</span>
                   <span>✓ Instant Confirmation</span>
                 </div>
@@ -429,24 +429,24 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
 
               {/* Contact Card */}
               <GlassCard className="p-6">
-                <h4 className="font-medium text-white mb-4">Need Help?</h4>
+                <h4 className="font-medium text-slate-800 mb-4">Need Help?</h4>
                 <div className="space-y-3">
-                  <a href="tel:+919876543210" className="flex items-center gap-3 text-white/70 hover:text-white transition-colors">
-                    <span className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center">
+                  <a href="tel:+919876543210" className="flex items-center gap-3 text-slate-600 hover:text-slate-800 transition-colors">
+                    <span className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
                       📞
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-white">Call Us</p>
-                      <p className="text-xs text-white/50">+91 98765 43210</p>
+                      <p className="text-sm font-medium text-slate-800">Call Us</p>
+                      <p className="text-xs text-slate-500">+91 98765 43210</p>
                     </div>
                   </a>
-                  <a href="mailto:support@naploo.com" className="flex items-center gap-3 text-white/70 hover:text-white transition-colors">
-                    <span className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center">
+                  <a href="mailto:support@naploo.com" className="flex items-center gap-3 text-slate-600 hover:text-slate-800 transition-colors">
+                    <span className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
                       ✉️
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-white">Email</p>
-                      <p className="text-xs text-white/50">support@naploo.com</p>
+                      <p className="text-sm font-medium text-slate-800">Email</p>
+                      <p className="text-xs text-slate-500">support@naploo.com</p>
                     </div>
                   </a>
                 </div>
@@ -459,7 +459,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
       {/* More Properties Section */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-white mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-8">
             Explore More <span className="gradient-text">Properties</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -485,16 +485,16 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                       </div>
                     </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors">
+                      <h3 className="font-semibold text-slate-800 group-hover:text-primary-600 transition-colors">
                         {p.name}
                       </h3>
-                      <p className="text-sm text-white/50">📍 {p.city}</p>
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+                      <p className="text-sm text-slate-500">📍 {p.city}</p>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
                         <div className="flex items-center gap-1">
                           <span className="text-amber-400">★</span>
-                          <span className="text-sm text-white">{p.rating}</span>
+                          <span className="text-sm text-slate-800">{p.rating}</span>
                         </div>
-                        <span className="text-sm text-primary-400">From ₹{p.podStartPrice}/hr</span>
+                        <span className="text-sm text-primary-600">From ₹{p.podStartPrice}/hr</span>
                       </div>
                     </div>
                   </GlassCard>

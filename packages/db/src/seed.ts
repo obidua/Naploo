@@ -104,6 +104,7 @@ async function seed() {
 
   // Create regular users (customers)
   const regularUsers = [
+    { id: 'test-user-001', phone: '+919999999999', firstName: 'Test', lastName: 'Customer', email: 'test@naploo.com', role: 'customer' as const, status: 'active' as const },
     { id: uuidv4(), phone: '+919900001111', firstName: 'Arun', lastName: 'Verma', email: 'arun@gmail.com', role: 'customer' as const, status: 'active' as const },
     { id: uuidv4(), phone: '+919900002222', firstName: 'Sneha', lastName: 'Gupta', email: 'sneha@gmail.com', role: 'customer' as const, status: 'active' as const },
     { id: uuidv4(), phone: '+919900003333', firstName: 'Rahul', lastName: 'Singh', email: 'rahul@gmail.com', role: 'customer' as const, status: 'active' as const },

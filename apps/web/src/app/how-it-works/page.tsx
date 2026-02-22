@@ -1,7 +1,23 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "How Naploo Works | Easy 3-Step Pod Booking",
+  description: "Book a sleep pod in 3 simple steps: Search, Select, Sleep. Learn how Naploo makes hourly rest easy at airports, stations & hotels across India.",
+  keywords: "how naploo works, pod booking process, book sleep pod, naploo tutorial, sleep pod guide",
+  openGraph: {
+    title: "How Naploo Works | Easy 3-Step Pod Booking",
+    description: "Book a sleep pod in 3 simple steps: Search, Select, Sleep. Learn how Naploo makes hourly rest easy at airports, stations & hotels across India.",
+    url: "https://naploo.com/how-it-works",
+    siteName: "Naploo",
+    type: "website",
+  },
+  alternates: { canonical: "https://naploo.com/how-it-works" },
+
+};
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { GlassCard } from '@/components/ui/GlassCard';
 
 const steps = [
   {
@@ -109,22 +125,22 @@ const faqs = [
 
 export default function HowItWorksPage() {
   return (
-    <div className="min-h-screen bg-naploo-dark-DEFAULT text-white">
+    <div className="min-h-screen bg-white text-slate-800">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
+      <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700">
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-primary-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-white/10 rounded-full blur-3xl" />
           <div className="absolute inset-0 grid-pattern opacity-30" />
         </div>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block px-4 py-2 bg-primary-500/10 border border-primary-500/20 rounded-full text-sm text-primary-400 mb-6">
+          <span className="inline-block px-4 py-2 bg-white/20 border border-white/30 rounded-full text-sm text-white mb-6">
             Simple & Fast
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white mb-6">
             How Naploo Works
           </h1>
-          <p className="text-lg sm:text-xl text-white/60 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto">
             Book a premium sleeping pod in under 60 seconds. No queues, no paperwork, 
             no hassle - just rest when you need it.
           </p>
@@ -132,23 +148,23 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Video Section */}
-      <section className="relative py-12">
+      <section className="relative py-12 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <GlassCard className="overflow-hidden">
-            <div className="aspect-video relative bg-gradient-to-br from-primary-500/20 to-violet-500/20 flex items-center justify-center">
-              <button className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors group">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="aspect-video relative bg-gradient-to-br from-primary-100 to-violet-100 flex items-center justify-center">
+              <button className="w-20 h-20 rounded-full bg-primary-600/80 backdrop-blur-xl border border-primary-500 flex items-center justify-center hover:bg-primary-700 transition-colors group">
                 <svg className="w-8 h-8 text-white ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </button>
-              <p className="absolute bottom-4 text-white/50 text-sm">Watch: How to book your first pod (2 min)</p>
+              <p className="absolute bottom-4 text-slate-500 text-sm">Watch: How to book your first pod (2 min)</p>
             </div>
-          </GlassCard>
+          </div>
         </div>
       </section>
 
       {/* Steps Section */}
-      <section className="relative py-24">
+      <section className="relative py-24 bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-12">
             {steps.map((step, index) => (
@@ -158,31 +174,31 @@ export default function HowItWorksPage() {
               >
                 {/* Visual */}
                 <div className="w-full lg:w-1/2">
-                  <GlassCard className="p-8 lg:p-12 text-center">
+                  <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 lg:p-12 text-center">
                     <div className="text-8xl mb-6">{step.icon}</div>
                     <div className="inline-block px-4 py-2 bg-gradient-to-r from-primary-500 to-violet-500 rounded-full text-sm font-bold text-white mb-4">
                       Step {step.number}
                     </div>
-                    <h3 className="text-2xl font-display font-bold text-white">
+                    <h3 className="text-2xl font-display font-bold text-slate-800">
                       {step.title}
                     </h3>
-                  </GlassCard>
+                  </div>
                 </div>
 
                 {/* Content */}
                 <div className="w-full lg:w-1/2 text-center lg:text-left">
-                  <p className="text-lg text-white/70 mb-6">
+                  <p className="text-lg text-slate-600 mb-6">
                     {step.description}
                   </p>
                   <ul className="space-y-3">
                     {step.details.map((detail, i) => (
                       <li key={i} className="flex items-center gap-3 justify-center lg:justify-start">
-                        <span className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                          <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <span className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                          <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         </span>
-                        <span className="text-white/60">{detail}</span>
+                        <span className="text-slate-500">{detail}</span>
                       </li>
                     ))}
                   </ul>
@@ -194,16 +210,16 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Pod Experience Section */}
-      <section className="relative py-24 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
+      <section className="relative py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-sm text-cyan-400 mb-4">
+            <span className="inline-block px-4 py-2 bg-cyan-50 border border-cyan-200 rounded-full text-sm text-cyan-600 mb-4">
               Inside the Pod
             </span>
-            <h2 className="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+            <h2 className="text-4xl sm:text-5xl font-display font-bold text-slate-800 mb-4">
               What to Expect
             </h2>
-            <p className="text-lg text-white/60 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
               Step inside a world of comfort and technology
             </p>
           </div>
@@ -217,45 +233,45 @@ export default function HowItWorksPage() {
               { icon: '💡', title: 'Ambient Lighting', desc: 'Customizable LED lighting with presets for sleep, reading, or work.' },
               { icon: '🔇', title: 'Sound Insulation', desc: 'Noise-cancelling walls ensure peace even in busy locations.' },
             ].map((feature) => (
-              <GlassCard key={feature.title} className="p-6 text-center">
+              <div key={feature.title} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 text-center">
                 <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-sm text-white/60">{feature.desc}</p>
-              </GlassCard>
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">{feature.title}</h3>
+                <p className="text-sm text-slate-500">{feature.desc}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* FAQs Section */}
-      <section className="relative py-24">
+      <section className="relative py-24 bg-violet-50/50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full text-sm text-amber-400 mb-4">
+            <span className="inline-block px-4 py-2 bg-amber-50 border border-amber-200 rounded-full text-sm text-amber-600 mb-4">
               FAQs
             </span>
-            <h2 className="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+            <h2 className="text-4xl sm:text-5xl font-display font-bold text-slate-800 mb-4">
               Common Questions
             </h2>
           </div>
 
           <div className="space-y-4">
             {faqs.map((faq, i) => (
-              <GlassCard key={i} className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-start gap-3">
-                  <span className="text-primary-400">Q:</span>
+              <div key={i} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-start gap-3">
+                  <span className="text-primary-600">Q:</span>
                   {faq.question}
                 </h3>
-                <p className="text-white/60 pl-6">{faq.answer}</p>
-              </GlassCard>
+                <p className="text-slate-500 pl-6">{faq.answer}</p>
+              </div>
             ))}
           </div>
 
           <div className="text-center mt-12">
-            <p className="text-white/60 mb-4">Still have questions?</p>
+            <p className="text-slate-500 mb-4">Still have questions?</p>
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 border border-white/20 rounded-xl text-white hover:bg-white/20 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-50 border border-gray-200 rounded-xl text-slate-700 hover:bg-gray-100 transition-colors"
             >
               Contact Support
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -267,26 +283,24 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 via-violet-600/20 to-cyan-600/20" />
-        
+      <section className="relative py-24 overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700">
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl sm:text-5xl font-display font-bold text-white mb-6">
             Ready to Try?
           </h2>
-          <p className="text-lg text-white/60 max-w-xl mx-auto mb-10">
+          <p className="text-lg text-white/80 max-w-xl mx-auto mb-10">
             Find your nearest pod and experience the future of rest today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/pods"
-              className="px-8 py-4 bg-gradient-to-r from-primary-500 to-violet-600 text-white font-semibold rounded-xl hover:shadow-glow-lg transition-all"
+              className="px-8 py-4 bg-white text-primary-700 font-semibold rounded-xl hover:bg-gray-100 transition-all"
             >
               Find Pods Near You
             </Link>
             <Link
               href="/signup"
-              className="px-8 py-4 bg-white/10 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/20 transition-all"
+              className="px-8 py-4 bg-white/10 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/20 transition-all"
             >
               Create Account
             </Link>

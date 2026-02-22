@@ -1,10 +1,76 @@
 # Naploo Ecosystem - Complete Project Documentation
 
 > **Version:** 4.0.0  
-> **Last Updated:** January 2026  
+> **Last Updated:** February 22, 2026  
 > **Company:** BIDUA Industries Pvt Ltd  
 > **Project Lead:** Development Team  
 > **Domain:** naploo.com
+
+---
+
+## ⚠️ Development Status Summary (February 2026)
+
+### Overall Progress
+
+| Category | Implemented | Total Planned | Progress |
+|----------|-------------|---------------|----------|
+| Frontend Apps | 1 (web) | 7 | ~14% |
+| Backend Services | 2 (gateway + auth stub) | 11 | ~10% |
+| Shared Packages | 1 (db) | 4 | 25% |
+| Database Tables | 19 | 19 | ✅ 100% |
+| Web Pages | 24 routes | 24+ | ✅ Complete |
+
+### What's Live in Production
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| **naploo.com** | ✅ Live | Next.js 14.2.35 + React 19 + Tailwind CSS, 24 pages, systemd managed |
+| **api.naploo.com** | ✅ Live | Elysia/Bun API Gateway with Swagger docs, systemd managed |
+| **Database Schema** | ✅ Complete | 19 tables via Drizzle ORM (PostgreSQL 14) covering all business entities |
+| **Nginx + SSL** | ✅ Running | Reverse proxy with Let's Encrypt, Cloudflare CDN/WAF |
+
+### What's Partially Done
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| **Auth Service** | ⚠️ Stub | 4 endpoints exist but return hardcoded data, no MSG91/DB integration |
+| **API Gateway Routes** | ⚠️ Stub | `/api/v1/*` health checks exist but don't proxy to downstream services |
+
+### What's Not Started
+
+| Category | Items |
+|----------|-------|
+| Frontend Apps | admin, partner, investor, associate, rental, mobile |
+| Backend Services | booking, payment, investor, referral, rental, hotel, notification, analytics, search |
+| Shared Packages | ui, types, config |
+| Infrastructure | Docker, Kafka, Elasticsearch, CI/CD pipelines, monitoring |
+| Integrations | Razorpay, MSG91, FCM, Google Maps, Sentry |
+
+### Web App Pages (24 routes implemented)
+
+| Route | Description |
+|-------|-------------|
+| `/` | Home page with hero slider |
+| `/about` | About Naploo |
+| `/blog`, `/blog/[id]` | Blog listing and detail |
+| `/careers` | Careers page |
+| `/contact` | Contact form |
+| `/cookies` | Cookie policy |
+| `/faqs` | Frequently asked questions |
+| `/help` | Help center |
+| `/how-it-works` | How Naploo works |
+| `/investor` | Investor information |
+| `/locations` | Location listings |
+| `/login`, `/signup` | Authentication pages |
+| `/partner` | Partner information |
+| `/pods`, `/pods/[id]` | Pod browsing and detail |
+| `/press` | Press/media page |
+| `/pricing` | Pricing information |
+| `/privacy` | Privacy policy |
+| `/profile` | User profile |
+| `/refund` | Refund policy |
+| `/safety` | Safety information |
+| `/terms` | Terms of service |
 
 ---
 
@@ -340,16 +406,19 @@ Build a complete digital ecosystem enabling:
 
 ### 1.8 Platforms to Develop
 
-| Platform | Technology | Priority | Deployment |
-|----------|------------|----------|------------|
-| Customer Website (PWA) | Next.js 14 | Phase 1 | Linux Server |
-| Partner Portal (Hotels/Homestays) | Next.js 14 | Phase 1 | Linux Server |
-| Customer Mobile App | React Native + Expo | Phase 2 | App Stores |
-| Investor Pool Portal | Next.js 14 | Phase 1 | Linux Server |
-| Associate Portal | Next.js 14 | Phase 1 | Linux Server |
-| Rental Portal | Next.js 14 | Phase 2 | Linux Server |
-| Admin Dashboard | Next.js 14 | Phase 1 | Linux Server |
-| Backend Services | Bun + Elysia (Microservices) | Parallel | Linux Server |
+| Platform | Technology | Priority | Deployment | Status |
+|----------|------------|----------|------------|--------|
+| Customer Website (PWA) | Next.js 14 | Phase 1 | Linux Server | ✅ Live (24 pages) |
+| API Gateway | Elysia (Bun) | Phase 1 | Linux Server | ✅ Running (stubs) |
+| Auth Service | Elysia (Bun) | Phase 1 | Linux Server | ⚠️ Stub only |
+| Database Schema | PostgreSQL + Drizzle | Phase 1 | Linux Server | ✅ 19 tables defined |
+| Partner Portal (Hotels/Homestays) | Next.js 14 | Phase 1 | Linux Server | ❌ Not started |
+| Customer Mobile App | React Native + Expo | Phase 2 | App Stores | ❌ Not started |
+| Investor Pool Portal | Next.js 14 | Phase 1 | Linux Server | ❌ Not started |
+| Associate Portal | Next.js 14 | Phase 1 | Linux Server | ❌ Not started |
+| Rental Portal | Next.js 14 | Phase 2 | Linux Server | ❌ Not started |
+| Admin Dashboard | Next.js 14 | Phase 1 | Linux Server | ❌ Not started |
+| Backend Services (9 remaining) | Bun + Elysia | Parallel | Linux Server | ❌ Not started |
 
 ### 1.9 Key Business Metrics
 
@@ -451,7 +520,10 @@ Build a complete digital ecosystem enabling:
 
 ## 3. System Architecture
 
-### 3.1 High-Level Architecture (Microservices)
+> **⚠️ IMPLEMENTATION NOTE:** The architecture below shows the planned target state.
+> Currently only the shaded components are operational. See Section 3.2 for status.
+
+### 3.1 High-Level Architecture (Planned)
 
 ```
 +-------------------------------------------------------------------------+
@@ -460,7 +532,7 @@ Build a complete digital ecosystem enabling:
 |  Customer Web |  Hotel Owner  |   Investor    |   Associate   |  Mobile  |
 |  (Next.js)    |   Portal      |   Portal      |    Portal     |   App    |
 |  naploo.com   | partner.      | investor.     | associate.    | iOS/     |
-|               | naploo.com    | naploo.com    | naploo.com    | Android  |
+|   ✅ LIVE     | naploo.com    | naploo.com    | naploo.com    | Android  |
 +---------------+---------------+---------------+---------------+----------+
 |  Rental       |     Admin     |               |               |          |
 |  Portal       |   Dashboard   |               |               |          |
@@ -472,72 +544,61 @@ Build a complete digital ecosystem enabling:
                                         |
                                         v
 +-------------------------------------------------------------------------+
-|                    CLOUDFLARE CDN + WAF + DDoS Protection                |
+|                ✅ CLOUDFLARE CDN + WAF + DDoS Protection                 |
 +-------------------------------------------------------------------------+
                                         |
                                         v
 +-------------------------------------------------------------------------+
-|                      NGINX REVERSE PROXY + SSL                           |
-|                    (Load Balancing, Rate Limiting)                       |
+|                  ✅ NGINX REVERSE PROXY + Let's Encrypt SSL              |
 +-------------------------------------------------------------------------+
                                         |
                                         v
 +-------------------------------------------------------------------------+
-|                         API GATEWAY (Elysia)                             |
-|          (Authentication, Rate Limiting, Request Routing)                |
+|                     ✅ API GATEWAY (Elysia on port 3000)                 |
+|                  (Health checks, Swagger — stubs only)                   |
 +-------------------------------------------------------------------------+
                                         |
-        +---------------+---------------+---------------+---------------+
-        |               |               |               |               |
-        v               v               v               v               v
-+-------------+ +-------------+ +-------------+ +-------------+ +-------------+
-|    AUTH     | |   BOOKING   | |   PAYMENT   | |  INVESTOR   | |  REFERRAL   |
-|   SERVICE   | |   SERVICE   | |   SERVICE   | |   SERVICE   | |   SERVICE   |
-| (OAuth+JWT) | | (Pods+Rooms)| | (Razorpay)  | | (Pool+3x)   | | (5-Level)   |
-+-------------+ +-------------+ +-------------+ +-------------+ +-------------+
-        |               |               |               |               |
-        v               v               v               v               v
-+-------------+ +-------------+ +-------------+ +-------------+ +-------------+
-|   RENTAL    | |   HOTEL     | |NOTIFICATION | |  ANALYTICS  | |   SEARCH    |
-|   SERVICE   | |   SERVICE   | |   SERVICE   | |   SERVICE   | |   SERVICE   |
-| (Home/Office)| | (Listings) | | (FCM+Email) | | (Reports)   | |(Elasticsearch)
-+-------------+ +-------------+ +-------------+ +-------------+ +-------------+
-        |               |               |               |               |
-        +---------------+---------------+---------------+---------------+
+        +---------------+---------------+--------- ... --------+
+        |               |                                       |
+        v               v                                       v
++-------------+ +-------------+                         +-------------+
+| ⚠️ AUTH    | | ❌ BOOKING  |  ... 9 more services     | ❌ SEARCH   |
+|   SERVICE   | |   SERVICE   |      all ❌ empty        |   SERVICE   |
+| (Stub only) | |             |                         |             |
++-------------+ +-------------+                         +-------------+
                                         |
                                         v
 +-------------------------------------------------------------------------+
-|                      APACHE KAFKA (Message Broker)                       |
-|              (Event Streaming, Real-time Notifications)                  |
+|                      ❌ KAFKA (Not installed)                            |
 +-------------------------------------------------------------------------+
                                         |
-        +---------------+---------------+---------------+---------------+
-        |               |               |               |               |
-        v               v               v               v               v
-+-------------+ +-------------+ +-------------+ +-------------+ +-------------+
-| PostgreSQL  |    Redis      |Elasticsearch  |Local Storage  |   Swagger    |
-| (Drizzle    |  (Cache/      |  (Search)     | (Media Files) | (API Docs)   |
-|    ORM)     |   Queue)      |               |               |              |
-+-------------+ +-------------+ +-------------+ +-------------+ +-------------+
+        +---------------+---------------+---------------+
+        |               |               |               |
+        v               v               v               v
++-------------+ +-------------+ +-------------+ +-------------+
+| ✅ Postgres |  ✅ Redis     | ❌ Elastic-  | ✅ Swagger    |
+| 14.20       |  6.0.16       |    search    |  (via Elysia) |
+| (Drizzle)   |  (installed)  |              |               |
++-------------+ +-------------+ +-------------+ +-------------+
 
-                        SELF-HOSTED LINUX SERVER (Docker)
+              SELF-HOSTED AWS EC2 (systemd, no Docker)
 ```
 
 ### 3.2 Microservices Overview
 
-| Service | Port | Responsibility |
-|---------|------|----------------|
-| **api-gateway** | 3000 | Request routing, authentication, rate limiting |
-| **auth-service** | 3001 | OAuth 2.0, JWT tokens, OTP verification |
-| **booking-service** | 3002 | Pod & room bookings, availability |
-| **payment-service** | 3003 | Razorpay integration, refunds |
-| **investor-service** | 3004 | Pool management, pod sets, 3x tracking |
-| **referral-service** | 3005 | 5-level referral, commissions |
-| **rental-service** | 3006 | Home/office rentals, contracts |
-| **hotel-service** | 3007 | Hotel listings, rooms, pods |
-| **notification-service** | 3008 | Email, SMS, push notifications |
-| **analytics-service** | 3009 | Reports, dashboards, metrics |
-| **search-service** | 3010 | Elasticsearch indexing, search |
+| Service | Port | Responsibility | Status |
+|---------|------|----------------|--------|
+| **api-gateway** | 3000 | Request routing, health checks, Swagger | ✅ Running (stub routes) |
+| **auth-service** | 3001 | OTP send/verify, JWT (hardcoded) | ⚠️ Stub (no DB, no MSG91) |
+| **booking-service** | 3002 | Pod & room bookings, availability | ❌ Empty directory |
+| **payment-service** | 3003 | Razorpay integration, refunds | ❌ Empty directory |
+| **investor-service** | 3004 | Pool management, pod sets, 3x tracking | ❌ Empty directory |
+| **referral-service** | 3005 | 5-level referral, commissions | ❌ Empty directory |
+| **rental-service** | 3006 | Home/office rentals, contracts | ❌ Empty directory |
+| **hotel-service** | 3007 | Hotel listings, rooms, pods | ❌ Empty directory |
+| **notification-service** | 3008 | Email, SMS, push notifications | ❌ Empty directory |
+| **analytics-service** | 3009 | Reports, dashboards, metrics | ❌ Empty directory |
+| **search-service** | 3010 | Elasticsearch indexing, search | ❌ Empty directory |
 
 ### 3.3 Data Flow - Investor Pool System
 
@@ -635,23 +696,28 @@ Associate                   Frontend                   Backend
 
 ### 4.1 Frontend Technologies
 
-| Category | Technology | Version | Purpose |
-|----------|------------|---------|---------|
-| **Framework** | Next.js | 14.2.35+ | React framework (SECURITY PATCHED) |
-| **React** | React | 19.2.1+ | UI library (SECURITY PATCHED) |
-| **Language** | TypeScript | 5.x | Type safety |
-| **Styling** | Tailwind CSS | 3.x | Utility-first CSS |
-| **UI Components** | shadcn/ui | Latest | Accessible components |
-| **State Management** | Zustand | 4.x | Lightweight state |
-| **Forms** | React Hook Form | 7.x | Form handling |
-| **Validation** | Zod | 3.x | Schema validation |
-| **HTTP Client** | Axios / TanStack Query | 5.x | API calls + caching |
-| **Maps** | Mapbox GL / Google Maps | Latest | Location features |
-| **Charts** | Recharts | 2.x | Analytics visualization |
-| **Animation** | Framer Motion | 10.x | UI animations |
-| **Icons** | Lucide React | Latest | Icon library |
+| Category | Technology | Version | Purpose | Status |
+|----------|------------|---------|---------|--------|
+| **Framework** | Next.js | 14.2.35 | React framework (SECURITY PATCHED) | ✅ In use |
+| **React** | React | 19.2.1 | UI library (SECURITY PATCHED) | ✅ In use |
+| **Language** | TypeScript | 5.x | Type safety | ✅ In use |
+| **Styling** | Tailwind CSS | 3.4.17 | Utility-first CSS | ✅ In use |
+| **UI Components** | Custom (GlassCard, Button, Input, etc.) | — | In `apps/web/src/components/` | ✅ Built |
+| **State Management** | Zustand | 5.0.0 | Lightweight state | ✅ In use |
+| **Icons** | Lucide React | 0.468.0 | Icon library | ✅ In use |
+| **Date Utils** | date-fns | 4.1.0 | Date formatting | ✅ In use |
+| **Class Utils** | clsx + tailwind-merge | Latest | Conditional classes | ✅ In use |
+| **Forms** | React Hook Form | — | Form handling | ❌ Not yet added |
+| **Validation** | Zod | — | Schema validation | ❌ Not yet added |
+| **HTTP Client** | Axios / TanStack Query | — | API calls + caching | ❌ Not yet added |
+| **Maps** | Google Maps | — | Location features | ❌ Not yet added |
+| **Charts** | Recharts | — | Analytics visualization | ❌ Not yet added |
+| **Animation** | Framer Motion | — | UI animations | ❌ Not yet added (CSS animations via Tailwind used instead) |
 
 ### 4.2 Mobile Technologies
+
+> **❌ Status: Not started.** The `apps/mobile/` directory is empty.
+> The following is the planned mobile technology stack.
 
 | Category | Technology | Version | Purpose |
 |----------|------------|---------|---------|
@@ -667,420 +733,177 @@ Associate                   Frontend                   Backend
 
 ### 4.3 Backend Technologies (NEW STACK)
 
-| Category | Technology | Version | Purpose |
-|----------|------------|---------|---------|
-| **Runtime** | Bun | 1.x | Fast JavaScript runtime |
-| **Framework** | Elysia | 1.x | High-performance API framework |
-| **Language** | TypeScript | 5.x | Type safety |
-| **ORM** | Drizzle ORM | Latest | Type-safe database access |
-| **Validation** | Zod / TypeBox | Latest | Request validation |
-| **Auth** | OAuth 2.0 + JWT | Latest | Authentication |
-| **Message Broker** | Apache Kafka | 3.x | Event streaming |
-| **WebSocket** | Elysia WebSocket | Latest | Real-time features |
-| **API Documentation** | Swagger/OpenAPI | 3.x | Auto-generated docs |
-| **Email** | Nodemailer + Resend | Latest | Email delivery |
-| **SMS** | MSG91 / Twilio | Latest | OTP delivery |
+| Category | Technology | Version | Purpose | Status |
+|----------|------------|---------|---------|--------|
+| **Runtime** | Bun | 1.3.6 | Fast JavaScript runtime | ✅ In use |
+| **Framework** | Elysia | ^1.2.0 | High-performance API framework | ✅ In use |
+| **Language** | TypeScript | 5.x | Type safety | ✅ In use |
+| **ORM** | Drizzle ORM | Latest | Type-safe database access | ✅ In use |
+| **Validation** | TypeBox (via Elysia) | Latest | Request validation | ✅ In use (auth-service) |
+| **Auth** | JWT via @elysiajs/jwt | Latest | Authentication | ✅ In use (stub) |
+| **API Documentation** | @elysiajs/swagger | Latest | Auto-generated docs | ✅ Live at /swagger |
+| **CORS** | @elysiajs/cors | Latest | Cross-origin support | ✅ In use |
+| **Message Broker** | RabbitMQ (installed) / Kafka (planned) | — | Event streaming | ❌ Not integrated |
+| **WebSocket** | Elysia WebSocket | — | Real-time features | ❌ Not yet added |
+| **Email** | Nodemailer + Resend | — | Email delivery | ❌ Not yet added |
+| **SMS** | MSG91 / Twilio | — | OTP delivery | ❌ Not yet added |
 
 ### 4.4 Database & Storage
 
-| Category | Technology | Purpose |
-|----------|------------|---------|
-| **Primary Database** | PostgreSQL 16 | Relational data (via Drizzle ORM) |
-| **Cache** | Redis 7 | Sessions, caching, queues |
-| **Search** | Elasticsearch / Meilisearch | Location search |
-| **File Storage** | Local / Cloudflare R2 | Images, documents |
-| **CDN** | Cloudflare | Static asset delivery, WAF |
+| Category | Technology | Purpose | Status |
+|----------|------------|---------|--------|
+| **Primary Database** | PostgreSQL 14.20 | Relational data (via Drizzle ORM) | ✅ Running |
+| **Cache** | Redis 6.0.16 | Sessions, caching, queues | ✅ Installed (not yet used by app) |
+| **Search** | Elasticsearch / Meilisearch | Location search | ❌ Not installed |
+| **File Storage** | Local / Cloudflare R2 | Images, documents | ❌ Not configured |
+| **CDN** | Cloudflare | Static asset delivery, WAF | ✅ Active |
 
 ### 4.5 External Services
 
-| Service | Provider | Purpose |
-|---------|----------|---------|
-| **Payments** | Razorpay | UPI, Cards, Wallets |
-| **Crypto Payments** | CoinGate / NOWPayments | Cryptocurrency |
-| **SMS OTP** | MSG91 | Phone verification |
-| **Email** | Resend / SendGrid | Transactional emails |
-| **Push Notifications** | Firebase Cloud Messaging | Mobile notifications |
-| **Maps** | Google Maps Platform | Geocoding, directions |
-| **Analytics** | Mixpanel / PostHog | Product analytics |
-| **Error Tracking** | Sentry | Error monitoring |
-| **Logging** | Axiom / Pino | Log aggregation |
+| Service | Provider | Purpose | Status |
+|---------|----------|---------|--------|
+| **Payments** | Razorpay | UPI, Cards, Wallets | ❌ Not integrated |
+| **SMS OTP** | MSG91 | Phone verification | ❌ Not integrated |
+| **Email** | Resend / SendGrid | Transactional emails | ❌ Not integrated |
+| **Push Notifications** | Firebase Cloud Messaging | Mobile notifications | ❌ Not integrated |
+| **Maps** | Google Maps Platform | Geocoding, directions | ❌ Not integrated |
+| **Analytics** | Mixpanel / PostHog | Product analytics | ❌ Not integrated |
+| **Error Tracking** | Sentry | Error monitoring | ❌ Not integrated |
 
-### 4.6 DevOps & Infrastructure (Self-Hosted Linux + Docker)
+### 4.6 DevOps & Infrastructure (Self-Hosted Linux)
 
-| Category | Technology | Purpose |
-|----------|------------|---------|
-| **Web Server** | Nginx | Reverse proxy, SSL, load balancing |
-| **Containerization** | Docker + Docker Compose | Service containerization |
-| **Container Orchestration** | Docker Swarm (optional K8s) | Multi-node deployment |
-| **SSL Certificates** | Let's Encrypt (Certbot) | Free SSL |
-| **CI/CD** | GitHub Actions | Automated deployments |
-| **CDN/DNS** | Cloudflare | DNS, CDN, WAF, DDoS protection |
-| **Monitoring** | Grafana + Prometheus | Infrastructure monitoring |
-| **Log Management** | Loki / ELK Stack | Log aggregation |
-| **Backup** | Cron + rclone / rsync | Automated backups |
-| **Firewall** | UFW / iptables | Server security |
-| **Domain** | naploo.com | Primary domain |
+| Category | Technology | Purpose | Status |
+|----------|------------|---------|--------|
+| **Web Server** | Nginx 1.18.0 | Reverse proxy, SSL | ✅ Running |
+| **Process Manager** | systemd | Service management, auto-restart | ✅ Running |
+| **SSL Certificates** | Let's Encrypt (Certbot) | Free SSL | ✅ Active |
+| **CDN/DNS** | Cloudflare | DNS, CDN, WAF, DDoS protection | ✅ Active |
+| **Domain** | naploo.com | Primary domain | ✅ Active |
+| **Containerization** | Docker + Docker Compose | Service containerization | ❌ Not installed |
+| **CI/CD** | GitHub Actions | Automated deployments | ❌ Not configured |
+| **Monitoring** | Grafana + Prometheus | Infrastructure monitoring | ❌ Not installed |
+| **Backup** | Cron + rclone / rsync | Automated backups | ❌ Not configured |
 
 ---
 
 ## 5. Project Structure
 
-### 5.1 Monorepo Structure (Microservices)
+### 5.1 Monorepo Structure (Actual vs Planned)
+
+> **Legend:** ✅ = Implemented | ⚠️ = Partial/Stub | ❌ = Empty/Not started
 
 ```
 naploo-ecosystem/
 |
-+-- .github/
-|   +-- workflows/
-|   |   +-- ci.yml                 # Continuous integration
-|   |   +-- deploy.yml             # Self-hosted deployment
-|   |   +-- backup.yml             # Automated backups
-|   +-- PULL_REQUEST_TEMPLATE.md
-|
 +-- apps/
 |   |
-|   +-- web/                        # Customer Website (Next.js)
-|   |   +-- app/
-|   |   |   +-- (auth)/
-|   |   |   |   +-- login/
-|   |   |   |   +-- register/
-|   |   |   |   +-- verify-otp/
-|   |   |   +-- (main)/
-|   |   |   |   +-- page.tsx           # Home
+|   +-- web/                        # ✅ Customer Website (Next.js 14)
+|   |   +-- src/
+|   |   |   +-- app/                # ✅ 24 routes (App Router)
+|   |   |   |   +-- page.tsx        # Home
 |   |   |   |   +-- about/
-|   |   |   |   +-- pods/
-|   |   |   |   +-- hotels/
-|   |   |   |   +-- locations/
-|   |   |   |   +-- gallery/
+|   |   |   |   +-- blog/ + [id]/
+|   |   |   |   +-- careers/
 |   |   |   |   +-- contact/
-|   |   |   +-- (booking)/
-|   |   |   |   +-- search/
-|   |   |   |   +-- hotel/[hotelId]/
-|   |   |   |   +-- book-pod/[hotelId]/
-|   |   |   |   +-- book-room/[roomId]/
-|   |   |   |   +-- checkout/
-|   |   |   |   +-- confirmation/[bookingId]/
-|   |   |   +-- (dashboard)/
-|   |   |   |   +-- dashboard/
-|   |   |   |   +-- my-bookings/
+|   |   |   |   +-- cookies/
+|   |   |   |   +-- faqs/
+|   |   |   |   +-- help/
+|   |   |   |   +-- how-it-works/
+|   |   |   |   +-- investor/
+|   |   |   |   +-- locations/
+|   |   |   |   +-- login/
+|   |   |   |   +-- partner/
+|   |   |   |   +-- pods/ + [id]/
+|   |   |   |   +-- press/
+|   |   |   |   +-- pricing/
+|   |   |   |   +-- privacy/
 |   |   |   |   +-- profile/
-|   |   |   |   +-- wallet/
-|   |   |   +-- layout.tsx
-|   |   |   +-- globals.css
-|   |   +-- components/
-|   |   +-- lib/
-|   |   +-- hooks/
-|   |   +-- store/
-|   |   +-- public/
-|   |   +-- next.config.js
-|   |   +-- package.json
-|   |
-|   +-- mobile/                     # React Native App
-|   |   +-- src/
-|   |   |   +-- screens/
+|   |   |   |   +-- refund/
+|   |   |   |   +-- safety/
+|   |   |   |   +-- signup/
+|   |   |   |   +-- terms/
+|   |   |   |   +-- layout.tsx
+|   |   |   |   +-- globals.css
 |   |   |   +-- components/
-|   |   |   +-- navigation/
-|   |   |   +-- services/
-|   |   |   +-- store/
-|   |   +-- app.json
+|   |   |   |   +-- ui/             # Button, GlassCard, HeroPodSlider, ImageSlider, Input
+|   |   |   |   +-- layout/         # Navbar, Footer, LayoutWrapper, MobileBottomNav
+|   |   |   |   +-- pods/           # FilterSection, PodCard, PropertyCard
+|   |   |   |   +-- PWAInstallPrompt.tsx
+|   |   |   +-- lib/                # api.ts, seo.ts, utils.ts
+|   |   |   +-- store/              # auth.ts (Zustand)
+|   |   |   +-- data/               # properties.ts (mock data)
+|   |   +-- .next/                  # ✅ Production build exists
+|   |   +-- next.config.js
+|   |   +-- tailwind.config.js
 |   |   +-- package.json
 |   |
-|   +-- partner/                    # Hotel Owner Portal (Next.js)
-|   |   +-- app/
-|   |   |   +-- (auth)/
-|   |   |   +-- (dashboard)/
-|   |   |   |   +-- dashboard/
-|   |   |   |   +-- property/
-|   |   |   |   +-- rooms/
-|   |   |   |   +-- pods/
-|   |   |   |   +-- bookings/
-|   |   |   |   +-- earnings/
-|   |   +-- components/
-|   |   +-- package.json
-|   |
-|   +-- investor/                   # Investor Pool Portal (Next.js)
-|   |   +-- app/
-|   |   |   +-- (auth)/
-|   |   |   +-- (onboarding)/
-|   |   |   |   +-- kyc/
-|   |   |   |   +-- verification/
-|   |   |   +-- (dashboard)/
-|   |   |   |   +-- dashboard/
-|   |   |   |   +-- pool/                # Investor pool status
-|   |   |   |   +-- announcements/       # New hotel announcements
-|   |   |   |   +-- my-pod-sets/         # Purchased pod sets
-|   |   |   |   +-- earnings/            # 60% share earnings
-|   |   |   |   +-- 3x-tracker/          # Progress to 3x return
-|   |   |   |   +-- withdrawals/
-|   |   |   |   +-- documents/           # Invoices, contracts
-|   |   +-- components/
-|   |   +-- package.json
-|   |
-|   +-- associate/                  # Associate/Referral Portal (Next.js)
-|   |   +-- app/
-|   |   |   +-- (auth)/
-|   |   |   +-- (dashboard)/
-|   |   |   |   +-- dashboard/
-|   |   |   |   +-- referral-links/      # Generate unique links
-|   |   |   |   +-- my-network/          # 5-level tree view
-|   |   |   |   +-- earnings/            # Commission by level
-|   |   |   |   +-- payouts/
-|   |   |   |   +-- marketing/           # Materials, banners
-|   |   +-- components/
-|   |   +-- package.json
-|   |
-|   +-- rental/                     # Rental Portal (Next.js)
-|   |   +-- app/
-|   |   |   +-- (auth)/
-|   |   |   +-- (main)/
-|   |   |   |   +-- home-pods/           # Home rental options
-|   |   |   |   +-- office-nap-rooms/    # Corporate solutions
-|   |   |   |   +-- request-survey/      # Site survey request
-|   |   |   +-- (dashboard)/
-|   |   |   |   +-- my-contracts/        # 12-month contracts
-|   |   |   |   +-- maintenance/         # Request maintenance
-|   |   |   |   +-- payments/
-|   |   +-- components/
-|   |   +-- package.json
-|   |
-|   +-- admin/                      # Admin Dashboard (Next.js)
-|       +-- app/
-|       |   +-- (auth)/
-|       |   +-- (dashboard)/
-|       |   |   +-- dashboard/
-|       |   |   +-- hotels/
-|       |   |   +-- hotel-owners/
-|       |   |   +-- investors/
-|       |   |   |   +-- pool/            # Manage investor pool
-|       |   |   |   +-- approvals/       # KYC approvals
-|       |   |   |   +-- pod-sets/        # Track pod set purchases
-|       |   |   |   +-- 3x-tracking/     # Monitor 3x returns
-|       |   |   +-- associates/
-|       |   |   |   +-- list/
-|       |   |   |   +-- commissions/     # Configure rates
-|       |   |   |   +-- payouts/
-|       |   |   +-- rentals/
-|       |   |   |   +-- contracts/
-|       |   |   |   +-- maintenance/
-|       |   |   +-- announcements/       # Create hotel announcements
-|       |   |   +-- bookings/
-|       |   |   +-- users/
-|       |   |   +-- payments/
-|       |   |   +-- reports/
-|       +-- components/
-|       +-- package.json
+|   +-- admin/                      # ❌ Empty
+|   +-- partner/                    # ❌ Empty
+|   +-- investor/                   # ❌ Empty
+|   +-- associate/                  # ❌ Empty
+|   +-- rental/                     # ❌ Empty
+|   +-- mobile/                     # ❌ Empty
 |
-+-- services/                       # Backend Microservices (Bun + Elysia)
++-- services/
 |   |
-|   +-- api-gateway/
+|   +-- api-gateway/                # ✅ Implemented
 |   |   +-- src/
-|   |   |   +-- index.ts            # Gateway entry point
-|   |   |   +-- routes/
-|   |   |   +-- middleware/
-|   |   |   |   +-- auth.ts         # JWT verification
-|   |   |   |   +-- rateLimit.ts
-|   |   |   |   +-- cors.ts
-|   |   +-- Dockerfile
-|   |   +-- package.json
+|   |   |   +-- index.ts            # 76 lines - Gateway with Swagger, health checks, /api/v1 stubs
+|   |   +-- dist/                   # ✅ Built
+|   |   +-- package.json            # Elysia + cors + swagger + jwt + @naploo/db
 |   |
-|   +-- auth-service/
+|   +-- auth-service/               # ⚠️ Stub implementation
 |   |   +-- src/
-|   |   |   +-- index.ts
-|   |   |   +-- routes/
-|   |   |   |   +-- oauth.routes.ts
-|   |   |   |   +-- jwt.routes.ts
-|   |   |   |   +-- otp.routes.ts
-|   |   |   +-- services/
-|   |   |   +-- middleware/
-|   |   +-- Dockerfile
-|   |   +-- package.json
+|   |   |   +-- index.ts            # 111 lines - send-otp, verify-otp, refresh, logout (all stubs)
+|   |   +-- dist/                   # ✅ Built
+|   |   +-- package.json            # Elysia + cors + jwt + @naploo/db
 |   |
-|   +-- booking-service/
-|   |   +-- src/
-|   |   |   +-- index.ts
-|   |   |   +-- routes/
-|   |   |   |   +-- pod-booking.routes.ts
-|   |   |   |   +-- room-booking.routes.ts
-|   |   |   +-- services/
-|   |   |   +-- kafka/
-|   |   |   |   +-- producers.ts
-|   |   |   |   +-- consumers.ts
-|   |   +-- Dockerfile
-|   |   +-- package.json
-|   |
-|   +-- payment-service/
-|   |   +-- src/
-|   |   |   +-- index.ts
-|   |   |   +-- routes/
-|   |   |   +-- services/
-|   |   |   |   +-- razorpay.service.ts
-|   |   |   |   +-- crypto.service.ts
-|   |   +-- Dockerfile
-|   |   +-- package.json
-|   |
-|   +-- investor-service/
-|   |   +-- src/
-|   |   |   +-- index.ts
-|   |   |   +-- routes/
-|   |   |   |   +-- pool.routes.ts       # Pool enrollment
-|   |   |   |   +-- announcements.routes.ts
-|   |   |   |   +-- pod-sets.routes.ts   # Pod set purchases
-|   |   |   |   +-- earnings.routes.ts   # 60% share
-|   |   |   |   +-- 3x-tracker.routes.ts # 3x return tracking
-|   |   |   +-- services/
-|   |   |   |   +-- pool.service.ts
-|   |   |   |   +-- scrap-policy.service.ts
-|   |   |   +-- kafka/
-|   |   +-- Dockerfile
-|   |   +-- package.json
-|   |
-|   +-- referral-service/
-|   |   +-- src/
-|   |   |   +-- index.ts
-|   |   |   +-- routes/
-|   |   |   |   +-- links.routes.ts      # Generate referral links
-|   |   |   |   +-- network.routes.ts    # 5-level tree
-|   |   |   |   +-- commissions.routes.ts
-|   |   |   +-- services/
-|   |   |   |   +-- commission-calculator.ts
-|   |   |   |   +-- tree-builder.ts
-|   |   +-- Dockerfile
-|   |   +-- package.json
-|   |
-|   +-- rental-service/
-|   |   +-- src/
-|   |   |   +-- index.ts
-|   |   |   +-- routes/
-|   |   |   |   +-- home-rental.routes.ts
-|   |   |   |   +-- office-rental.routes.ts
-|   |   |   |   +-- contracts.routes.ts
-|   |   |   |   +-- maintenance.routes.ts
-|   |   |   +-- services/
-|   |   +-- Dockerfile
-|   |   +-- package.json
-|   |
-|   +-- hotel-service/
-|   |   +-- src/
-|   |   |   +-- index.ts
-|   |   |   +-- routes/
-|   |   |   +-- services/
-|   |   +-- Dockerfile
-|   |   +-- package.json
-|   |
-|   +-- notification-service/
-|   |   +-- src/
-|   |   |   +-- index.ts
-|   |   |   +-- routes/
-|   |   |   +-- services/
-|   |   |   |   +-- email.service.ts
-|   |   |   |   +-- sms.service.ts
-|   |   |   |   +-- push.service.ts
-|   |   |   +-- kafka/
-|   |   |   |   +-- consumers.ts     # Listen for events
-|   |   +-- Dockerfile
-|   |   +-- package.json
-|   |
-|   +-- analytics-service/
-|   |   +-- src/
-|   |   |   +-- index.ts
-|   |   |   +-- routes/
-|   |   |   +-- services/
-|   |   +-- Dockerfile
-|   |   +-- package.json
-|   |
-|   +-- search-service/
-|       +-- src/
-|       |   +-- index.ts
-|       |   +-- routes/
-|       |   +-- services/
-|       |   |   +-- elasticsearch.service.ts
-|       +-- Dockerfile
-|       +-- package.json
+|   +-- booking-service/            # ❌ Empty directory
+|   +-- payment-service/            # ❌ Empty directory
+|   +-- investor-service/           # ❌ Empty directory
+|   +-- referral-service/           # ❌ Empty directory
+|   +-- rental-service/             # ❌ Empty directory
+|   +-- hotel-service/              # ❌ Empty directory
+|   +-- notification-service/       # ❌ Empty directory
+|   +-- analytics-service/          # ❌ Empty directory
+|   +-- search-service/             # ❌ Empty directory
 |
 +-- packages/
 |   |
-|   +-- database/                   # Shared Drizzle ORM Schema
+|   +-- db/                         # ✅ Implemented (Drizzle ORM)
 |   |   +-- src/
 |   |   |   +-- schema/
-|   |   |   |   +-- users.ts
-|   |   |   |   +-- hotels.ts
-|   |   |   |   +-- rooms.ts
-|   |   |   |   +-- pods.ts
-|   |   |   |   +-- bookings.ts
-|   |   |   |   +-- investors.ts     # Pool, pod sets, 3x tracking
-|   |   |   |   +-- referrals.ts     # 5-level referral
-|   |   |   |   +-- rentals.ts       # Home/office contracts
-|   |   |   |   +-- payments.ts
+|   |   |   |   +-- users.ts        # users, otps, refresh_tokens tables
+|   |   |   |   +-- partners.ts     # partners table
+|   |   |   |   +-- pods.ts         # pod_sets, pods tables
+|   |   |   |   +-- rooms.ts        # rooms table
+|   |   |   |   +-- bookings.ts     # bookings table
+|   |   |   |   +-- investors.ts    # investors, investments, investment_earnings tables
+|   |   |   |   +-- payments.ts     # payments, payouts, wallets, wallet_transactions tables
+|   |   |   |   +-- referrals.ts    # associates, referrals, referral_earnings, commission_config tables
 |   |   |   |   +-- index.ts
-|   |   |   +-- migrations/
-|   |   |   +-- seed.ts
+|   |   |   +-- client.ts
+|   |   |   +-- index.ts
+|   |   +-- drizzle/
+|   |   |   +-- 0000_tranquil_skrulls.sql  # Initial migration (360 lines)
 |   |   +-- drizzle.config.ts
 |   |   +-- package.json
 |   |
-|   +-- ui/                         # Shared UI Components
-|   |   +-- src/
-|   |   +-- package.json
-|   |
-|   +-- types/                      # Shared TypeScript Types
-|   |   +-- src/
-|   |   |   +-- user.ts
-|   |   |   +-- hotel.ts
-|   |   |   +-- room.ts
-|   |   |   +-- pod.ts
-|   |   |   +-- booking.ts
-|   |   |   +-- investor.ts          # Pool, pod set, 3x types
-|   |   |   +-- referral.ts          # 5-level types
-|   |   |   +-- rental.ts            # Contract types
-|   |   |   +-- payment.ts
-|   |   |   +-- index.ts
-|   |   +-- package.json
-|   |
-|   +-- utils/                      # Shared Utilities
-|   |   +-- src/
-|   |   +-- package.json
-|   |
-|   +-- kafka/                      # Shared Kafka Utilities
-|   |   +-- src/
-|   |   |   +-- client.ts
-|   |   |   +-- topics.ts
-|   |   |   +-- producers.ts
-|   |   |   +-- consumers.ts
-|   |   +-- package.json
-|   |
-|   +-- api-client/                 # Shared API Client
-|       +-- src/
-|       +-- package.json
+|   +-- ui/                         # ❌ Empty
+|   +-- types/                      # ❌ Empty
+|   +-- config/                     # ❌ Empty
 |
-+-- docker/
-|   +-- docker-compose.yml          # All services
-|   +-- docker-compose.dev.yml      # Development
-|   +-- docker-compose.prod.yml     # Production
-|   +-- nginx/
-|   |   +-- nginx.conf
-|   |   +-- ssl/
-|   +-- kafka/
-|       +-- docker-compose.kafka.yml
-|
-+-- docs/
-|   +-- PROJECT_DOCUMENTATION.md    # This file
++-- docs/                           # ✅ Documentation
+|   +-- PROJECT_DOCUMENTATION.md
 |   +-- API_REFERENCE.md
 |   +-- DEPLOYMENT.md
+|   +-- DEPLOYMENT_GUIDE.md
 |   +-- DESIGN_SYSTEM.md
-|   +-- CONTRIBUTING.md
 |
-+-- scripts/
-|   +-- setup.sh
-|   +-- deploy.sh
-|   +-- backup.sh
-|   +-- seed-data.ts
-|
-+-- .env.example
-+-- .gitignore
-+-- .prettierrc
-+-- .eslintrc.js
-+-- turbo.json                      # Turborepo config
-+-- package.json                    # Root package.json
-+-- bun.lockb                       # Bun lockfile
++-- Pods_Images/                    # ✅ Pod product images (multiple series)
++-- .env                            # Environment configuration
++-- package.json                    # Root monorepo config (Bun workspaces)
++-- bun.lock                        # Bun lockfile
 +-- README.md
 ```
 
@@ -2316,7 +2139,32 @@ export const rentalPayments = pgTable('rental_payments', {
 
 See [API_REFERENCE.md](./API_REFERENCE.md) for complete API documentation.
 
-### 8.1 Key API Endpoints Overview
+### 8.1 Currently Live Endpoints
+
+| Endpoint | Method | Status |
+|----------|--------|--------|
+| `/health` | GET | ✅ Live |
+| `/` | GET | ✅ Live (gateway info) |
+| `/swagger` | GET | ✅ Live (Swagger UI) |
+| `/api/v1/auth/health` | GET | ✅ Live (stub) |
+| `/api/v1/bookings/health` | GET | ✅ Live (stub) |
+| `/api/v1/investors/health` | GET | ✅ Live (stub) |
+| `/api/v1/partners/health` | GET | ✅ Live (stub) |
+
+> **Note:** All `/api/v1/*` health checks return static JSON objects — no actual service proxying is implemented yet.
+
+### 8.2 Auth Service Endpoints (Stub)
+
+| Endpoint | Method | Status |
+|----------|--------|--------|
+| `/send-otp` | POST | ⚠️ Generates random OTP, logs to console only |
+| `/verify-otp` | POST | ⚠️ Returns hardcoded user + JWT |
+| `/refresh` | POST | ⚠️ Stub |
+| `/logout` | POST | ⚠️ Stub |
+
+### 8.3 Planned API Endpoints (Not Implemented)
+
+The following endpoints are designed but have no backend implementation:
 
 #### Investor Pool APIs
 - `POST /api/v1/investors/enroll` - Enroll in investor pool
@@ -2373,136 +2221,165 @@ See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for complete design guidelines.
 
 ## 10. Development Roadmap
 
-### Phase 1: Foundation (Months 1-3)
-- [ ] Set up monorepo with Turborepo
-- [ ] Configure Docker + microservices
-- [ ] Set up PostgreSQL + Drizzle ORM
-- [ ] Set up Kafka for event streaming
-- [ ] Implement auth service (OAuth + JWT)
-- [ ] Build customer website (search, booking)
-- [ ] Build partner portal (basic)
-- [ ] Build admin dashboard (basic)
+### Phase 1: Foundation ← **CURRENT PHASE (Partially Complete)**
+- [x] Set up Bun monorepo with workspaces
+- [ ] ~~Set up Turborepo~~ (not used — using Bun workspaces)
+- [ ] ~~Configure Docker~~ (not used — using systemd)
+- [x] Set up PostgreSQL + Drizzle ORM (19 tables, 1 migration)
+- [ ] Set up Kafka for event streaming (❌ not installed)
+- [x] Customer website — 24 pages live at naploo.com
+- [x] API Gateway — running with health stubs
+- [ ] Auth service — stub only (no DB integration, no real OTP)
+- [ ] Build partner portal (❌ not started)
+- [ ] Build admin dashboard (❌ not started)
+- [x] Domain + SSL + Cloudflare + Nginx configured
+- [x] systemd services for auto-restart
 
-### Phase 2: Investor Pool (Months 3-4)
-- [ ] Investor pool enrollment
-- [ ] KYC verification system
+### Phase 2: Backend Services (Next Priority)
+- [ ] Implement real auth service (MSG91 OTP, JWT with DB, refresh tokens)
+- [ ] Implement booking service (availability, pricing, checkout)
+- [ ] Implement payment service (Razorpay integration)
+- [ ] Implement hotel/partner service (listings, management)
+- [ ] API Gateway → actual service proxying (not stubs)
+- [ ] Connect frontend to real APIs (replace mock data)
+
+### Phase 3: Investor Pool
+- [ ] Investor pool enrollment + KYC
 - [ ] Hotel announcement system
 - [ ] Pod set purchase flow
 - [ ] 3x return tracking
 - [ ] Investor earnings dashboard
+- [ ] Investor portal app
 
-### Phase 3: Referral System (Months 4-5)
+### Phase 4: Referral System
 - [ ] Associate registration
-- [ ] Referral link generation
-- [ ] 5-level tracking
-- [ ] Commission calculation
-- [ ] Payout processing
+- [ ] Referral link generation + 5-level tracking
+- [ ] Commission calculation + payout processing
+- [ ] Associate portal app
 
-### Phase 4: Rental Program (Months 5-6)
+### Phase 5: Rental Program
 - [ ] Home rental flow
 - [ ] Office nap room packages
-- [ ] Contract management
-- [ ] Maintenance system
+- [ ] Contract management + maintenance
+- [ ] Rental portal app
 
-### Phase 5: Mobile App (Months 6-8)
-- [ ] React Native setup
-- [ ] Customer app
-- [ ] Investor app
-- [ ] Associate app
+### Phase 6: Mobile & Additional Apps
+- [ ] React Native / Expo setup
+- [ ] Customer mobile app
+- [ ] Admin dashboard
 
-### Phase 6: Polish & Launch (Months 8-9)
-- [ ] Performance optimization
+### Phase 7: Production Hardening
+- [ ] Switch .env to NODE_ENV=production
+- [ ] Redis integration for caching/sessions
+- [ ] Notification service (email, SMS, push)
+- [ ] Analytics service + reporting
+- [ ] Search service (Elasticsearch)
+- [ ] CI/CD pipeline
+- [ ] Monitoring + alerting
 - [ ] Security audit
-- [ ] Beta testing
-- [ ] Production launch
+- [ ] Load testing
 
 ---
 
 ## 11. Deployment Strategy
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment guide.
+See [DEPLOYMENT.md](./DEPLOYMENT.md) and [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for complete deployment guides.
 
-### 11.1 Docker Compose Overview
+### 11.1 Current Deployment (Production)
 
-```yaml
-# docker/docker-compose.yml
-version: '3.8'
+**Server:** AWS EC2 (Ubuntu), hostname `ip-172-31-14-247`
+**Process Manager:** systemd (NOT Docker)
+**Runtime:** Bun 1.3.6
 
-services:
-  # Infrastructure
-  postgres:
-    image: postgres:16
-    
-  redis:
-    image: redis:7
-    
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    
-  elasticsearch:
-    image: elasticsearch:8.11.0
-    
-  # Services
-  api-gateway:
-    build: ./services/api-gateway
-    
-  auth-service:
-    build: ./services/auth-service
-    
-  booking-service:
-    build: ./services/booking-service
-    
-  investor-service:
-    build: ./services/investor-service
-    
-  referral-service:
-    build: ./services/referral-service
-    
-  rental-service:
-    build: ./services/rental-service
-    
-  # ... other services
+```bash
+# Active systemd services
+naploo-web.service    → bun run start in apps/web/         → port 3100
+naploo-api.service    → bun run start in services/api-gateway/ → port 3000
+
+# Nginx reverse proxy
+naploo.com        → 127.0.0.1:3100  (Next.js web app)
+api.naploo.com    → 127.0.0.1:3000  (API gateway)
+
+# SSL: Let's Encrypt (auto-renewed via certbot)
+# CDN/WAF: Cloudflare
 ```
+
+### 11.2 Infrastructure Services
+
+```bash
+# Installed and running
+PostgreSQL 14.20    → port 5432  (naploo_db database)
+Redis 6.0.16        → port 6379  (installed, not actively used by app)
+Nginx 1.18.0        → port 80/443
+RabbitMQ            → installed via apt (not used by app)
+
+# NOT installed
+Docker              → ❌
+Kafka               → ❌
+Elasticsearch       → ❌
+```
+
+### 11.3 Planned: Docker Compose (Future)
+
+Docker containerization is planned for future phases but is not currently in use.
 
 ---
 
 ## 12. Security Guidelines
 
-### 12.1 Authentication
-- OAuth 2.0 + JWT tokens
-- Refresh token rotation
-- OTP verification for phone
-- Rate limiting on auth endpoints
+### 12.1 Authentication (Current State)
+- ⚠️ JWT tokens — implemented as stubs only (hardcoded secrets in .env)
+- ⚠️ OTP — generates random 6-digit code, logs to console (no SMS delivery)
+- ❌ OAuth 2.0 — not implemented
+- ❌ Refresh token rotation — not implemented
+- ❌ Rate limiting — not implemented at application level
 
-### 12.2 Data Protection
-- All data encrypted at rest (PostgreSQL)
-- TLS 1.3 for data in transit
-- PII data encryption
-- GDPR compliance
+### 12.2 Data Protection (Current State)
+- ✅ HTTPS via Let's Encrypt SSL + Cloudflare
+- ⚠️ Database credentials in `.env` file (placeholder JWT secrets need rotation)
+- ⚠️ `.env` has `NODE_ENV=development` — should be `production`
+- ❌ PII data encryption — not implemented
+- ❌ GDPR compliance — not implemented
 
-### 12.3 Infrastructure
-- Cloudflare WAF
-- DDoS protection
-- Regular security audits
-- Penetration testing
+### 12.3 Infrastructure (Current State)
+- ✅ Cloudflare WAF + DDoS protection
+- ✅ Nginx reverse proxy with SSL
+- ✅ systemd auto-restart on crash
+- ❌ Regular security audits — not scheduled
+- ❌ Penetration testing — not performed
+
+### 12.4 Security TODOs (Priority)
+1. Rotate JWT secrets (currently placeholder values)
+2. Set `NODE_ENV=production` in `.env`
+3. Implement real OTP delivery (MSG91)
+4. Add rate limiting to auth endpoints
+5. Implement refresh token rotation with DB storage
+6. Enable PostgreSQL connection SSL
 
 ---
 
 ## 13. Testing Strategy
 
-### 13.1 Test Types
+> **⚠️ Current State:** No tests exist in the codebase. No test framework is configured.
+> The following is the planned testing strategy.
+
+### 13.1 Test Types (Planned)
 - Unit tests (Vitest)
 - Integration tests
 - E2E tests (Playwright)
 - Load testing (k6)
 
-### 13.2 Coverage Targets
+### 13.2 Coverage Targets (Planned)
 - Unit: 80%+
 - Integration: 70%+
 - E2E: Critical paths
+
+### 13.3 Testing TODOs
+1. Install Vitest and configure for Bun runtime
+2. Add unit tests for database schema/queries
+3. Add API integration tests for auth-service
+4. Set up Playwright for web app E2E testing
+5. Configure CI to run tests on push
 
 ---
 
@@ -2528,6 +2405,7 @@ services:
 ---
 
 **Document Version History:**
+- v3.1.0 (Feb 2026): Updated all sections to reflect actual implementation status vs planned features
 - v3.0.0 (Jan 2026): Added Investor Pool, 5-Level Referral, Rental Program, Microservices architecture
 - v2.0.0 (Jan 2026): Added hybrid hotel booking model
 - v1.0.0 (Dec 2025): Initial documentation

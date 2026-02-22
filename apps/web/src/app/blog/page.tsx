@@ -222,16 +222,15 @@ export default function BlogPage() {
   });
 
   return (
-    <div className="min-h-screen bg-naploo-dark text-white">
+    <div className="min-h-screen bg-white text-slate-800">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-16 overflow-hidden">
+      <section className="relative pt-32 pb-16 overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700">
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-violet-500/10 rounded-full blur-3xl" />
-          <div className="absolute inset-0 grid-pattern opacity-30" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-white/10 rounded-full blur-3xl" />
         </div>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block px-4 py-2 bg-primary-500/10 border border-primary-500/20 rounded-full text-sm text-primary-400 mb-6">
+          <span className="inline-block px-4 py-2 bg-white/10 border border-white/20 rounded-full text-sm text-white mb-6">
             <BookOpen className="w-4 h-4 inline mr-2" />
             Naploo Blog
           </span>
@@ -253,7 +252,7 @@ export default function BlogPage() {
                 placeholder="Search articles..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-primary-500/50"
+                className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/60 focus:outline-none focus:border-white/50"
               />
             </div>
           </div>
@@ -261,7 +260,7 @@ export default function BlogPage() {
       </section>
 
       {/* Categories */}
-      <section className="relative py-8 border-b border-white/10">
+      <section className="relative py-8 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center gap-3">
             {categories.map((cat) => (
@@ -271,7 +270,7 @@ export default function BlogPage() {
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   selectedCategory === cat.id
                     ? 'bg-primary-500 text-white'
-                    : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                    : 'bg-gray-50 text-slate-500 hover:bg-gray-100 hover:text-slate-800'
                 }`}
               >
                 <cat.icon className="w-4 h-4" />
@@ -286,13 +285,13 @@ export default function BlogPage() {
       {selectedCategory === 'all' && searchTerm === '' && (
         <section className="relative py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-white mb-8">Featured Articles</h2>
+            <h2 className="text-2xl font-bold text-slate-800 mb-8">Featured Articles</h2>
             <div className="grid lg:grid-cols-3 gap-6">
               {featuredPosts.map((post, index) => (
                 <Link
                   key={post.id}
                   href={`/blog/${post.id}`}
-                  className={`group glass-card rounded-2xl overflow-hidden hover:ring-2 hover:ring-primary-500/50 transition-all ${
+                  className={`group bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden hover:ring-2 hover:ring-primary-500/50 transition-all ${
                     index === 0 ? 'lg:col-span-2 lg:row-span-2' : ''
                   }`}
                 >
@@ -303,7 +302,7 @@ export default function BlogPage() {
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/20 to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-6">
                       <span className="inline-block px-3 py-1 bg-primary-500/80 rounded-full text-xs font-medium mb-3">
                         Featured
@@ -333,16 +332,16 @@ export default function BlogPage() {
       )}
 
       {/* All Posts Grid */}
-      <section className="relative py-16">
+      <section className="relative py-16 bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-white mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-8">
             {selectedCategory === 'all' ? 'Latest Articles' : categories.find(c => c.id === selectedCategory)?.name}
-            <span className="text-white/40 font-normal ml-2">({filteredPosts.length})</span>
+            <span className="text-slate-400 font-normal ml-2">({filteredPosts.length})</span>
           </h2>
 
           {filteredPosts.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-white/60">No articles found matching your criteria.</p>
+              <p className="text-slate-500">No articles found matching your criteria.</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -350,7 +349,7 @@ export default function BlogPage() {
                 <Link
                   key={post.id}
                   href={`/blog/${post.id}`}
-                  className="group glass-card rounded-2xl overflow-hidden hover:ring-2 hover:ring-primary-500/50 transition-all"
+                  className="group bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden hover:ring-2 hover:ring-primary-500/50 transition-all"
                 >
                   <div className="relative aspect-[16/10]">
                     <Image
@@ -360,20 +359,20 @@ export default function BlogPage() {
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute top-4 left-4">
-                      <span className="inline-block px-3 py-1 bg-black/50 backdrop-blur-sm rounded-full text-xs font-medium">
+                      <span className="inline-block px-3 py-1 bg-gray-900/50 backdrop-blur-sm rounded-full text-xs font-medium text-white">
                         {categories.find(c => c.id === post.category)?.name}
                       </span>
                     </div>
                   </div>
                   <div className="p-6">
-                    <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary-400 transition-colors line-clamp-2">
+                    <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-primary-600 transition-colors line-clamp-2">
                       {post.title}
                     </h3>
-                    <p className="text-sm text-white/60 mb-4 line-clamp-2">
+                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">
                       {post.excerpt}
                     </p>
                     <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-3 text-white/40">
+                      <div className="flex items-center gap-3 text-slate-400">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
                           {post.date}
@@ -383,7 +382,7 @@ export default function BlogPage() {
                           {post.readTime}
                         </span>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-primary-400 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 text-primary-600 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </Link>
@@ -395,20 +394,20 @@ export default function BlogPage() {
 
       {/* Newsletter CTA */}
       <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 via-violet-600/20 to-cyan-600/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700" />
         
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Stay Updated
           </h2>
-          <p className="text-lg text-white/60 max-w-xl mx-auto mb-8">
+          <p className="text-lg text-white/70 max-w-xl mx-auto mb-8">
             Subscribe to our newsletter for the latest industry insights, product updates, and exclusive content.
           </p>
           <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input
               type="email"
               placeholder="Enter your email"
-              className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-primary-500/50"
+              className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/60 focus:outline-none focus:border-white/50"
             />
             <button
               type="submit"

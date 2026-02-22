@@ -18,18 +18,18 @@ export function GlassCard({
   ...props
 }: GlassCardProps) {
   const variants = {
-    light: 'bg-white/10 border-white/20',
-    dark: 'bg-naploo-dark-50/80 border-white/10',
-    gradient: 'bg-gradient-to-br from-white/10 to-white/5 border-white/20',
+    light: 'bg-white border-gray-200 shadow-sm',
+    dark: 'bg-slate-900 border-white/10 text-white',
+    gradient: 'bg-gradient-to-br from-white to-primary-50/30 border-primary-100',
   };
 
   return (
     <div
       className={cn(
-        'backdrop-blur-xl rounded-2xl border animate-fade-in',
+        'rounded-2xl border animate-fade-in',
         variants[variant],
-        glow && 'shadow-glow',
-        hover && 'transition-all duration-300 hover:shadow-glow-lg hover:border-primary-400/30 hover:-translate-y-1',
+        glow && 'shadow-lg shadow-primary-500/10',
+        hover && 'transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 hover:border-primary-200 hover:-translate-y-1',
         className
       )}
       {...props}
@@ -54,10 +54,10 @@ export function GlassButton({
   ...props
 }: GlassButtonProps) {
   const variantStyles = {
-    primary: 'bg-gradient-to-r from-primary-500 via-primary-600 to-violet-600 text-white hover:from-primary-600 hover:via-primary-700 hover:to-violet-700',
-    secondary: 'bg-white/10 backdrop-blur-xl border border-white/20 text-white hover:bg-white/20',
-    outline: 'border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white',
-    ghost: 'text-white hover:bg-white/10',
+    primary: 'bg-gradient-to-r from-primary-500 via-primary-600 to-violet-600 text-white hover:from-primary-600 hover:via-primary-700 hover:to-violet-700 shadow-md hover:shadow-lg',
+    secondary: 'bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100',
+    outline: 'border-2 border-primary-500 text-primary-600 hover:bg-primary-500 hover:text-white',
+    ghost: 'text-slate-700 hover:bg-gray-100',
   };
 
   const sizeStyles = {
@@ -72,7 +72,7 @@ export function GlassButton({
         'font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95',
         variantStyles[variant],
         sizeStyles[size],
-        glow && 'shadow-glow hover:shadow-glow-lg',
+        glow && 'shadow-lg shadow-primary-500/20 hover:shadow-xl hover:shadow-primary-500/30',
         className
       )}
       {...props}
@@ -96,21 +96,21 @@ export function GlassInput({
   return (
     <div className="relative">
       {label && (
-        <label className="block text-sm font-medium text-white/70 mb-2">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
           {label}
         </label>
       )}
       <div className="relative">
         {icon && (
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
             {icon}
           </span>
         )}
         <input
           className={cn(
-            'w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3',
-            'text-white placeholder:text-white/40',
-            'focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20',
+            'w-full bg-white border border-gray-200 rounded-xl px-4 py-3',
+            'text-slate-800 placeholder:text-slate-400',
+            'focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20',
             'transition-all duration-300',
             icon && 'pl-12',
             className

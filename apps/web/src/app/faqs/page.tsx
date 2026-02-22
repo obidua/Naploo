@@ -141,16 +141,15 @@ export default function FAQsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-naploo-dark text-white">
+    <div className="min-h-screen bg-white text-slate-800">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-16 overflow-hidden">
+      <section className="relative pt-32 pb-16 overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700">
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-amber-500/10 rounded-full blur-3xl" />
-          <div className="absolute inset-0 grid-pattern opacity-30" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-white/10 rounded-full blur-3xl" />
         </div>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full text-sm text-amber-400 mb-6">
+          <span className="inline-block px-4 py-2 bg-white/10 border border-white/20 rounded-full text-sm text-white mb-6">
             <HelpCircle className="w-4 h-4 inline mr-2" />
             FAQs
           </span>
@@ -172,7 +171,7 @@ export default function FAQsPage() {
                 placeholder="Search FAQs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-primary-500/50"
+                className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/60 focus:outline-none focus:border-white/50"
               />
             </div>
           </div>
@@ -184,7 +183,7 @@ export default function FAQsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {faqCategories.map((category, catIndex) => (
             <div key={category.name} className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-6">{category.name}</h2>
+              <h2 className="text-2xl font-bold text-slate-800 mb-6">{category.name}</h2>
               <div className="space-y-3">
                 {category.faqs
                   .filter(
@@ -197,21 +196,21 @@ export default function FAQsPage() {
                     const id = `${catIndex}-${faqIndex}`;
                     const isOpen = openIndex === id;
                     return (
-                      <div key={id} className="glass-card rounded-xl overflow-hidden">
+                      <div key={id} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                         <button
                           onClick={() => toggleFAQ(id)}
                           className="w-full flex items-center justify-between p-6 text-left"
                         >
-                          <span className="font-medium text-white pr-4">{faq.q}</span>
+                          <span className="font-medium text-slate-800 pr-4">{faq.q}</span>
                           <ChevronDown
-                            className={`w-5 h-5 text-white/50 flex-shrink-0 transition-transform ${
+                            className={`w-5 h-5 text-slate-400 flex-shrink-0 transition-transform ${
                               isOpen ? 'rotate-180' : ''
                             }`}
                           />
                         </button>
                         {isOpen && (
                           <div className="px-6 pb-6">
-                            <p className="text-white/60">{faq.a}</p>
+                            <p className="text-slate-500">{faq.a}</p>
                           </div>
                         )}
                       </div>
@@ -225,13 +224,13 @@ export default function FAQsPage() {
 
       {/* Contact CTA */}
       <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 via-violet-600/20 to-cyan-600/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-700 to-violet-700" />
         
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Still Have Questions?
           </h2>
-          <p className="text-lg text-white/60 max-w-xl mx-auto mb-8">
+          <p className="text-lg text-white/70 max-w-xl mx-auto mb-8">
             Our support team is available 24/7 to help you.
           </p>
           <a

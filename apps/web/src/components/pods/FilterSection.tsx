@@ -46,7 +46,7 @@ export function FilterSection({
       <div className="flex flex-col lg:flex-row gap-4 mb-4">
         {/* Search */}
         <div className="flex-1 relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -56,18 +56,18 @@ export function FilterSection({
             placeholder="Search hotels, homestays, or pods..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-primary-500/50 transition-colors"
+            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
           />
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex bg-white/5 rounded-xl p-1 self-start">
+        <div className="flex bg-gray-100 rounded-xl p-1 self-start">
           <button
             onClick={() => onViewModeChange('properties')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               viewMode === 'properties'
                 ? 'bg-primary-500 text-white'
-                : 'text-white/60 hover:text-white'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             🏨 Properties
@@ -77,7 +77,7 @@ export function FilterSection({
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               viewMode === 'pods'
                 ? 'bg-primary-500 text-white'
-                : 'text-white/60 hover:text-white'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             🛸 All Pods
@@ -87,7 +87,7 @@ export function FilterSection({
         {/* Filter Toggle */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl text-white/70 hover:text-white transition-colors"
+          className="lg:hidden flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl text-slate-500 hover:text-slate-800 transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -101,30 +101,30 @@ export function FilterSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* City Filter */}
           <div>
-            <label className="block text-sm text-white/60 mb-2">City</label>
+            <label className="block text-sm text-slate-500 mb-2">City</label>
             <select
               value={selectedCity}
               onChange={(e) => onCityChange(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-500/50 transition-colors appearance-none cursor-pointer"
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors appearance-none cursor-pointer"
             >
-              <option value="" className="bg-naploo-dark-light">All Cities</option>
+              <option value="" className="bg-white">All Cities</option>
               {cities.map((city) => (
-                <option key={city} value={city} className="bg-naploo-dark-light">{city}</option>
+                <option key={city} value={city} className="bg-white">{city}</option>
               ))}
             </select>
           </div>
 
           {/* Property Type Filter */}
           <div>
-            <label className="block text-sm text-white/60 mb-2">Property Type</label>
+            <label className="block text-sm text-slate-500 mb-2">Property Type</label>
             <select
               value={selectedType}
               onChange={(e) => onTypeChange(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-500/50 transition-colors appearance-none cursor-pointer"
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors appearance-none cursor-pointer"
             >
-              <option value="" className="bg-naploo-dark-light">All Types</option>
+              <option value="" className="bg-white">All Types</option>
               {propertyTypes.map((type) => (
-                <option key={type} value={type} className="bg-naploo-dark-light capitalize">{type}</option>
+                <option key={type} value={type} className="bg-white capitalize">{type}</option>
               ))}
             </select>
           </div>
@@ -132,15 +132,15 @@ export function FilterSection({
           {/* Pod Series Filter - Only show when viewing pods */}
           {viewMode === 'pods' && (
             <div>
-              <label className="block text-sm text-white/60 mb-2">Pod Series</label>
+              <label className="block text-sm text-slate-500 mb-2">Pod Series</label>
               <select
                 value={selectedSeries}
                 onChange={(e) => onSeriesChange(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-500/50 transition-colors appearance-none cursor-pointer"
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors appearance-none cursor-pointer"
               >
-                <option value="" className="bg-naploo-dark-light">All Series</option>
+                <option value="" className="bg-white">All Series</option>
                 {podSeries.map((series) => (
-                  <option key={series} value={series} className="bg-naploo-dark-light">{series}</option>
+                  <option key={series} value={series} className="bg-white">{series}</option>
                 ))}
               </select>
             </div>
@@ -148,7 +148,7 @@ export function FilterSection({
 
           {/* Price Range */}
           <div>
-            <label className="block text-sm text-white/60 mb-2">
+            <label className="block text-sm text-slate-500 mb-2">
               Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
             </label>
             <input
@@ -210,7 +210,7 @@ function QuickFilterButton({
       className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
         active
           ? 'bg-primary-500 text-white'
-          : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
+          : 'bg-gray-100 text-slate-600 hover:bg-gray-200 hover:text-slate-800 border border-gray-200'
       }`}
     >
       {children}

@@ -105,23 +105,23 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-naploo-dark">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-violet-50/30 text-slate-800">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
+      <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-b from-primary-600 via-primary-700 to-violet-700">
         {/* Background Effects */}
         <div className="absolute inset-0 mesh-gradient opacity-30" />
         <div className="absolute inset-0 grid-pattern opacity-10" />
-        <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-naploo-primary/20 rounded-full blur-[120px]" />
+        <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-white/10 rounded-full blur-[120px]" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block px-4 py-2 bg-naploo-primary/20 text-naploo-primary rounded-full text-sm font-medium mb-6">
+          <span className="inline-block px-4 py-2 bg-white/20 text-white rounded-full text-sm font-medium mb-6">
             Get In Touch
           </span>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
             We&apos;d Love to
             <span className="block gradient-text">Hear From You</span>
           </h1>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto">
+          <p className="text-lg text-white/70 max-w-2xl mx-auto">
             Have a question, feedback, or need support? Our team is here to help you 24/7.
           </p>
         </div>
@@ -135,14 +135,14 @@ export default function ContactPage() {
               <a
                 key={index}
                 href={method.action}
-                className="glass-card rounded-2xl p-6 hover:border-naploo-primary/50 transition-all duration-300 group"
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:border-primary-300 transition-all duration-300 group"
               >
-                <div className="w-14 h-14 bg-gradient-to-br from-naploo-primary/20 to-naploo-violet/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <method.icon className="w-7 h-7 text-naploo-primary" />
+                <div className="w-14 h-14 bg-gradient-to-br from-primary-50 to-violet-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <method.icon className="w-7 h-7 text-primary-600" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-1">{method.title}</h3>
-                <p className="text-white/50 text-sm mb-2">{method.description}</p>
-                <p className="text-naploo-primary font-medium">{method.value}</p>
+                <h3 className="text-lg font-bold text-slate-800 mb-1">{method.title}</h3>
+                <p className="text-slate-400 text-sm mb-2">{method.description}</p>
+                <p className="text-primary-600 font-medium">{method.value}</p>
               </a>
             ))}
           </div>
@@ -151,29 +151,29 @@ export default function ContactPage() {
 
       {/* Contact Form + Map */}
       <section className="py-20 relative">
-        <div className="absolute inset-0 dot-pattern opacity-10" />
+        <div className="absolute inset-0 dot-pattern opacity-5" />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Form */}
             <div>
-              <span className="inline-block px-4 py-2 bg-naploo-accent/20 text-naploo-accent rounded-full text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-2 bg-violet-50 text-violet-600 border border-violet-200 rounded-full text-sm font-medium mb-4">
                 Send Message
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
                 Drop Us a <span className="gradient-text">Message</span>
               </h2>
-              <p className="text-white/60 mb-8">
+              <p className="text-slate-500 mb-8">
                 Fill out the form below and we&apos;ll get back to you within 24 hours.
               </p>
 
               {isSubmitted ? (
-                <div className="glass-card rounded-2xl p-8 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <Send className="w-8 h-8 text-green-400" />
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-green-50 rounded-full flex items-center justify-center">
+                    <Send className="w-8 h-8 text-green-500" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Message Sent!</h3>
-                  <p className="text-white/60">
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">Message Sent!</h3>
+                  <p className="text-slate-500">
                     Thank you for reaching out. We&apos;ll get back to you within 24 hours.
                   </p>
                 </div>
@@ -181,64 +181,64 @@ export default function ContactPage() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-white/70 text-sm mb-2">Full Name</label>
+                      <label className="block text-slate-600 text-sm mb-2">Full Name</label>
                       <input
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
                         placeholder="John Doe"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-white/70 text-sm mb-2">Phone Number</label>
+                      <label className="block text-slate-600 text-sm mb-2">Phone Number</label>
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
                         placeholder="+91 98765 43210"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-white/70 text-sm mb-2">Email Address</label>
+                    <label className="block text-slate-600 text-sm mb-2">Email Address</label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
                       placeholder="john@example.com"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-white/70 text-sm mb-2">Subject</label>
+                    <label className="block text-slate-600 text-sm mb-2">Subject</label>
                     <select
                       value={formData.subject}
                       onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-naploo-primary/50 transition"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-4 text-slate-800 focus:outline-none focus:border-primary-500 transition"
                       required
                     >
-                      <option value="" className="bg-naploo-dark">Select a topic</option>
-                      <option value="booking" className="bg-naploo-dark">Booking Help</option>
-                      <option value="partnership" className="bg-naploo-dark">Partnership Inquiry</option>
-                      <option value="feedback" className="bg-naploo-dark">Feedback</option>
-                      <option value="complaint" className="bg-naploo-dark">Complaint</option>
-                      <option value="other" className="bg-naploo-dark">Other</option>
+                      <option value="" className="bg-white">Select a topic</option>
+                      <option value="booking" className="bg-white">Booking Help</option>
+                      <option value="partnership" className="bg-white">Partnership Inquiry</option>
+                      <option value="feedback" className="bg-white">Feedback</option>
+                      <option value="complaint" className="bg-white">Complaint</option>
+                      <option value="other" className="bg-white">Other</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-white/70 text-sm mb-2">Message</label>
+                    <label className="block text-slate-600 text-sm mb-2">Message</label>
                     <textarea
                       value={formData.message}
                       onChange={(e) => setFormData({...formData, message: e.target.value})}
                       rows={5}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition resize-none"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition resize-none"
                       placeholder="How can we help you?"
                       required
                     />
@@ -247,7 +247,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-naploo-primary to-naploo-violet text-white py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full bg-gradient-to-r from-primary-500 to-violet-600 text-white py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <>
@@ -267,35 +267,35 @@ export default function ContactPage() {
 
             {/* Office Locations */}
             <div>
-              <span className="inline-block px-4 py-2 bg-naploo-violet/20 text-naploo-violet rounded-full text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-2 bg-violet-50 text-violet-600 border border-violet-200 rounded-full text-sm font-medium mb-4">
                 Our Offices
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-8">
                 Visit Our <span className="gradient-text">Locations</span>
               </h2>
 
               <div className="space-y-4">
                 {offices.map((office, index) => (
-                  <div key={index} className={`glass-card rounded-2xl p-6 ${office.isPrimary ? 'border-naploo-primary/30' : ''}`}>
+                  <div key={index} className={`bg-white rounded-2xl shadow-sm border p-6 ${office.isPrimary ? 'border-primary-200' : 'border-gray-100'}`}>
                     <div className="flex items-start gap-4">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         office.isPrimary 
-                          ? 'bg-gradient-to-br from-naploo-primary to-naploo-violet' 
-                          : 'bg-white/10'
+                          ? 'bg-gradient-to-br from-primary-500 to-violet-600' 
+                          : 'bg-gray-100'
                       }`}>
-                        <MapPin className="w-6 h-6 text-white" />
+                        <MapPin className={`w-6 h-6 ${office.isPrimary ? 'text-white' : 'text-slate-500'}`} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-bold text-white">{office.city}</h3>
+                          <h3 className="text-lg font-bold text-slate-800">{office.city}</h3>
                           {office.isPrimary && (
-                            <span className="text-xs bg-naploo-primary/20 text-naploo-primary px-2 py-0.5 rounded-full">
+                            <span className="text-xs bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">
                               HQ
                             </span>
                           )}
                         </div>
-                        <p className="text-white/60 text-sm mb-2">{office.address}</p>
-                        <a href={`tel:${office.phone}`} className="text-naploo-primary text-sm hover:underline">
+                        <p className="text-slate-500 text-sm mb-2">{office.address}</p>
+                        <a href={`tel:${office.phone}`} className="text-primary-600 text-sm hover:underline">
                           {office.phone}
                         </a>
                       </div>
@@ -305,8 +305,8 @@ export default function ContactPage() {
               </div>
 
               {/* Social Links */}
-              <div className="mt-8 glass-card rounded-2xl p-6">
-                <h3 className="text-white font-semibold mb-4">Follow Us</h3>
+              <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-slate-800 font-semibold mb-4">Follow Us</h3>
                 <div className="flex gap-4">
                   {[
                     { icon: Twitter, href: '#' },
@@ -317,7 +317,7 @@ export default function ContactPage() {
                     <a
                       key={index}
                       href={social.href}
-                      className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center hover:bg-naploo-primary/20 hover:text-naploo-primary transition-all duration-300 text-white/60"
+                      className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center hover:bg-primary-50 hover:text-primary-600 transition-all duration-300 text-slate-400"
                     >
                       <social.icon className="w-5 h-5" />
                     </a>
@@ -331,32 +331,32 @@ export default function ContactPage() {
 
       {/* FAQ Section */}
       <section className="py-20 relative">
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-naploo-primary/50 to-transparent" />
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-300 to-transparent" />
         
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-naploo-primary/20 text-naploo-primary rounded-full text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-2 bg-primary-50 text-primary-600 border border-primary-200 rounded-full text-sm font-medium mb-4">
               FAQs
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
               Frequently Asked <span className="gradient-text">Questions</span>
             </h2>
           </div>
 
           <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <div key={index} className="glass-card rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-2">{faq.q}</h3>
-                <p className="text-white/60">{faq.a}</p>
+              <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">{faq.q}</h3>
+                <p className="text-slate-500">{faq.a}</p>
               </div>
             ))}
           </div>
 
           <div className="mt-12 text-center">
-            <p className="text-white/60 mb-4">Can&apos;t find what you&apos;re looking for?</p>
+            <p className="text-slate-500 mb-4">Can&apos;t find what you&apos;re looking for?</p>
             <a
               href="#"
-              className="inline-flex items-center gap-2 text-naploo-primary hover:text-naploo-violet transition"
+              className="inline-flex items-center gap-2 text-primary-600 hover:text-violet-600 transition"
             >
               Visit our Help Center
               <ArrowRight className="w-4 h-4" />

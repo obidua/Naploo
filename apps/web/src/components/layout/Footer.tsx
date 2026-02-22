@@ -16,9 +16,9 @@ const footerLinks = {
   ],
   partners: [
     { name: 'Become a Partner', href: '/partner' },
-    { name: 'Partner Portal', href: '/partner/portal' },
     { name: 'Partner Benefits', href: '/partner#benefits' },
-    { name: 'Partner Support', href: '/partner/support' },
+    { name: 'Buy Pods', href: '/investor' },
+    { name: 'Contact Support', href: '/contact' },
   ],
   support: [
     { name: 'Help Center', href: '/help' },
@@ -43,12 +43,9 @@ const socialLinks = [
 
 export function Footer() {
   return (
-    <footer className="relative bg-naploo-dark-DEFAULT border-t border-white/10">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-violet-500/10 rounded-full blur-3xl" />
-      </div>
+    <footer className="relative bg-gradient-to-b from-slate-900 to-slate-950 text-white">
+      {/* Subtle accent */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-500/50 to-transparent" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Top Section */}
@@ -162,7 +159,7 @@ export function Footer() {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 md:w-64 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-primary-500/50"
+                className="flex-1 md:w-64 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/30"
               />
               <button
                 type="submit"

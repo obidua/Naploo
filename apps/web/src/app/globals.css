@@ -20,20 +20,18 @@
   --gradient-glow: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
   
   /* Backgrounds */
-  --foreground-rgb: 15, 15, 35;
+  --foreground-rgb: 30, 41, 59;
   --background-rgb: 255, 255, 255;
   
   /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.dark {
-  --foreground-rgb: 248, 250, 252;
-  --background-rgb: 15, 15, 35;
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(99, 102, 241, 0.12);
+  --glass-shadow: 0 8px 32px rgba(99, 102, 241, 0.08);
+  
+  /* Section backgrounds */
+  --section-white: #ffffff;
+  --section-light: #f8f5ff;
+  --section-subtle: #f1edff;
 }
 
 * {
@@ -47,8 +45,8 @@ html {
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  color: #1e293b;
+  background: #ffffff;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -56,8 +54,8 @@ body {
 
 /* Selection */
 ::selection {
-  background: rgba(99, 102, 241, 0.3);
-  color: #fff;
+  background: rgba(99, 102, 241, 0.2);
+  color: #1e1b4b;
 }
 
 @layer base {
@@ -74,22 +72,20 @@ body {
 
   /* Glassmorphism */
   .glass {
-    background: var(--glass-bg);
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
+    border: 1px solid rgba(99, 102, 241, 0.1);
   }
 
   .glass-card {
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.18);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    box-shadow: 0 4px 24px rgba(99, 102, 241, 0.06);
   }
 
   .glass-dark {
-    background: linear-gradient(135deg, rgba(15,15,35,0.9) 0%, rgba(26,26,46,0.9) 100%);
+    background: linear-gradient(135deg, rgba(15,15,35,0.95) 0%, rgba(26,26,46,0.95) 100%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.1);
@@ -193,15 +189,34 @@ body {
   /* Grid background pattern */
   .grid-pattern {
     background-image: 
-      linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
     background-size: 50px 50px;
   }
 
   /* Dot pattern */
   .dot-pattern {
-    background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px);
     background-size: 20px 20px;
+  }
+
+  /* Professional section backgrounds */
+  .section-white {
+    background-color: #ffffff;
+  }
+
+  .section-light {
+    background-color: #f8f5ff;
+  }
+
+  .section-subtle {
+    background-color: #f1edff;
+  }
+
+  /* Dark section (hero/cta/footer) */
+  .section-dark {
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #1e1b4b 100%);
+    color: #ffffff;
   }
 
   /* Noise texture overlay */
@@ -217,12 +232,12 @@ body {
   /* Gradient mesh background */
   .mesh-gradient {
     background: 
-      radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.3) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.2) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, rgba(6, 182, 212, 0.2) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.2) 0px, transparent 50%),
-      radial-gradient(at 80% 100%, rgba(6, 182, 212, 0.15) 0px, transparent 50%);
+      radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, rgba(6, 182, 212, 0.06) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, rgba(6, 182, 212, 0.05) 0px, transparent 50%);
   }
 
   /* 3D card tilt effect */
@@ -267,7 +282,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(99, 102, 241, 0.05);
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -292,7 +307,7 @@ body {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 0px, #e0e0e0 40px, #f0f0f0 80px);
+  background: linear-gradient(90deg, #f1f5f9 0px, #e2e8f0 40px, #f1f5f9 80px);
   background-size: 200px 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
 }
@@ -316,4 +331,70 @@ body {
 .page-exit-active {
   opacity: 0;
   transition: opacity 300ms;
+}
+
+/* PWA Safe Areas for Mobile */
+@supports(padding: max(0px)) {
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+  
+  .pt-safe {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+  
+  .px-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+  
+  .mb-safe {
+    margin-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Mobile Bottom Nav Spacing */
+.main-content {
+  padding-bottom: 5rem; /* Space for bottom nav */
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    padding-bottom: 0;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Disable zoom on input focus (iOS) */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+/* Smooth overscroll behavior */
+html {
+  overscroll-behavior: none;
+}
+
+/* Mobile-optimized typography */
+@media (max-width: 640px) {
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  p { font-size: 0.875rem; }
+}
+
+/* Hide footer on mobile when bottom nav is visible */
+@media (max-width: 1023px) {
+  footer .mobile-hide-on-nav {
+    display: none;
+  }
 }

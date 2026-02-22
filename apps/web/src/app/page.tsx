@@ -1,7 +1,11 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GlassCard } from '@/components/ui/GlassCard';
+import ImageSlider from '@/components/ui/ImageSlider';
+import HeroPodSlider from '@/components/ui/HeroPodSlider';
 
 // Partner Hotels & Homestays Data
 const partnerProperties = [
@@ -18,6 +22,9 @@ const partnerProperties = [
     images: [
       '/Pods_Images/For Website main images/Main Pods Image.png',
       '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
     ],
   },
   {
@@ -33,6 +40,9 @@ const partnerProperties = [
     images: [
       '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
       '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/E-sports series/"E-sports"series -Horizontal single bed main.png',
+      '/Pods_Images/Made in India T1/Main.jpg',
     ],
   },
   {
@@ -48,6 +58,9 @@ const partnerProperties = [
     images: [
       '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
       '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/wooden series/"wooden"series -Horizontal single bed:Vertical single bed main.png',
+      '/Pods_Images/For Website main images/Main Pods Image.png',
     ],
   },
   {
@@ -63,6 +76,9 @@ const partnerProperties = [
     images: [
       '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
       '/Pods_Images/E-sports series/"E-sports"series -Horizontal single bed main.png',
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/Made in India T1/Main.jpg',
     ],
   },
   {
@@ -78,6 +94,9 @@ const partnerProperties = [
     images: [
       '/Pods_Images/E-sports series/"E-sports"series -Horizontal single bed main.png',
       '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/wooden series/"wooden"series -Horizontal single bed:Vertical single bed main.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/For Website main images/Main Pods Image.png',
     ],
   },
   {
@@ -93,6 +112,9 @@ const partnerProperties = [
     images: [
       '/Pods_Images/wooden series/"wooden"series -Horizontal single bed:Vertical single bed main.png',
       '/Pods_Images/Made in India T1/Main.jpg',
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
     ],
   },
   {
@@ -108,6 +130,9 @@ const partnerProperties = [
     images: [
       '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png',
       '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/E-sports series/"E-sports"series -Horizontal single bed main.png',
+      '/Pods_Images/wooden series/"wooden"series -Horizontal single bed:Vertical single bed main.png',
+      '/Pods_Images/For Website main images/Main Pods Image.png',
     ],
   },
   {
@@ -123,6 +148,9 @@ const partnerProperties = [
     images: [
       '/Pods_Images/Made in India T1/Main.jpg',
       '/Pods_Images/wooden series/"wooden"series -Horizontal single bed:Vertical single bed main.png',
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
     ],
   },
 ];
@@ -134,7 +162,12 @@ const podSeries = [
     tagline: 'Experience Zero Gravity Rest',
     description: 'Futuristic capsule design inspired by space stations. Premium single & double bed options.',
     price: '₹150',
-    image: '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+    images: [
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/For Website main images/Main Pods Image.png',
+    ],
     gradient: 'from-indigo-600 via-purple-600 to-pink-600',
     features: ['Climate Control', 'LED Ambient', 'USB-C Ports', 'Smart Lock'],
   },
@@ -143,7 +176,12 @@ const podSeries = [
     tagline: 'Sleep Among the Stars',
     description: 'Elegant horizontal pods with cosmic-inspired interiors. Perfect for travelers.',
     price: '₹180',
-    image: '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+    images: [
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/E-sports series/"E-sports"series -Horizontal single bed main.png',
+    ],
     gradient: 'from-violet-600 via-purple-600 to-indigo-600',
     features: ['HD Display', 'WiFi 6', 'Air Purifier', 'Premium Bedding'],
   },
@@ -152,7 +190,12 @@ const podSeries = [
     tagline: 'Infinite Comfort Awaits',
     description: 'Modern minimalist design with maximum functionality. Vertical & horizontal options.',
     price: '₹200',
-    image: '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+    images: [
+      '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+      '/Pods_Images/wooden series/"wooden"series -Horizontal single bed:Vertical single bed main.png',
+    ],
     gradient: 'from-cyan-600 via-blue-600 to-indigo-600',
     features: ['Noise Cancelling', 'Aromatherapy', 'Smart Mirror', 'Mini Safe'],
   },
@@ -161,7 +204,12 @@ const podSeries = [
     tagline: 'Tomorrow\'s Rest, Today',
     description: 'Revolutionary pod design from the future. Cutting-edge technology meets comfort.',
     price: '₹250',
-    image: '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png',
+    images: [
+      '/Pods_Images/BACK TO FUTURE 2047 series/"BACK TO FUTURE 2047"series -Horizontal:Verticalsingle bed main.png',
+      '/Pods_Images/E-sports series/"E-sports"series -Horizontal single bed main.png',
+      '/Pods_Images/Made in India T1/Main.jpg',
+      '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+    ],
     gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
     features: ['AI Assistant', 'Biometric Lock', '4K Display', 'Massage Mode'],
   },
@@ -182,25 +230,25 @@ const steps = [
   {
     step: '01',
     title: 'Find Your Pod',
-    description: 'Search pods near airports, railway stations, or city centers. Filter by amenities and price.',
+    description: 'Search pods near airports, railway stations, or city centers.',
     icon: '🔍',
   },
   {
     step: '02',
     title: 'Book Instantly',
-    description: 'Select your duration - 1 hour to 12 hours. No advance booking needed, book on the go.',
+    description: 'Select your duration - 1 hour to 12 hours. Book on the go.',
     icon: '📱',
   },
   {
     step: '03',
     title: 'Get Access Code',
-    description: 'Receive a unique OTP on your phone. Use it to unlock your private pod.',
+    description: 'Receive a unique OTP on your phone to unlock your pod.',
     icon: '🔐',
   },
   {
     step: '04',
     title: 'Rest & Recharge',
-    description: 'Enjoy premium amenities in your private space. Extend anytime with one tap.',
+    description: 'Enjoy premium amenities. Extend anytime with one tap.',
     icon: '😴',
   },
 ];
@@ -218,157 +266,154 @@ const testimonials = [
   {
     name: 'Vikram Mehta',
     role: 'Business Consultant',
-    text: 'The Space Series pod at Mumbai Airport was incredible! Clean, futuristic, and exactly what I needed during my 6-hour layover. Will definitely use again.',
+    text: 'The Space Series pod at Mumbai Airport was incredible! Clean, futuristic, and exactly what I needed during my 6-hour layover.',
     rating: 5,
   },
   {
     name: 'Priya Sharma',
     role: 'Software Engineer',
-    text: 'As a frequent traveler, Naploo has become my go-to for quick rest. The Galaxy pods have amazing WiFi and the smart features are next level!',
+    text: 'As a frequent traveler, Naploo has become my go-to for quick rest. The Galaxy pods have amazing WiFi and smart features!',
     rating: 5,
   },
   {
     name: 'Arjun Reddy',
     role: 'Medical Professional',
-    text: 'After long hospital shifts, I need quality rest before driving home. The Cosmos pod near my hospital is a lifesaver. So peaceful and private.',
+    text: 'After long hospital shifts, I need quality rest before driving home. The Cosmos pod near my hospital is a lifesaver.',
     rating: 5,
+  },
+];
+
+
+// Hero Pod Slides - Different bed types with amenities
+const heroPodSlides = [
+  {
+    image: '/Pods_Images/Space Series/"SPACE"series -Horizontal single:double bed.png',
+    series: 'Space Series Pod',
+    name: 'Premium Single Capsule',
+    bedType: 'Single Bed',
+    price: '₹150',
+    amenities: ['AC Climate Control', 'USB Charging', 'LED Ambient Light', 'Fresh Air Ventilation'],
+  },
+  {
+    image: '/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png',
+    series: 'Galaxy Series Pod',
+    name: 'Deluxe Double Capsule',
+    bedType: 'Double Bed',
+    price: '₹250',
+    amenities: ['Queen Size Bed', 'Smart TV 24"', 'Bluetooth Speaker', 'Mini Fridge'],
+  },
+  {
+    image: '/Pods_Images/ABS Flagship Series/ABS Single Vertical.png',
+    series: 'ABS Flagship Series',
+    name: 'Executive Single Pod',
+    bedType: 'Single Bed',
+    price: '₹199',
+    amenities: ['Noise Cancellation', 'WiFi High-Speed', 'Reading Light', 'Luggage Storage'],
+  },
+  {
+    image: '/Pods_Images/COSMOS series/"COSMOS"series -Horizontal:Verticalsingle bed main.png',
+    series: 'Cosmos Series Pod',
+    name: 'Premium Double Suite',
+    bedType: 'Double Bed',
+    price: '₹299',
+    amenities: ['King Size Bed', 'Mirror & Vanity', 'Aromatherapy', 'Premium Bedding'],
+  },
+  {
+    image: '/Pods_Images/For Website main images/Main Pods Image.png',
+    series: 'Made in India Series',
+    name: 'Comfort Single Capsule',
+    bedType: 'Single Bed',
+    price: '₹149',
+    amenities: ['AC Cooling', 'Phone Charger', 'Privacy Curtain', 'Clean Linens'],
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-naploo-dark-DEFAULT text-white overflow-x-hidden">
+    <main className="min-h-screen bg-white text-slate-800 overflow-x-hidden">
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center pt-20">
+      {/* Hero Section - Dark purple gradient for impact */}
+      <section className="relative min-h-screen flex items-center pt-20 bg-gradient-to-br from-slate-900 via-primary-950 to-slate-900 text-white">
         {/* Background Effects */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-naploo-dark-DEFAULT via-naploo-dark-50 to-naploo-dark-DEFAULT" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-primary-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-violet-500/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/3 right-0 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] sm:w-[1000px] h-[600px] sm:h-[1000px] bg-primary-500/15 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-violet-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 right-0 w-[200px] sm:w-[400px] h-[200px] sm:h-[400px] bg-cyan-500/10 rounded-full blur-3xl" />
           {/* Grid Pattern */}
-          <div className="absolute inset-0 grid-pattern opacity-30" />
+          <div className="absolute inset-0 grid-pattern opacity-20" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-20 items-center">
             {/* Left Content */}
             <div className="text-center lg:text-left order-2 lg:order-1">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full mb-6 animate-fade-in">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full mb-4 sm:mb-6">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span className="text-sm text-white/70">India&apos;s First Smart Sleeping Pod Network</span>
+                <span className="text-xs sm:text-sm text-white/70">India&apos;s First Smart Sleeping Pod Network</span>
               </div>
 
               {/* Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-display font-bold leading-[1.1] mb-6">
+              <h1 className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-display font-bold leading-[1.1] mb-4 sm:mb-6">
                 <span className="text-white">The Future of</span>
                 <br />
                 <span className="gradient-text">Rest is Here</span>
               </h1>
 
               {/* Subheadline */}
-              <p className="text-lg sm:text-xl text-white/60 max-w-xl mx-auto lg:mx-0 mb-8">
+              <p className="text-base sm:text-lg lg:text-xl text-white/60 max-w-xl mx-auto lg:mx-0 mb-6 sm:mb-8">
                 Premium futuristic sleeping pods at airports, railway stations & hotels. 
                 Pay only for the hours you rest. Starting at just <span className="text-white font-semibold">₹150/hour</span>.
               </p>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start mb-8 sm:mb-10">
                 <Link
                   href="/pods"
-                  className="group px-8 py-4 bg-gradient-to-r from-primary-500 via-violet-500 to-primary-600 text-white font-semibold rounded-2xl hover:shadow-glow-lg transition-all duration-500 flex items-center justify-center gap-3"
+                  className="group px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-primary-500 via-violet-500 to-primary-600 text-white font-semibold rounded-xl sm:rounded-2xl hover:shadow-glow-lg transition-all duration-500 flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base"
                 >
                   <span>Find Pods Near You</span>
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </Link>
                 <Link
                   href="/how-it-works"
-                  className="px-8 py-4 bg-white/5 backdrop-blur-xl border border-white/20 text-white font-semibold rounded-2xl hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-2"
+                  className="px-6 sm:px-8 py-3 sm:py-4 bg-white/5 backdrop-blur-xl border border-white/20 text-white font-semibold rounded-xl sm:rounded-2xl hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Watch How It Works
+                  How It Works
                 </Link>
               </div>
 
               {/* Trust Indicators */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-6">
                 {[
                   { icon: '🛡️', text: 'Sanitized Pods' },
                   { icon: '⚡', text: '24/7 Available' },
                   { icon: '🔒', text: 'Smart Lock' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-white/50">
-                    <span className="text-lg">{item.icon}</span>
-                    <span className="text-sm">{item.text}</span>
+                    <span className="text-base sm:text-lg">{item.icon}</span>
+                    <span className="text-xs sm:text-sm">{item.text}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Right Content - Hero Image */}
+            {/* Right Content - Hero Image Slider */}
             <div className="relative order-1 lg:order-2">
               <div className="relative">
-                {/* Main Pod Image */}
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-primary-500/20 border border-white/10">
-                  <div className="aspect-[4/3] relative">
-                    <Image
-                      src="/Pods_Images/For Website main images/Main Pods Image.png"
-                      alt="Naploo Premium Sleeping Pod"
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-naploo-dark-DEFAULT/90 via-transparent to-transparent" />
-                  </div>
-                  {/* Overlay Content */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-white/60 text-sm">Space Series Pod</p>
-                        <p className="text-white font-semibold text-lg">Premium Single Capsule</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-white/60 text-sm">Starting from</p>
-                        <p className="text-2xl font-bold gradient-text">₹150/hr</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Main Pod Image Slider */}
+                <HeroPodSlider slides={heroPodSlides} />
 
-                {/* Floating Cards */}
-                <div className="absolute -top-4 -left-4 glass-card px-4 py-3 rounded-xl animate-float hidden sm:block">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white">
-                      ✓
-                    </div>
-                    <div>
-                      <p className="text-xs text-white/50">Available Now</p>
-                      <p className="text-sm font-semibold text-white">156 Pods</p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="absolute -bottom-4 -right-4 glass-card px-4 py-3 rounded-xl animate-float-slow hidden sm:block">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white">
-                      ★
-                    </div>
-                    <div>
-                      <p className="text-xs text-white/50">User Rating</p>
-                      <p className="text-sm font-semibold text-white">4.9/5.0</p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -383,14 +428,14 @@ export default function HomePage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="relative py-12 border-y border-white/10 bg-white/[0.02]">
+      <section className="relative py-8 sm:py-12 border-y border-gray-100 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
             {stats.map((stat, i) => (
               <div key={i} className="text-center">
-                <div className="text-3xl mb-2">{stat.icon}</div>
-                <p className="text-3xl sm:text-4xl font-display font-bold gradient-text mb-1">{stat.value}</p>
-                <p className="text-white/50 text-sm">{stat.label}</p>
+                <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">{stat.icon}</div>
+                <p className="text-2xl sm:text-3xl md:text-4xl font-display font-bold gradient-text mb-1">{stat.value}</p>
+                <p className="text-slate-500 text-xs sm:text-sm">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -398,22 +443,22 @@ export default function HomePage() {
       </section>
 
       {/* Partner Hotels & Homestays Section */}
-      <section className="relative py-24 overflow-hidden bg-gradient-to-b from-transparent via-primary-500/5 to-transparent">
+      <section className="relative py-16 sm:py-24 overflow-hidden bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 sm:mb-12 gap-4">
             <div>
-              <span className="inline-block px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-sm text-emerald-400 mb-4">
+              <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-50 border border-emerald-200 rounded-full text-xs sm:text-sm text-emerald-600 mb-3 sm:mb-4">
                 Our Partner Properties
               </span>
-              <h2 className="text-4xl sm:text-5xl font-display font-bold text-white">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-slate-800">
                 Hotels & Homestays
               </h2>
-              <p className="text-white/60 mt-2">Book pods hourly or rooms for your stay</p>
+              <p className="text-slate-500 mt-2 text-sm sm:text-base">Book pods hourly or rooms for your stay</p>
             </div>
             <Link
               href="/pods"
-              className="text-primary-400 hover:text-primary-300 font-medium flex items-center gap-2 transition-colors"
+              className="text-primary-600 hover:text-primary-700 font-medium flex items-center gap-2 transition-colors text-sm sm:text-base"
             >
               View All Properties
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -424,37 +469,26 @@ export default function HomePage() {
 
           {/* Horizontal Scrolling Properties */}
           <div className="relative">
-            <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide snap-x snap-mandatory">
+            <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 sm:pb-6 scrollbar-hide snap-x snap-mandatory">
               {partnerProperties.map((property) => (
                 <Link
                   key={property.id}
                   href={`/pods/${property.id}`}
-                  className="flex-shrink-0 w-[350px] snap-start"
+                  className="flex-shrink-0 w-[280px] sm:w-[350px] snap-start"
                 >
                   <GlassCard className="overflow-hidden group cursor-pointer h-full">
-                    {/* Image with Slider Effect */}
-                    <div className="relative h-52 overflow-hidden">
-                      <div className="absolute inset-0 flex transition-transform duration-500 group-hover:-translate-x-1/2">
-                        <Image
-                          src={property.images[0]}
-                          alt={property.name}
-                          width={350}
-                          height={208}
-                          className="w-full h-full object-cover flex-shrink-0"
-                        />
-                        {property.images[1] && (
-                          <Image
-                            src={property.images[1]}
-                            alt={`${property.name} 2`}
-                            width={350}
-                            height={208}
-                            className="w-full h-full object-cover flex-shrink-0"
-                          />
-                        )}
-                      </div>
+                    {/* Image Slider */}
+                    <div className="relative h-40 sm:h-52">
+                      <ImageSlider
+                        images={property.images}
+                        alt={property.name}
+                        className="h-full rounded-t-xl"
+                        autoPlay={true}
+                        interval={4000}
+                      />
                       
                       {/* Type Badge */}
-                      <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-white text-sm font-medium ${
+                      <div className={`absolute top-3 sm:top-4 left-3 sm:left-4 px-2 sm:px-3 py-1 rounded-full text-white text-xs sm:text-sm font-medium ${
                         property.type === 'hotel' 
                           ? 'bg-gradient-to-r from-primary-500 to-violet-600' 
                           : 'bg-gradient-to-r from-emerald-500 to-teal-600'
@@ -463,46 +497,40 @@ export default function HomePage() {
                       </div>
 
                       {/* Rating */}
-                      <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-black/50 backdrop-blur text-white text-sm flex items-center gap-1">
+                      <div className="absolute top-3 sm:top-4 right-3 sm:right-4 px-2 py-1 rounded-full bg-black/50 backdrop-blur text-white text-xs sm:text-sm flex items-center gap-1">
                         ⭐ {property.rating}
-                      </div>
-
-                      {/* Hover Indicator */}
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1">
-                        <div className="w-6 h-1 rounded bg-white/80 group-hover:w-2 transition-all"></div>
-                        <div className="w-2 h-1 rounded bg-white/40 group-hover:w-6 transition-all"></div>
                       </div>
                     </div>
 
                     {/* Details */}
-                    <div className="p-5">
-                      <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="p-4 sm:p-5">
+                      <div className="flex items-center gap-2 text-slate-500 text-xs sm:text-sm mb-1">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         </svg>
                         {property.city}
                       </div>
 
-                      <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-primary-400 transition-colors">
+                      <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-2 sm:mb-3 group-hover:text-primary-600 transition-colors line-clamp-1">
                         {property.name}
                       </h3>
 
                       {/* Availability Badges */}
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <span className="px-2 py-1 bg-primary-500/20 text-primary-400 rounded text-xs font-medium">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                        <span className="px-2 py-0.5 sm:py-1 bg-primary-50 text-primary-600 rounded text-[10px] sm:text-xs font-medium">
                           🛏️ {property.pods} Pods • ₹{property.podPrice}/hr
                         </span>
                         {property.rooms > 0 && (
-                          <span className="px-2 py-1 bg-violet-500/20 text-violet-400 rounded text-xs font-medium">
-                            🚪 {property.rooms} Rooms • ₹{property.roomPrice}/night
+                          <span className="px-2 py-0.5 sm:py-1 bg-violet-50 text-violet-600 rounded text-[10px] sm:text-xs font-medium">
+                            🚪 {property.rooms} Rooms
                           </span>
                         )}
                       </div>
 
                       {/* CTA */}
-                      <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                        <span className="text-sm text-gray-400">View details</span>
-                        <svg className="w-5 h-5 text-primary-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100">
+                        <span className="text-xs sm:text-sm text-slate-400">View details</span>
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                       </div>
@@ -516,67 +544,63 @@ export default function HomePage() {
       </section>
 
       {/* Pod Series Section */}
-      <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-3xl" />
-          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-violet-500/5 rounded-full blur-3xl" />
-        </div>
-
+      <section className="relative py-16 sm:py-24 overflow-hidden bg-white">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-primary-500/10 border border-primary-500/20 rounded-full text-sm text-primary-400 mb-4">
+          <div className="text-center mb-10 sm:mb-16">
+            <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-50 border border-primary-200 rounded-full text-xs sm:text-sm text-primary-600 mb-3 sm:mb-4">
               Premium Collection
             </span>
-            <h2 className="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-slate-800 mb-3 sm:mb-4">
               Choose Your Pod Series
             </h2>
-            <p className="text-lg text-white/60 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base lg:text-lg text-slate-500 max-w-2xl mx-auto px-4">
               From futuristic capsules to elegant lounges, find the perfect pod for your rest.
             </p>
           </div>
 
           {/* Pod Series Grid */}
-          <div className="grid md:grid-cols-2 gap-8">
-            {podSeries.map((pod, index) => (
+          <div className="grid md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+            {podSeries.map((pod) => (
               <GlassCard
                 key={pod.name}
                 className="group overflow-hidden"
                 hover
               >
-                <div className="flex flex-col lg:flex-row">
-                  {/* Image */}
-                  <div className="lg:w-1/2 relative">
-                    <div className="aspect-[4/3] lg:aspect-auto lg:absolute lg:inset-0">
-                      <Image
-                        src={pod.image}
+                <div className="flex flex-col sm:flex-row">
+                  {/* Image Slider */}
+                  <div className="sm:w-2/5 lg:w-1/2 relative">
+                    <div className="aspect-[16/10] sm:aspect-auto sm:absolute sm:inset-0">
+                      <ImageSlider
+                        images={pod.images}
                         alt={pod.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                        className="h-full w-full"
+                        autoPlay={true}
+                        interval={5000}
                       />
-                      <div className={`absolute inset-0 bg-gradient-to-r ${pod.gradient} opacity-20 group-hover:opacity-30 transition-opacity`} />
+                      <div className={`absolute inset-0 bg-gradient-to-r ${pod.gradient} opacity-20 group-hover:opacity-30 transition-opacity pointer-events-none`} />
                     </div>
                   </div>
                   
                   {/* Content */}
-                  <div className="lg:w-1/2 p-6 lg:p-8">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="text-xl font-display font-bold text-white mb-1">{pod.name}</h3>
-                        <p className="text-sm text-primary-400">{pod.tagline}</p>
+                  <div className="sm:w-3/5 lg:w-1/2 p-4 sm:p-5 lg:p-6">
+                    <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-display font-bold text-slate-800 mb-0.5 sm:mb-1 truncate">{pod.name}</h3>
+                        <p className="text-xs sm:text-sm text-primary-600 truncate">{pod.tagline}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-white">{pod.price}</p>
-                        <p className="text-xs text-white/50">/hour</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800">{pod.price}</p>
+                        <p className="text-[10px] sm:text-xs text-slate-400">/hour</p>
                       </div>
                     </div>
                     
-                    <p className="text-white/60 text-sm mb-4">{pod.description}</p>
+                    <p className="text-slate-500 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">{pod.description}</p>
                     
                     {/* Features */}
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {pod.features.map((feature) => (
-                        <span key={feature} className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-white/70">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6">
+                      {pod.features.slice(0, 3).map((feature) => (
+                        <span key={feature} className="px-2 sm:px-3 py-0.5 sm:py-1 bg-gray-50 border border-gray-200 rounded-lg text-[10px] sm:text-xs text-slate-600">
                           {feature}
                         </span>
                       ))}
@@ -584,10 +608,10 @@ export default function HomePage() {
                     
                     <Link
                       href={`/pods?series=${pod.name.toLowerCase().replace(/\s+/g, '-')}`}
-                      className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${pod.gradient} text-white font-semibold rounded-xl text-sm hover:shadow-glow transition-all`}
+                      className={`inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r ${pod.gradient} text-white font-semibold rounded-lg sm:rounded-xl text-xs sm:text-sm hover:shadow-glow transition-all`}
                     >
                       Explore Series
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                       </svg>
                     </Link>
@@ -598,10 +622,10 @@ export default function HomePage() {
           </div>
 
           {/* View All */}
-          <div className="text-center mt-12">
+          <div className="text-center mt-8 sm:mt-12">
             <Link
               href="/pods"
-              className="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300 font-medium transition-colors"
+              className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors text-sm sm:text-base"
             >
               View All Pod Collections
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -613,13 +637,13 @@ export default function HomePage() {
       </section>
 
       {/* Pod Interior Showcase */}
-      <section className="relative py-24 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
+      <section className="relative py-16 sm:py-24 bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             {/* Image Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div className="rounded-2xl overflow-hidden border border-white/10">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                   <div className="aspect-[3/4] relative">
                     <Image
                       src="/Pods_Images/For Website main images/inside 2.png"
@@ -629,7 +653,7 @@ export default function HomePage() {
                     />
                   </div>
                 </div>
-                <div className="rounded-2xl overflow-hidden border border-white/10">
+                <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                   <div className="aspect-square relative">
                     <Image
                       src="/Pods_Images/For Website main images/interior looks.png"
@@ -640,8 +664,8 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <div className="space-y-4 pt-8">
-                <div className="rounded-2xl overflow-hidden border border-white/10">
+              <div className="space-y-3 sm:space-y-4 pt-6 sm:pt-8">
+                <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                   <div className="aspect-square relative">
                     <Image
                       src="/Pods_Images/For Website main images/pod view.png"
@@ -651,7 +675,7 @@ export default function HomePage() {
                     />
                   </div>
                 </div>
-                <div className="rounded-2xl overflow-hidden border border-white/10">
+                <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                   <div className="aspect-[3/4] relative">
                     <Image
                       src="/Pods_Images/For Website main images/interior looks2.png"
@@ -666,22 +690,21 @@ export default function HomePage() {
 
             {/* Content */}
             <div>
-              <span className="inline-block px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-sm text-cyan-400 mb-4">
+              <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-cyan-50 border border-cyan-200 rounded-full text-xs sm:text-sm text-cyan-600 mb-3 sm:mb-4">
                 Premium Amenities
               </span>
-              <h2 className="text-4xl sm:text-5xl font-display font-bold text-white mb-6">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-slate-800 mb-4 sm:mb-6">
                 Every Detail
                 <br />
                 <span className="gradient-text">Designed for Rest</span>
               </h2>
-              <p className="text-lg text-white/60 mb-8">
+              <p className="text-sm sm:text-base lg:text-lg text-slate-500 mb-6 sm:mb-8">
                 Step inside a world of comfort. Our pods feature premium bedding, 
-                climate control, ambient lighting, and smart technology - everything 
-                you need for the perfect rest.
+                climate control, ambient lighting, and smart technology.
               </p>
 
               {/* Amenities List */}
-              <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 mb-6 sm:mb-8">
                 {[
                   { icon: '❄️', name: 'Climate Control', desc: 'Perfect temperature' },
                   { icon: '📺', name: 'Smart Display', desc: 'Entertainment ready' },
@@ -690,11 +713,11 @@ export default function HomePage() {
                   { icon: '🔇', name: 'Sound Insulated', desc: 'Peaceful quiet' },
                   { icon: '🛏️', name: 'Premium Bedding', desc: 'Fresh linens always' },
                 ].map((amenity) => (
-                  <div key={amenity.name} className="flex items-start gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-2xl">{amenity.icon}</span>
-                    <div>
-                      <p className="font-semibold text-white">{amenity.name}</p>
-                      <p className="text-sm text-white/50">{amenity.desc}</p>
+                  <div key={amenity.name} className="flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 lg:p-4 bg-white rounded-lg sm:rounded-xl border border-gray-200 shadow-sm">
+                    <span className="text-lg sm:text-xl lg:text-2xl">{amenity.icon}</span>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-800 text-xs sm:text-sm lg:text-base truncate">{amenity.name}</p>
+                      <p className="text-[10px] sm:text-xs lg:text-sm text-slate-400 truncate">{amenity.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -702,10 +725,10 @@ export default function HomePage() {
 
               <Link
                 href="/pods"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-glow-cyan transition-all"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-lg sm:rounded-xl hover:shadow-glow-cyan transition-all text-sm sm:text-base"
               >
                 Book Your Pod
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </Link>
@@ -715,23 +738,23 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section className="relative py-24">
+      <section className="relative py-16 sm:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-violet-500/10 border border-violet-500/20 rounded-full text-sm text-violet-400 mb-4">
+          <div className="text-center mb-10 sm:mb-16">
+            <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-violet-50 border border-violet-200 rounded-full text-xs sm:text-sm text-violet-600 mb-3 sm:mb-4">
               Simple Process
             </span>
-            <h2 className="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-slate-800 mb-3 sm:mb-4">
               Book in 60 Seconds
             </h2>
-            <p className="text-lg text-white/60 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base lg:text-lg text-slate-500 max-w-2xl mx-auto">
               No queues, no paperwork. Just find, book, and rest.
             </p>
           </div>
 
           {/* Steps */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             {steps.map((step, index) => (
               <div key={step.step} className="relative group">
                 {/* Connector Line */}
@@ -739,20 +762,20 @@ export default function HomePage() {
                   <div className="hidden lg:block absolute top-12 left-full w-full h-0.5 bg-gradient-to-r from-primary-500/50 to-transparent z-0" />
                 )}
                 
-                <GlassCard className="p-6 text-center h-full relative z-10">
+                <GlassCard className="p-4 sm:p-5 lg:p-6 text-center h-full relative z-10">
                   {/* Step Number */}
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-primary-500 to-violet-500 rounded-full text-xs font-bold text-white">
+                  <div className="absolute -top-2 sm:-top-3 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 bg-gradient-to-r from-primary-500 to-violet-500 rounded-full text-[10px] sm:text-xs font-bold text-white">
                     Step {step.step}
                   </div>
                   
                   {/* Icon */}
-                  <div className="text-5xl mb-4 mt-4">{step.icon}</div>
+                  <div className="text-3xl sm:text-4xl lg:text-5xl mb-2 sm:mb-3 lg:mb-4 mt-3 sm:mt-4">{step.icon}</div>
                   
                   {/* Content */}
-                  <h3 className="text-lg font-display font-bold text-white mb-2">
+                  <h3 className="text-sm sm:text-base lg:text-lg font-display font-bold text-slate-800 mb-1 sm:mb-2">
                     {step.title}
                   </h3>
-                  <p className="text-sm text-white/50">
+                  <p className="text-[10px] sm:text-xs lg:text-sm text-slate-500 leading-relaxed">
                     {step.description}
                   </p>
                 </GlassCard>
@@ -763,21 +786,21 @@ export default function HomePage() {
       </section>
 
       {/* Locations Section */}
-      <section className="relative py-24 bg-gradient-to-b from-transparent via-primary-500/5 to-transparent">
+      <section className="relative py-16 sm:py-24 bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 sm:mb-12 gap-4">
             <div>
-              <span className="inline-block px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-sm text-emerald-400 mb-4">
+              <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-50 border border-emerald-200 rounded-full text-xs sm:text-sm text-emerald-600 mb-3 sm:mb-4">
                 Nationwide Network
               </span>
-              <h2 className="text-4xl sm:text-5xl font-display font-bold text-white">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-slate-800">
                 Top Locations
               </h2>
             </div>
             <Link
               href="/pods"
-              className="text-primary-400 hover:text-primary-300 font-medium flex items-center gap-2 transition-colors"
+              className="text-primary-600 hover:text-primary-700 font-medium flex items-center gap-2 transition-colors text-sm sm:text-base"
             >
               View All Locations
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -787,28 +810,28 @@ export default function HomePage() {
           </div>
 
           {/* Locations Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {locations.map((location) => (
               <Link
                 key={location.name}
                 href={`/pods?location=${location.name.toLowerCase().replace(/\s+/g, '-')}`}
               >
-                <GlassCard className="p-6 group cursor-pointer">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white group-hover:text-primary-400 transition-colors">
+                <GlassCard className="p-4 sm:p-5 lg:p-6 group cursor-pointer h-full">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3 lg:mb-4 gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-800 group-hover:text-primary-600 transition-colors truncate">
                         {location.name}
                       </h3>
-                      <p className="text-sm text-white/50">{location.city}</p>
+                      <p className="text-xs sm:text-sm text-slate-400">{location.city}</p>
                     </div>
-                    <div className="flex items-center gap-1 text-amber-400">
-                      <span>★</span>
-                      <span className="text-white font-medium">{location.rating}</span>
+                    <div className="flex items-center gap-1 text-amber-500 flex-shrink-0">
+                      <span className="text-xs sm:text-sm">★</span>
+                      <span className="text-slate-700 font-medium text-xs sm:text-sm">{location.rating}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-white/50">{location.pods} pods available</span>
-                    <svg className="w-5 h-5 text-white/30 group-hover:text-primary-400 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <span className="text-[10px] sm:text-xs lg:text-sm text-slate-400">{location.pods} pods available</span>
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300 group-hover:text-primary-600 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </div>
@@ -820,45 +843,45 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="relative py-24">
+      <section className="relative py-16 sm:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full text-sm text-amber-400 mb-4">
+          <div className="text-center mb-10 sm:mb-16">
+            <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-50 border border-amber-200 rounded-full text-xs sm:text-sm text-amber-600 mb-3 sm:mb-4">
               Customer Stories
             </span>
-            <h2 className="text-4xl sm:text-5xl font-display font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-slate-800 mb-3 sm:mb-4">
               Loved by Travelers
             </h2>
-            <p className="text-lg text-white/60">
+            <p className="text-sm sm:text-base lg:text-lg text-slate-500">
               Join thousands who trust Naploo for quality rest
             </p>
           </div>
 
           {/* Testimonials Grid */}
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {testimonials.map((t, i) => (
-              <GlassCard key={i} className="p-8">
+              <GlassCard key={i} className="p-5 sm:p-6 lg:p-8">
                 {/* Rating */}
-                <div className="flex gap-1 mb-4">
+                <div className="flex gap-0.5 sm:gap-1 mb-3 sm:mb-4">
                   {Array.from({ length: t.rating }).map((_, j) => (
-                    <span key={j} className="text-amber-400">★</span>
+                    <span key={j} className="text-amber-400 text-sm sm:text-base">★</span>
                   ))}
                 </div>
                 
                 {/* Quote */}
-                <p className="text-white/70 mb-6 leading-relaxed">
+                <p className="text-slate-600 mb-4 sm:mb-6 leading-relaxed text-xs sm:text-sm lg:text-base">
                   &quot;{t.text}&quot;
                 </p>
                 
                 {/* Author */}
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center text-white font-bold">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-500 to-violet-500 flex items-center justify-center text-white font-bold text-sm sm:text-base">
                     {t.name.charAt(0)}
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{t.name}</p>
-                    <p className="text-sm text-white/50">{t.role}</p>
+                    <p className="font-semibold text-slate-800 text-sm sm:text-base">{t.name}</p>
+                    <p className="text-xs sm:text-sm text-slate-400">{t.role}</p>
                   </div>
                 </div>
               </GlassCard>
@@ -868,52 +891,51 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-24 overflow-hidden">
+      <section className="relative py-16 sm:py-24 overflow-hidden bg-gradient-to-br from-slate-900 via-primary-950 to-slate-900 text-white">
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 via-violet-600/20 to-cyan-600/20" />
-          <div className="absolute inset-0 mesh-gradient opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-600/10 via-violet-600/10 to-cyan-600/10" />
         </div>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-display font-bold text-white mb-4 sm:mb-6">
             Ready to Experience
             <br />
             <span className="gradient-text">The Future of Rest?</span>
           </h2>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto mb-10">
+          <p className="text-sm sm:text-base lg:text-lg text-white/60 max-w-2xl mx-auto mb-8 sm:mb-10">
             Book your first pod today and discover why thousands of travelers 
             choose Naploo for quality rest.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link
               href="/pods"
-              className="px-8 py-4 bg-gradient-to-r from-primary-500 via-violet-500 to-primary-600 text-white font-semibold rounded-2xl hover:shadow-glow-lg transition-all duration-300"
+              className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-primary-500 via-violet-500 to-primary-600 text-white font-semibold rounded-xl sm:rounded-2xl hover:shadow-glow-lg transition-all duration-300 text-sm sm:text-base"
             >
               Find Pods Near You
             </Link>
             <Link
               href="/signup"
-              className="px-8 py-4 bg-white/10 backdrop-blur-xl border border-white/20 text-white font-semibold rounded-2xl hover:bg-white/20 transition-all"
+              className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-xl border border-white/20 text-white font-semibold rounded-xl sm:rounded-2xl hover:bg-white/20 transition-all text-sm sm:text-base"
             >
               Create Free Account
             </Link>
           </div>
 
           {/* App Store Badges */}
-          <div className="flex flex-wrap gap-4 justify-center mt-10">
-            <a href="#" className="flex items-center gap-3 px-5 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
-              <span className="text-2xl">🍎</span>
+          <div className="flex flex-wrap gap-3 sm:gap-4 justify-center mt-8 sm:mt-10">
+            <a href="#" className="flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2.5 sm:py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg sm:rounded-xl hover:bg-white/10 transition-colors">
+              <span className="text-xl sm:text-2xl">🍎</span>
               <div className="text-left">
-                <p className="text-xs text-white/50">Download on the</p>
-                <p className="text-sm font-semibold text-white">App Store</p>
+                <p className="text-[10px] sm:text-xs text-white/50">Download on the</p>
+                <p className="text-xs sm:text-sm font-semibold text-white">App Store</p>
               </div>
             </a>
-            <a href="#" className="flex items-center gap-3 px-5 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
-              <span className="text-2xl">▶️</span>
+            <a href="#" className="flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2.5 sm:py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg sm:rounded-xl hover:bg-white/10 transition-colors">
+              <span className="text-xl sm:text-2xl">▶️</span>
               <div className="text-left">
-                <p className="text-xs text-white/50">Get it on</p>
-                <p className="text-sm font-semibold text-white">Google Play</p>
+                <p className="text-[10px] sm:text-xs text-white/50">Get it on</p>
+                <p className="text-xs sm:text-sm font-semibold text-white">Google Play</p>
               </div>
             </a>
           </div>

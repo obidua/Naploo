@@ -1,8 +1,43 @@
 # Naploo API Reference
 
 > **Version:** 3.0.0  
-> **Base URL:** `https://api.naploo.com/v1`  
-> **Last Updated:** January 2026
+> **Base URL:** `https://api.naploo.com`  
+> **Last Updated:** February 22, 2026
+
+---
+
+## ⚠️ Implementation Status
+
+> **IMPORTANT:** This document describes the **planned API specification**. Most endpoints below are **not yet implemented**. See the status summary below.
+
+### Currently Implemented (Live)
+
+| Service | Port | Status | Endpoints |
+|---------|------|--------|-----------|
+| **API Gateway** | 3000 | ✅ Running | `GET /health`, `GET /`, `GET /swagger`, `GET /api/v1/auth/health`, `GET /api/v1/bookings/health`, `GET /api/v1/investors/health`, `GET /api/v1/partners/health` |
+| **Auth Service** | 3001 | ⚠️ Stub only | `POST /send-otp` (logs to console, no MSG91), `POST /verify-otp` (returns hardcoded user), `POST /refresh` (stub), `POST /logout` (stub) |
+
+### Not Yet Implemented (Planned)
+
+| Service | Port | Status |
+|---------|------|--------|
+| Booking Service | 3002 | ❌ Empty directory |
+| Payment Service | 3003 | ❌ Empty directory |
+| Investor Service | 3004 | ❌ Empty directory |
+| Referral Service | 3005 | ❌ Empty directory |
+| Rental Service | 3006 | ❌ Empty directory |
+| Hotel Service | 3007 | ❌ Empty directory |
+| Notification Service | 3008 | ❌ Empty directory |
+| Analytics Service | 3009 | ❌ Empty directory |
+| Search Service | 3010 | ❌ Empty directory |
+
+### Live API Endpoints (Swagger)
+
+Interactive API documentation is available at: **https://api.naploo.com/swagger**
+
+---
+
+> **The sections below describe the full planned API design for all services. Implement these endpoints as each service is built.**
 
 ---
 
@@ -38,9 +73,8 @@
 
 | Environment | URL |
 |-------------|-----|
-| Production | `https://api.naploo.com/v1` |
-| Staging | `https://api-staging.naploo.com/v1` |
-| Development | `http://localhost:4000/api/v1` |
+| Production | `https://api.naploo.com` |
+| Development | `http://localhost:3000` |
 
 ### 1.2 Request Format
 

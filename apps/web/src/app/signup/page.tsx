@@ -1,20 +1,22 @@
-'use client';
+"use client";
+
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
 import { 
-  Phone, ArrowRight, Shield, User, Mail,
-  CheckCircle, Loader2, Sparkles, Gift
+  Phone, ArrowRight, Shield, User, Mail, 
+  CheckCircle, Loader2, ArrowLeft, Moon, Bed, Check
 } from 'lucide-react';
 
+type Step = 'details' | 'phone' | 'otp';
+
 export default function SignupPage() {
-  const [step, setStep] = useState<'details' | 'phone' | 'otp'>('details');
+  const [step, setStep] = useState<Step>('details');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    referralCode: ''
   });
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,36 +36,30 @@ export default function SignupPage() {
 
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.name && formData.phone.length >= 10 && agreedToTerms) {
+    if (formData.name && formData.email && agreedToTerms) {
       setStep('phone');
     }
   };
 
   const handlePhoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep('otp');
-      setCountdown(30);
-      setShowResend(false);
-    }, 1500);
+    if (formData.phone.length >= 10) {
+      setIsLoading(true);
+      setTimeout(() => {
+        setIsLoading(false);
+        setStep('otp');
+        setCountdown(30);
+        setShowResend(false);
+      }, 1500);
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) {
-      value = value[0];
-    }
-    
+    if (value.length > 1) value = value[0];
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      otpInputs.current[index + 1]?.focus();
-    }
+    if (value && index < 5) otpInputs.current[index + 1]?.focus();
   };
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -74,346 +70,383 @@ export default function SignupPage() {
 
   const handleOtpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const otpValue = otp.join('');
-    if (otpValue.length === 6) {
+    if (otp.join('').length === 6) {
       setIsLoading(true);
-      // Simulate API call
       setTimeout(() => {
         setIsLoading(false);
-        // Redirect to dashboard or home
         window.location.href = '/';
       }, 1500);
     }
   };
 
-  const handleResendOtp = () => {
-    setShowResend(false);
-    setCountdown(30);
-    // Simulate resend API call
+  const getStepNumber = () => {
+    switch (step) {
+      case 'details': return 1;
+      case 'phone': return 2;
+      case 'otp': return 3;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-naploo-dark flex">
-      {/* Left Side - Image */}
-      <div className="hidden lg:flex flex-1 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-naploo-primary/20 to-naploo-violet/20" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-violet-50">
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-violet-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] bg-primary-500/5 rounded-full blur-3xl" />
         <div className="absolute inset-0 grid-pattern opacity-10" />
-        
-        <Image
-          src="/Pods_Images/Galaxy Series/Galaxy Series Horizontal single:double bed.png"
-          alt="Sleep Pod"
-          fill
-          className="object-cover"
-        />
-        
-        <div className="absolute inset-0 bg-gradient-to-t from-naploo-dark via-transparent to-transparent" />
-        
-        {/* Feature Cards */}
-        <div className="absolute bottom-12 left-12 right-12 space-y-4">
-          <div className="glass-card p-4 rounded-xl flex items-center gap-4">
-            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-400" />
-            </div>
-            <div>
-              <p className="text-white font-medium">Instant Bookings</p>
-              <p className="text-white/50 text-sm">Book a pod in under 60 seconds</p>
+      </div>
+
+      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
+        {/* Left Side - Form */}
+        <div className="flex-1 flex flex-col min-h-screen lg:min-h-0">
+          {/* Header */}
+          <header className="p-4 sm:p-6 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary-500 to-violet-600 rounded-xl flex items-center justify-center shadow-glow">
+                <span className="text-xl sm:text-2xl font-bold text-white">N</span>
+              </div>
+              <span className="text-xl sm:text-2xl font-bold gradient-text">Naploo</span>
+            </Link>
+            <Link 
+              href="/" 
+              className="flex items-center gap-2 text-slate-400 hover:text-slate-800 transition text-sm sm:text-base"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back to Home</span>
+            </Link>
+          </header>
+
+          {/* Progress Indicator */}
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md mx-auto lg:mx-0">
+              <div className="flex items-center justify-between mb-2">
+                {['Details', 'Phone', 'Verify'].map((label, index) => (
+                  <div key={label} className="flex items-center">
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all ${
+                      getStepNumber() > index + 1 
+                        ? 'bg-green-500 text-white' 
+                        : getStepNumber() === index + 1 
+                          ? 'bg-gradient-to-r from-primary-500 to-violet-600 text-white' 
+                          : 'bg-gray-200 text-slate-400'
+                    }`}>
+                      {getStepNumber() > index + 1 ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : index + 1}
+                    </div>
+                    {index < 2 && (
+                      <div className={`w-12 sm:w-16 lg:w-20 h-0.5 mx-1 sm:mx-2 transition-all ${
+                        getStepNumber() > index + 1 ? 'bg-green-500' : 'bg-gray-200'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between text-[10px] sm:text-xs text-slate-400">
+                <span>Details</span>
+                <span className="ml-2 sm:ml-4">Phone</span>
+                <span>Verify</span>
+              </div>
             </div>
           </div>
-          
-          <div className="glass-card p-4 rounded-xl flex items-center gap-4">
-            <div className="w-10 h-10 bg-naploo-primary/20 rounded-lg flex items-center justify-center">
-              <Gift className="w-5 h-5 text-naploo-primary" />
-            </div>
-            <div>
-              <p className="text-white font-medium">Welcome Bonus</p>
-              <p className="text-white/50 text-sm">Get ₹100 off on your first booking</p>
+
+          {/* Form Content */}
+          <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8">
+              {step === 'details' && (
+                <div className="space-y-5 sm:space-y-6">
+                  <div className="text-center lg:text-left">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 mb-2">
+                      Create Account
+                    </h1>
+                    <p className="text-slate-500 text-sm sm:text-base">
+                      Join Naploo for premium rest experience
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleDetailsSubmit} className="space-y-4 sm:space-y-5">
+                    <div>
+                      <label className="block text-slate-600 text-sm mb-2">Full Name</label>
+                      <div className="relative">
+                        <User className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+                        <input
+                          type="text"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full bg-white border border-gray-200 rounded-xl pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition text-sm sm:text-base"
+                          placeholder="Enter your name"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 text-sm mb-2">Email Address</label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full bg-white border border-gray-200 rounded-xl pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition text-sm sm:text-base"
+                          placeholder="you@example.com"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <div className="relative mt-0.5">
+                        <input
+                          type="checkbox"
+                          checked={agreedToTerms}
+                          onChange={(e) => setAgreedToTerms(e.target.checked)}
+                          className="sr-only"
+                        />
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                          agreedToTerms 
+                            ? 'bg-primary-500 border-primary-500' 
+                            : 'border-gray-300 bg-transparent'
+                        }`}>
+                          {agreedToTerms && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                      </div>
+                      <span className="text-slate-500 text-xs sm:text-sm">
+                        I agree to the{' '}
+                        <Link href="/terms" className="text-primary-600 hover:underline">Terms of Service</Link>
+                        {' '}and{' '}
+                        <Link href="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
+                      </span>
+                    </label>
+
+                    <button
+                      type="submit"
+                      disabled={!formData.name || !formData.email || !agreedToTerms}
+                      className="w-full bg-gradient-to-r from-primary-500 to-violet-600 text-white py-3 sm:py-3.5 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                    >
+                      Continue
+                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
+                  </form>
+
+                  <p className="text-center text-slate-500 text-sm">
+                    Already have an account?{' '}
+                    <Link href="/login" className="text-primary-600 hover:text-primary-500 font-medium transition">
+                      Login
+                    </Link>
+                  </p>
+                </div>
+              )}
+
+              {step === 'phone' && (
+                <div className="space-y-5 sm:space-y-6">
+                  <button
+                    onClick={() => setStep('details')}
+                    className="text-slate-400 hover:text-slate-800 flex items-center gap-2 transition text-sm"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                  </button>
+
+                  <div className="text-center lg:text-left">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 mb-2">
+                      Phone Number
+                    </h1>
+                    <p className="text-slate-500 text-sm sm:text-base">
+                      We&apos;ll send you a verification code
+                    </p>
+                  </div>
+
+                  <form onSubmit={handlePhoneSubmit} className="space-y-4 sm:space-y-5">
+                    <div>
+                      <label className="block text-slate-600 text-sm mb-2">Phone Number</label>
+                      <div className="relative">
+                        <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 sm:gap-2 text-slate-400">
+                          <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="text-sm">+91</span>
+                        </div>
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                          className="w-full bg-white border border-gray-200 rounded-xl pl-20 sm:pl-24 pr-4 py-3 sm:py-3.5 text-slate-800 text-base sm:text-lg placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                          placeholder="98765 43210"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={formData.phone.length < 10 || isLoading}
+                      className="w-full bg-gradient-to-r from-primary-500 to-violet-600 text-white py-3 sm:py-3.5 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                          Sending OTP...
+                        </>
+                      ) : (
+                        <>
+                          Send OTP
+                          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {step === 'otp' && (
+                <div className="space-y-5 sm:space-y-6">
+                  <button
+                    onClick={() => setStep('phone')}
+                    className="text-slate-400 hover:text-slate-800 flex items-center gap-2 transition text-sm"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                  </button>
+
+                  <div className="text-center lg:text-left">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 mb-2">
+                      Verify OTP
+                    </h1>
+                    <p className="text-slate-500 text-sm sm:text-base">
+                      Enter the 6-digit code sent to{' '}
+                      <span className="text-slate-800 font-medium">+91 {formData.phone}</span>
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleOtpSubmit} className="space-y-4 sm:space-y-5">
+                    <div>
+                      <label className="block text-slate-600 text-sm mb-3">Enter OTP</label>
+                      <div className="flex gap-2 sm:gap-3">
+                        {otp.map((digit, index) => (
+                          <input
+                            key={index}
+                            ref={el => { otpInputs.current[index] = el; }}
+                            type="text"
+                            inputMode="numeric"
+                            value={digit}
+                            onChange={(e) => handleOtpChange(index, e.target.value)}
+                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                            className="w-full aspect-square max-w-[46px] sm:max-w-[52px] bg-white border border-gray-200 rounded-lg sm:rounded-xl text-slate-800 text-lg sm:text-2xl font-bold text-center focus:outline-none focus:border-primary-500 transition"
+                            maxLength={1}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="text-center">
+                      {showResend ? (
+                        <button
+                          type="button"
+                          onClick={() => { setShowResend(false); setCountdown(30); }}
+                          className="text-primary-600 hover:text-primary-500 transition text-sm"
+                        >
+                          Resend OTP
+                        </button>
+                      ) : (
+                        <p className="text-slate-400 text-sm">
+                          Resend OTP in <span className="text-primary-600">{countdown}s</span>
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={otp.join('').length < 6 || isLoading}
+                      className="w-full bg-gradient-to-r from-primary-500 to-violet-600 text-white py-3 sm:py-3.5 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                          Creating Account...
+                        </>
+                      ) : (
+                        <>
+                          Create Account
+                          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Right Side - Form */}
-      <div className="flex-1 flex flex-col justify-center px-8 lg:px-16 xl:px-24 relative">
-        {/* Background Effects */}
-        <div className="absolute inset-0 mesh-gradient opacity-20" />
-        <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-naploo-accent/20 rounded-full blur-[100px]" />
-        
-        <div className="relative z-10 max-w-md mx-auto w-full">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 bg-gradient-to-br from-naploo-primary to-naploo-violet rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold text-white">N</span>
+        {/* Right Side - Visual */}
+        <div className="hidden lg:flex lg:w-1/2 xl:w-2/5 relative overflow-hidden">
+          {/* Background Image */}
+          <div className="absolute inset-0">
+            <Image
+              src="/Pods_Images/For Website main images/Main Pods Image.png"
+              alt="Naploo Sleep Pod"
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-gray-50/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-slate-900/40" />
+          </div>
+
+          {/* Content Overlay */}
+          <div className="relative z-10 flex flex-col justify-end p-8 xl:p-12">
+            {/* Benefits */}
+            <div className="space-y-4 mb-8">
+              <h3 className="text-xl font-semibold text-white mb-4">Why Join Naploo?</h3>
+              {[
+                { icon: Moon, title: 'Instant Booking', desc: 'Book pods in seconds' },
+                { icon: Bed, title: 'Premium Comfort', desc: 'Climate-controlled pods' },
+                { icon: Shield, title: 'Safe & Secure', desc: 'Your privacy matters' },
+              ].map((item, i) => (
+                <div key={i} className="glass-card p-4 rounded-xl flex items-center gap-4 backdrop-blur-xl">
+                  <div className="w-10 h-10 bg-primary-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <item.icon className="w-5 h-5 text-primary-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{item.title}</p>
+                    <p className="text-white/60 text-sm">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <span className="text-2xl font-bold gradient-text">Naploo</span>
-          </Link>
 
-          {/* Progress Indicator */}
-          <div className="flex items-center gap-2 mb-8">
-            {['details', 'phone', 'otp'].map((s, index) => (
-              <div key={s} className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition ${
-                  step === s 
-                    ? 'bg-gradient-to-r from-naploo-primary to-naploo-violet text-white' 
-                    : index < ['details', 'phone', 'otp'].indexOf(step)
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-white/10 text-white/50'
-                }`}>
-                  {index < ['details', 'phone', 'otp'].indexOf(step) ? (
-                    <CheckCircle className="w-4 h-4" />
-                  ) : (
-                    index + 1
-                  )}
-                </div>
-                {index < 2 && (
-                  <div className={`w-8 h-px ${
-                    index < ['details', 'phone', 'otp'].indexOf(step)
-                      ? 'bg-green-500'
-                      : 'bg-white/20'
-                  }`} />
-                )}
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-2xl xl:text-3xl font-bold gradient-text">150+</p>
+                <p className="text-white/50 text-xs xl:text-sm">Locations</p>
               </div>
-            ))}
+              <div className="text-center">
+                <p className="text-2xl xl:text-3xl font-bold gradient-text">10K+</p>
+                <p className="text-white/50 text-xs xl:text-sm">Users</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl xl:text-3xl font-bold gradient-text">4.9</p>
+                <p className="text-white/50 text-xs xl:text-sm">Rating</p>
+              </div>
+            </div>
           </div>
+        </div>
 
-          {step === 'details' && (
-            <>
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                Create Account
-              </h1>
-              <p className="text-white/60 mb-8">
-                Join thousands of happy nappers
-              </p>
-
-              <form onSubmit={handleDetailsSubmit} className="space-y-5">
-                <div>
-                  <label className="block text-white/70 text-sm mb-2">Full Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
-                      placeholder="John Doe"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-white/70 text-sm mb-2">Email (Optional)</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
-                      placeholder="john@example.com"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-white/70 text-sm mb-2">Phone Number</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-white/50">
-                      <Phone className="w-5 h-5" />
-                      <span>+91</span>
-                    </div>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-24 pr-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition"
-                      placeholder="98765 43210"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-white/70 text-sm mb-2">
-                    Referral Code <span className="text-white/40">(Optional)</span>
-                  </label>
-                  <div className="relative">
-                    <Gift className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
-                    <input
-                      type="text"
-                      value={formData.referralCode}
-                      onChange={(e) => setFormData({...formData, referralCode: e.target.value.toUpperCase()})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-naploo-primary/50 transition uppercase"
-                      placeholder="NAPLOO100"
-                    />
-                  </div>
-                </div>
-
-                {/* Terms Checkbox */}
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="w-5 h-5 mt-0.5 rounded border-white/20 bg-white/5 text-naploo-primary focus:ring-naploo-primary/50"
-                  />
-                  <span className="text-white/60 text-sm">
-                    I agree to the{' '}
-                    <Link href="/terms" className="text-naploo-primary hover:underline">Terms of Service</Link>
-                    {' '}and{' '}
-                    <Link href="/privacy" className="text-naploo-primary hover:underline">Privacy Policy</Link>
-                  </span>
-                </label>
-
-                <button
-                  type="submit"
-                  disabled={!formData.name || formData.phone.length < 10 || !agreedToTerms}
-                  className="w-full bg-gradient-to-r from-naploo-primary to-naploo-violet text-white py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Continue
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </form>
-            </>
-          )}
-
-          {step === 'phone' && (
-            <>
-              <button
-                onClick={() => setStep('details')}
-                className="text-white/50 hover:text-white mb-8 flex items-center gap-2 transition"
-              >
-                <ArrowRight className="w-4 h-4 rotate-180" />
-                Back
-              </button>
-
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                Verify Phone
-              </h1>
-              <p className="text-white/60 mb-8">
-                We&apos;ll send an OTP to <span className="text-white">+91 {formData.phone}</span>
-              </p>
-
-              <form onSubmit={handlePhoneSubmit} className="space-y-6">
-                <div className="glass-card p-4 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-naploo-primary/20 rounded-xl flex items-center justify-center">
-                      <Phone className="w-6 h-6 text-naploo-primary" />
-                    </div>
-                    <div>
-                      <p className="text-white font-medium">+91 {formData.phone}</p>
-                      <p className="text-white/50 text-sm">Mobile Number</p>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-naploo-primary to-naploo-violet text-white py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Sending OTP...
-                    </>
-                  ) : (
-                    <>
-                      Send OTP
-                      <ArrowRight className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
-              </form>
-            </>
-          )}
-
-          {step === 'otp' && (
-            <>
-              <button
-                onClick={() => setStep('phone')}
-                className="text-white/50 hover:text-white mb-8 flex items-center gap-2 transition"
-              >
-                <ArrowRight className="w-4 h-4 rotate-180" />
-                Back
-              </button>
-
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                Enter OTP
-              </h1>
-              <p className="text-white/60 mb-8">
-                Enter the 6-digit code sent to <span className="text-white">+91 {formData.phone}</span>
-              </p>
-
-              <form onSubmit={handleOtpSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-white/70 text-sm mb-4">Enter OTP</label>
-                  <div className="flex gap-3">
-                    {otp.map((digit, index) => (
-                      <input
-                        key={index}
-                        ref={el => { otpInputs.current[index] = el; }}
-                        type="text"
-                        inputMode="numeric"
-                        value={digit}
-                        onChange={(e) => handleOtpChange(index, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="w-full aspect-square bg-white/5 border border-white/10 rounded-xl text-white text-2xl font-bold text-center focus:outline-none focus:border-naploo-primary/50 transition"
-                        maxLength={1}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  {showResend ? (
-                    <button
-                      type="button"
-                      onClick={handleResendOtp}
-                      className="text-naploo-primary hover:text-naploo-violet transition"
-                    >
-                      Resend OTP
-                    </button>
-                  ) : (
-                    <p className="text-white/50">
-                      Resend OTP in <span className="text-naploo-primary">{countdown}s</span>
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={otp.join('').length < 6 || isLoading}
-                  className="w-full bg-gradient-to-r from-naploo-primary to-naploo-violet text-white py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Creating Account...
-                    </>
-                  ) : (
-                    <>
-                      Create Account
-                      <Sparkles className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
-              </form>
-            </>
-          )}
-
-          {/* Security Badge */}
-          <div className="mt-8 flex items-center justify-center gap-2 text-white/40 text-sm">
-            <Shield className="w-4 h-4" />
-            <span>Your data is protected with 256-bit encryption</span>
+        {/* Mobile Bottom Feature */}
+        <div className="lg:hidden p-4 pb-6 border-t border-gray-200">
+          <div className="flex items-center justify-center gap-6 text-center">
+            <div>
+              <p className="text-lg font-bold gradient-text">150+</p>
+              <p className="text-slate-400 text-xs">Locations</p>
+            </div>
+            <div className="w-px h-8 bg-gray-200" />
+            <div>
+              <p className="text-lg font-bold gradient-text">10K+</p>
+              <p className="text-slate-400 text-xs">Users</p>
+            </div>
+            <div className="w-px h-8 bg-gray-200" />
+            <div>
+              <p className="text-lg font-bold gradient-text">4.9</p>
+              <p className="text-slate-400 text-xs">Rating</p>
+            </div>
           </div>
-
-          {/* Login Link */}
-          <p className="mt-8 text-center text-white/60">
-            Already have an account?{' '}
-            <Link href="/login" className="text-naploo-primary hover:text-naploo-violet transition">
-              Login
-            </Link>
-          </p>
         </div>
       </div>
     </div>

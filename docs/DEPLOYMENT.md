@@ -1,7 +1,47 @@
 # Naploo(TM) Self-Hosted Deployment Guide
 
-> Complete deployment instructions for self-hosted Linux server at naploo.com
-> **Version 3.0.0** - Microservices Architecture with Docker
+> Complete deployment instructions for self-hosted Linux server at naploo.com  
+> **Version 3.0.0** - Microservices Architecture  
+> **Last Updated:** February 22, 2026
+
+---
+
+## ⚠️ Current Deployment Status
+
+> **NOTE:** The current production deployment does **NOT** use Docker, Kafka, Elasticsearch, or container orchestration. Services run directly on the host via systemd. The architecture described below is the **planned target state**.
+
+### What's Actually Running (February 2026)
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| **naploo.com** (Customer Website) | ✅ Live | Next.js 14 on port 3100, managed by systemd |
+| **api.naploo.com** (API Gateway) | ✅ Live | Elysia/Bun on port 3000, managed by systemd |
+| **Auth Service** | ⚠️ Stub | Endpoints exist but no DB/MSG91 integration |
+| **PostgreSQL 14** | ✅ Running | Database with 19 tables via Drizzle ORM |
+| **Redis 6** | ✅ Running | Installed, not yet actively used by app |
+| **RabbitMQ** | ✅ Installed | Not yet used by any service |
+| **Nginx** | ✅ Running | Reverse proxy with Let's Encrypt SSL |
+| **Cloudflare** | ✅ Active | DNS + CDN + WAF |
+| **Docker** | ❌ Not installed | |
+| **Kafka** | ❌ Not installed | |
+| **Elasticsearch** | ❌ Not installed | |
+| **9 backend services** | ❌ Empty dirs | booking, payment, investor, referral, rental, hotel, notification, analytics, search |
+| **6 frontend apps** | ❌ Empty dirs | admin, partner, investor, associate, rental, mobile |
+
+### Process Management
+
+Services are managed via **systemd** (not PM2 or Docker):
+```bash
+sudo systemctl status naploo-web naploo-api   # Check status
+sudo systemctl restart naploo-web              # Restart web
+sudo journalctl -u naploo-api -f               # View logs
+```
+
+For detailed current operations, see **DEPLOYMENT_GUIDE.md**.
+
+---
+
+> **The sections below describe the planned full-scale deployment architecture with Docker and microservices. These should be implemented as the services are built.**
 
 ---
 
