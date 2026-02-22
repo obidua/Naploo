@@ -1,7 +1,7 @@
 # Naploo™ UI/UX Design System
 
 > Complete design specifications and guidelines for the Naploo™ ecosystem  
-> **Last Updated:** February 22, 2026
+> **Last Updated:** February 23, 2026
 
 ---
 
@@ -997,4 +997,4 @@ module.exports = {
 
 ---
 
-*Design System Version 2.0.0 | Last Updated: February 22, 2026*
+*Design System Version 2.1.0 | Last Updated: February 23, 2026*

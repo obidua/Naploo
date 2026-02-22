@@ -1,7 +1,7 @@
 # Naploo Ecosystem - Complete Project Documentation
 
-> **Version:** 4.0.0  
-> **Last Updated:** February 22, 2026  
+> **Version:** 4.1.0  
+> **Last Updated:** February 23, 2026  
 > **Company:** BIDUA Industries Pvt Ltd  
 > **Project Lead:** Development Team  
 > **Domain:** naploo.com
@@ -15,10 +15,11 @@
 | Category | Implemented | Total Planned | Progress |
 |----------|-------------|---------------|----------|
 | Frontend Apps | 1 (web) | 7 | ~14% |
-| Backend Services | 2 (gateway + auth stub) | 11 | ~10% |
+| Backend Services | 3 (gateway + auth + db) | 11 | ~27% |
 | Shared Packages | 1 (db) | 4 | 25% |
 | Database Tables | 19 | 19 | ✅ 100% |
 | Web Pages | 24 routes | 24+ | ✅ Complete |
+| Auth System | Fully dynamic | — | ✅ Complete |
 
 ### What's Live in Production
 
@@ -33,8 +34,8 @@
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| **Auth Service** | ⚠️ Stub | 4 endpoints exist but return hardcoded data, no MSG91/DB integration |
-| **API Gateway Routes** | ⚠️ Stub | `/api/v1/*` health checks exist but don't proxy to downstream services |
+| **SMS Integration** | ⚠️ Pending | OTP generated and stored in DB but not sent via SMS (no MSG91/Twilio yet). In dev mode, OTP is returned in API response. |
+| **Profile Editing** | ⚠️ Basic | Profile page reads from API but edit/save flow not fully wired to UI form |
 
 ### What's Not Started
 
@@ -409,8 +410,8 @@ Build a complete digital ecosystem enabling:
 | Platform | Technology | Priority | Deployment | Status |
 |----------|------------|----------|------------|--------|
 | Customer Website (PWA) | Next.js 14 | Phase 1 | Linux Server | ✅ Live (24 pages) |
-| API Gateway | Elysia (Bun) | Phase 1 | Linux Server | ✅ Running (stubs) |
-| Auth Service | Elysia (Bun) | Phase 1 | Linux Server | ⚠️ Stub only |
+| API Gateway | Elysia (Bun) | Phase 1 | Linux Server | ✅ Live (proxies to auth-service) |
+| Auth Service | Elysia (Bun) | Phase 1 | Linux Server | ✅ Live (real DB, JWT, OTP) |
 | Database Schema | PostgreSQL + Drizzle | Phase 1 | Linux Server | ✅ 19 tables defined |
 | Partner Portal (Hotels/Homestays) | Next.js 14 | Phase 1 | Linux Server | ❌ Not started |
 | Customer Mobile App | React Native + Expo | Phase 2 | App Stores | ❌ Not started |
@@ -555,16 +556,16 @@ Build a complete digital ecosystem enabling:
                                         v
 +-------------------------------------------------------------------------+
 |                     ✅ API GATEWAY (Elysia on port 3000)                 |
-|                  (Health checks, Swagger — stubs only)                   |
+|              (Proxies to auth-service, Swagger, health checks)           |
 +-------------------------------------------------------------------------+
                                         |
         +---------------+---------------+--------- ... --------+
         |               |                                       |
         v               v                                       v
 +-------------+ +-------------+                         +-------------+
-| ⚠️ AUTH    | | ❌ BOOKING  |  ... 9 more services     | ❌ SEARCH   |
+| ✅ AUTH     | | ❌ BOOKING  |  ... 9 more services     | ❌ SEARCH   |
 |   SERVICE   | |   SERVICE   |      all ❌ empty        |   SERVICE   |
-| (Stub only) | |             |                         |             |
+| (port 3001) | |             |                         |             |
 +-------------+ +-------------+                         +-------------+
                                         |
                                         v
@@ -588,8 +589,8 @@ Build a complete digital ecosystem enabling:
 
 | Service | Port | Responsibility | Status |
 |---------|------|----------------|--------|
-| **api-gateway** | 3000 | Request routing, health checks, Swagger | ✅ Running (stub routes) |
-| **auth-service** | 3001 | OTP send/verify, JWT (hardcoded) | ⚠️ Stub (no DB, no MSG91) |
+| **api-gateway** | 3000 | Request routing, proxies to auth-service, Swagger | ✅ Live |
+| **auth-service** | 3001 | OTP send/verify, JWT (access+refresh), profile | ✅ Live (PostgreSQL, Drizzle ORM) |
 | **booking-service** | 3002 | Pod & room bookings, availability | ❌ Empty directory |
 | **payment-service** | 3003 | Razorpay integration, refunds | ❌ Empty directory |
 | **investor-service** | 3004 | Pool management, pod sets, 3x tracking | ❌ Empty directory |
@@ -740,7 +741,7 @@ Associate                   Frontend                   Backend
 | **Language** | TypeScript | 5.x | Type safety | ✅ In use |
 | **ORM** | Drizzle ORM | Latest | Type-safe database access | ✅ In use |
 | **Validation** | TypeBox (via Elysia) | Latest | Request validation | ✅ In use (auth-service) |
-| **Auth** | JWT via @elysiajs/jwt | Latest | Authentication | ✅ In use (stub) |
+| **Auth** | JWT via @elysiajs/jwt | Latest | Authentication (dual JWT: access 15min + refresh 7d) | ✅ In use |
 | **API Documentation** | @elysiajs/swagger | Latest | Auto-generated docs | ✅ Live at /swagger |
 | **CORS** | @elysiajs/cors | Latest | Cross-origin support | ✅ In use |
 | **Message Broker** | RabbitMQ (installed) / Kafka (planned) | — | Event streaming | ❌ Not integrated |
@@ -846,17 +847,17 @@ naploo-ecosystem/
 |
 +-- services/
 |   |
-|   +-- api-gateway/                # ✅ Implemented
+|   +-- api-gateway/                # ✅ Live
 |   |   +-- src/
-|   |   |   +-- index.ts            # 76 lines - Gateway with Swagger, health checks, /api/v1 stubs
+|   |   |   +-- index.ts            # ~244 lines - Gateway proxying to auth-service + Swagger
 |   |   +-- dist/                   # ✅ Built
 |   |   +-- package.json            # Elysia + cors + swagger + jwt + @naploo/db
 |   |
-|   +-- auth-service/               # ⚠️ Stub implementation
+|   +-- auth-service/               # ✅ Live (fully functional)
 |   |   +-- src/
-|   |   |   +-- index.ts            # 111 lines - send-otp, verify-otp, refresh, logout (all stubs)
+|   |   |   +-- index.ts            # ~425 lines - send-otp, verify-otp, refresh, me, profile, logout (all real DB)
 |   |   +-- dist/                   # ✅ Built
-|   |   +-- package.json            # Elysia + cors + jwt + @naploo/db
+|   |   +-- package.json            # Elysia + cors + jwt + @naploo/db + drizzle-orm
 |   |
 |   +-- booking-service/            # ❌ Empty directory
 |   +-- payment-service/            # ❌ Empty directory
@@ -2151,16 +2152,18 @@ See [API_REFERENCE.md](./API_REFERENCE.md) for complete API documentation.
 | `/api/v1/investors/health` | GET | ✅ Live (stub) |
 | `/api/v1/partners/health` | GET | ✅ Live (stub) |
 
-> **Note:** All `/api/v1/*` health checks return static JSON objects — no actual service proxying is implemented yet.
+> **Note:** Auth routes are fully proxied to auth-service. Other `/api/v1/*` health checks still return static JSON.
 
-### 8.2 Auth Service Endpoints (Stub)
+### 8.2 Auth Service Endpoints (Live)
 
-| Endpoint | Method | Status |
-|----------|--------|--------|
-| `/send-otp` | POST | ⚠️ Generates random OTP, logs to console only |
-| `/verify-otp` | POST | ⚠️ Returns hardcoded user + JWT |
-| `/refresh` | POST | ⚠️ Stub |
-| `/logout` | POST | ⚠️ Stub |
+| Endpoint | Method | Status | Details |
+|----------|--------|--------|----------|
+| `POST /api/v1/auth/send-otp` | POST | ✅ Live | Generates OTP, stores in DB (5min expiry), rate limited 5/10min |
+| `POST /api/v1/auth/verify-otp` | POST | ✅ Live | Verifies OTP from DB, creates/finds user, returns JWT access+refresh tokens |
+| `POST /api/v1/auth/refresh` | POST | ✅ Live | Validates refresh token, issues new access+refresh pair |
+| `GET /api/v1/auth/me` | GET | ✅ Live | Returns authenticated user profile (requires Bearer token) |
+| `PATCH /api/v1/auth/profile` | PATCH | ✅ Live | Updates user profile fields (firstName, lastName, email, city, state) |
+| `POST /api/v1/auth/logout` | POST | ✅ Live | Invalidates refresh token in DB |
 
 ### 8.3 Planned API Endpoints (Not Implemented)
 
@@ -2228,20 +2231,22 @@ See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for complete design guidelines.
 - [x] Set up PostgreSQL + Drizzle ORM (19 tables, 1 migration)
 - [ ] Set up Kafka for event streaming (❌ not installed)
 - [x] Customer website — 24 pages live at naploo.com
-- [x] API Gateway — running with health stubs
-- [ ] Auth service — stub only (no DB integration, no real OTP)
+- [x] API Gateway — live, proxies auth routes to auth-service
+- [x] Auth service — fully dynamic (PostgreSQL, Drizzle ORM, JWT, OTP in DB)
 - [ ] Build partner portal (❌ not started)
 - [ ] Build admin dashboard (❌ not started)
 - [x] Domain + SSL + Cloudflare + Nginx configured
 - [x] systemd services for auto-restart
 
 ### Phase 2: Backend Services (Next Priority)
-- [ ] Implement real auth service (MSG91 OTP, JWT with DB, refresh tokens)
+- [x] Implement real auth service (OTP in DB, dual JWT access+refresh, profile CRUD) ✅
+- [ ] Integrate SMS provider (MSG91/Twilio) for OTP delivery
 - [ ] Implement booking service (availability, pricing, checkout)
 - [ ] Implement payment service (Razorpay integration)
 - [ ] Implement hotel/partner service (listings, management)
-- [ ] API Gateway → actual service proxying (not stubs)
-- [ ] Connect frontend to real APIs (replace mock data)
+- [x] API Gateway → proxies to auth-service ✅
+- [x] Connect frontend auth pages to real APIs (login, signup, profile) ✅
+- [ ] Connect frontend to remaining real APIs (replace mock data)
 
 ### Phase 3: Investor Pool
 - [ ] Investor pool enrollment + KYC

@@ -8,25 +8,21 @@ import {
   Phone, ArrowRight, Shield, Sparkles, 
   CheckCircle, Loader2, ArrowLeft, Moon, Bed
 } from 'lucide-react';
-
-// Test user credentials for demo
-const TEST_USER = {
-  phone: '9999999999',
-  otp: '123456',
-  name: 'Test Customer',
-  email: 'test@naploo.com',
-};
+import { authApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
 
 
 export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
-  const [showTestInfo, setShowTestInfo] = useState(false);
+  const [error, setError] = useState('');
+  const [devOtp, setDevOtp] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [showResend, setShowResend] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
+  const { setUser, setTokens } = useAuthStore();
 
   useEffect(() => {
     if (step === 'otp' && countdown > 0) {
@@ -37,16 +33,28 @@ export default function LoginPage() {
     }
   }, [step, countdown]);
 
-  const handlePhoneSubmit = (e: React.FormEvent) => {
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     if (phone.length >= 10) {
       setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        setStep('otp');
-        setCountdown(30);
-        setShowResend(false);
-      }, 1500);
+      try {
+        const result = await authApi.sendOtp(phone);
+        if (result.data?.success) {
+          // In dev mode, the OTP is returned in the response
+          if (result.data.otp) {
+            setDevOtp(result.data.otp);
+          }
+          setStep('otp');
+          setCountdown(30);
+          setShowResend(false);
+        } else {
+          setError(result.data?.message || result.error || 'Failed to send OTP');
+        }
+      } catch {
+        setError('Network error. Please try again.');
+      }
+      setIsLoading(false);
     }
   };
 
@@ -64,43 +72,50 @@ export default function LoginPage() {
     }
   };
 
-  const handleOtpSubmit = (e: React.FormEvent) => {
+  const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpValue = otp.join('');
+    setError('');
     if (otpValue.length === 6) {
       setIsLoading(true);
-      // Check if test user
-      if (phone === TEST_USER.phone && otpValue === TEST_USER.otp) {
-        // Store test user in localStorage for demo
-        localStorage.setItem('naploo_user', JSON.stringify({
-          id: 'test-user-001',
-          name: TEST_USER.name,
-          phone: TEST_USER.phone,
-          email: TEST_USER.email,
-          isLoggedIn: true,
-        }));
-        setTimeout(() => {
-          setIsLoading(false);
+      try {
+        const result = await authApi.verifyOtp(phone, otpValue);
+        if (result.data?.success) {
+          // Store auth state in Zustand
+          const userData = result.data.user;
+          setUser({
+            id: userData.id,
+            phone: userData.phone,
+            firstName: userData.firstName || undefined,
+            lastName: userData.lastName || undefined,
+            email: userData.email || undefined,
+            avatar: userData.avatar || undefined,
+            role: userData.role,
+            status: userData.status,
+          });
+          setTokens(result.data.accessToken, result.data.refreshToken);
+          
           window.location.href = '/profile';
-        }, 1500);
-      } else {
-        // For demo, accept any OTP for any phone
-        localStorage.setItem('naploo_user', JSON.stringify({
-          id: 'user-' + Date.now(),
-          phone: phone,
-          isLoggedIn: true,
-        }));
-        setTimeout(() => {
-          setIsLoading(false);
-          window.location.href = '/profile';
-        }, 1500);
+        } else {
+          setError(result.data?.message || result.error || 'Invalid OTP');
+        }
+      } catch {
+        setError('Network error. Please try again.');
       }
+      setIsLoading(false);
     }
   };
   
-  const fillTestCredentials = () => {
-    setPhone(TEST_USER.phone);
-    setShowTestInfo(true);
+  const handleResendOtp = async () => {
+    setShowResend(false);
+    setCountdown(30);
+    setError('');
+    try {
+      const result = await authApi.sendOtp(phone);
+      if (result.data?.otp) {
+        setDevOtp(result.data.otp);
+      }
+    } catch {}
   };
 
   return (
@@ -157,12 +172,13 @@ export default function LoginPage() {
                         <input
                           type="tel"
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); setError(''); }}
                           className="w-full bg-white border border-gray-200 rounded-xl pl-20 sm:pl-24 pr-4 py-3.5 sm:py-4 text-slate-800 text-base sm:text-lg placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
                           placeholder="98765 43210"
                           required
                         />
                       </div>
+                      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                     </div>
 
                     <button
@@ -216,6 +232,11 @@ export default function LoginPage() {
                       Enter the 6-digit code sent to{' '}
                       <span className="text-slate-800 font-medium">+91 {phone}</span>
                     </p>
+                    {devOtp && (
+                      <p className="text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs mt-2">
+                        Dev Mode OTP: <span className="font-bold font-mono">{devOtp}</span>
+                      </p>
+                    )}
                   </div>
 
                   <form onSubmit={handleOtpSubmit} className="space-y-5 sm:space-y-6">
@@ -242,7 +263,7 @@ export default function LoginPage() {
                       {showResend ? (
                         <button
                           type="button"
-                          onClick={() => { setShowResend(false); setCountdown(30); }}
+                          onClick={handleResendOtp}
                           className="text-primary-600 hover:text-primary-500 transition text-sm sm:text-base"
                         >
                           Resend OTP
@@ -271,6 +292,7 @@ export default function LoginPage() {
                         </>
                       )}
                     </button>
+                    {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
                   </form>
                 </div>
               )}

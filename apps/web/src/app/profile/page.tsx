@@ -9,14 +9,8 @@ import {
   MapPin, ChevronRight, Edit2, Phone, Mail,
   Wallet, Gift, Bell, Shield, HelpCircle
 } from 'lucide-react';
-
-interface UserData {
-  id: string;
-  name?: string;
-  phone: string;
-  email?: string;
-  isLoggedIn: boolean;
-}
+import { authApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
 
 // Sample booking data
 const recentBookings = [
@@ -61,40 +55,62 @@ const menuItems = [
 ];
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<UserData | null>(null);
+  const { user, token, refreshToken, logout, setUser } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('naploo_user');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        if (parsed.isLoggedIn) {
-          setUser(parsed);
-        } else {
-          router.push('/login');
-        }
-      } catch (e) {
-        router.push('/login');
-      }
-    } else {
+    if (!user || !token) {
       router.push('/login');
+      setLoading(false);
+      return;
     }
-    setLoading(false);
-  }, [router]);
+    // Fetch fresh profile from API
+    authApi.getMe().then(res => {
+      if (res.data?.user) {
+        const u = res.data.user;
+        setUser({
+          id: u.id,
+          phone: u.phone,
+          firstName: u.firstName || undefined,
+          lastName: u.lastName || undefined,
+          email: u.email || undefined,
+          avatar: u.avatar || undefined,
+          role: u.role,
+          status: u.status,
+          city: u.city || undefined,
+          state: u.state || undefined,
+          phoneVerified: u.phoneVerified,
+          emailVerified: u.emailVerified,
+          createdAt: u.createdAt,
+        });
+      }
+    }).catch(() => {
+      // Token might be expired, try to stay on page with cached data
+    }).finally(() => setLoading(false));
+  }, [router, user, token, setUser]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('naploo_user');
+  const handleLogout = async () => {
+    try {
+      await authApi.logout(refreshToken || undefined);
+    } catch {
+      // ignore
+    }
+    logout();
     router.push('/');
   };
 
-  const getInitials = (name?: string, phone?: string) => {
-    if (name) {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const getInitials = (firstName?: string, lastName?: string, phone?: string) => {
+    if (firstName && lastName) {
+      return (firstName[0] + lastName[0]).toUpperCase();
+    }
+    if (firstName) {
+      return firstName.slice(0, 2).toUpperCase();
     }
     return phone?.slice(-2) || 'U';
   };
+
+  const displayName = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || 'User' : 'User';
 
   if (loading) {
     return (
@@ -122,15 +138,15 @@ export default function ProfilePage() {
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center text-white text-lg sm:text-2xl font-bold shadow-glow">
-                {getInitials(user.name, user.phone)}
+                {getInitials(user?.firstName, user?.lastName, user?.phone)}
               </div>
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-slate-800">{user.name || 'User'}</h1>
+                <h1 className="text-lg sm:text-2xl font-bold text-slate-800">{displayName}</h1>
                 <div className="flex items-center gap-2 mt-0.5 sm:mt-1 text-slate-500">
                   <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="text-xs sm:text-sm">{user.phone}</span>
+                  <span className="text-xs sm:text-sm">{user?.phone}</span>
                 </div>
-                {user.email && (
+                {user?.email && (
                   <div className="flex items-center gap-2 mt-0.5 sm:mt-1 text-slate-500">
                     <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="text-xs sm:text-sm truncate max-w-[150px] sm:max-w-full">{user.email}</span>

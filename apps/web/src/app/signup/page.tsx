@@ -8,10 +8,13 @@ import {
   Phone, ArrowRight, Shield, User, Mail, 
   CheckCircle, Loader2, ArrowLeft, Moon, Bed, Check
 } from 'lucide-react';
+import { authApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
 
 type Step = 'details' | 'phone' | 'otp';
 
 export default function SignupPage() {
+  const { setUser, setTokens } = useAuthStore();
   const [step, setStep] = useState<Step>('details');
   const [formData, setFormData] = useState({
     name: '',
@@ -23,6 +26,8 @@ export default function SignupPage() {
   const [showResend, setShowResend] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [error, setError] = useState('');
+  const [devOtp, setDevOtp] = useState('');
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -41,17 +46,37 @@ export default function SignupPage() {
     }
   };
 
-  const handlePhoneSubmit = (e: React.FormEvent) => {
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.phone.length >= 10) {
       setIsLoading(true);
-      setTimeout(() => {
+      setError('');
+      try {
+        const res = await authApi.sendOtp(formData.phone);
+        if (res.data?.success) {
+          if (res.data.otp) setDevOtp(res.data.otp);
+          setStep('otp');
+          setCountdown(30);
+          setShowResend(false);
+        } else {
+          setError(res.data?.message || res.error || 'Failed to send OTP');
+        }
+      } catch {
+        setError('Network error. Please try again.');
+      } finally {
         setIsLoading(false);
-        setStep('otp');
-        setCountdown(30);
-        setShowResend(false);
-      }, 1500);
+      }
     }
+  };
+
+  const handleResendOtp = async () => {
+    setShowResend(false);
+    setCountdown(30);
+    setError('');
+    try {
+      const res = await authApi.sendOtp(formData.phone);
+      if (res.data?.otp) setDevOtp(res.data.otp);
+    } catch {}
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -68,14 +93,35 @@ export default function SignupPage() {
     }
   };
 
-  const handleOtpSubmit = (e: React.FormEvent) => {
+  const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otp.join('').length === 6) {
       setIsLoading(true);
-      setTimeout(() => {
+      setError('');
+      try {
+        const res = await authApi.verifyOtp(formData.phone, otp.join(''), formData.name, formData.email);
+        if (res.data?.success) {
+          const userData = res.data.user;
+          setUser({
+            id: userData.id,
+            phone: userData.phone,
+            firstName: userData.firstName || undefined,
+            lastName: userData.lastName || undefined,
+            email: userData.email || undefined,
+            avatar: userData.avatar || undefined,
+            role: userData.role,
+            status: userData.status,
+          });
+          setTokens(res.data.accessToken, res.data.refreshToken);
+          window.location.href = '/';
+        } else {
+          setError(res.data?.message || res.error || 'Invalid OTP');
+        }
+      } catch {
+        setError('Network error. Please try again.');
+      } finally {
         setIsLoading(false);
-        window.location.href = '/';
-      }, 1500);
+      }
     }
   };
 
@@ -271,6 +317,7 @@ export default function SignupPage() {
                           required
                         />
                       </div>
+                      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                     </div>
 
                     <button
@@ -312,6 +359,11 @@ export default function SignupPage() {
                       Enter the 6-digit code sent to{' '}
                       <span className="text-slate-800 font-medium">+91 {formData.phone}</span>
                     </p>
+                    {devOtp && (
+                      <p className="text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs mt-2">
+                        Dev Mode OTP: <span className="font-bold font-mono">{devOtp}</span>
+                      </p>
+                    )}
                   </div>
 
                   <form onSubmit={handleOtpSubmit} className="space-y-4 sm:space-y-5">
@@ -338,7 +390,7 @@ export default function SignupPage() {
                       {showResend ? (
                         <button
                           type="button"
-                          onClick={() => { setShowResend(false); setCountdown(30); }}
+                          onClick={handleResendOtp}
                           className="text-primary-600 hover:text-primary-500 transition text-sm"
                         >
                           Resend OTP
@@ -367,14 +419,13 @@ export default function SignupPage() {
                         </>
                       )}
                     </button>
+                    {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
                   </form>
                 </div>
               )}
             </div>
           </div>
         </div>
-
-        {/* Right Side - Visual */}
         <div className="hidden lg:flex lg:w-1/2 xl:w-2/5 relative overflow-hidden">
           {/* Background Image */}
           <div className="absolute inset-0">

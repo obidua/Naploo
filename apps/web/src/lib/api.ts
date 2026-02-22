@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//api.${window.location.hostname}` : 'http://localhost:3000');
 
 interface ApiResponse<T> {
   data?: T;
@@ -6,11 +6,27 @@ interface ApiResponse<T> {
   status: number;
 }
 
+// Get auth tokens from zustand persisted store
+function getAuthTokens() {
+  if (typeof window === 'undefined') return { token: null, refreshToken: null };
+  try {
+    const stored = localStorage.getItem('naploo-auth');
+    if (!stored) return { token: null, refreshToken: null };
+    const parsed = JSON.parse(stored);
+    return {
+      token: parsed?.state?.token || null,
+      refreshToken: parsed?.state?.refreshToken || null,
+    };
+  } catch {
+    return { token: null, refreshToken: null };
+  }
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const { token } = getAuthTokens();
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -27,6 +43,27 @@ async function request<T>(
     const data = await response.json();
 
     if (!response.ok) {
+      // If token expired, try to refresh
+      if (response.status === 401 && token) {
+        const refreshResult = await tryRefreshToken();
+        if (refreshResult) {
+          // Retry the original request with new token
+          const retryHeaders: HeadersInit = {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${refreshResult}`,
+            ...options.headers,
+          };
+          const retryResponse = await fetch(`${API_URL}${endpoint}`, {
+            ...options,
+            headers: retryHeaders,
+          });
+          const retryData = await retryResponse.json();
+          if (retryResponse.ok) {
+            return { data: retryData, status: retryResponse.status };
+          }
+        }
+      }
+
       return {
         error: data.message || 'Something went wrong',
         status: response.status,
@@ -42,6 +79,42 @@ async function request<T>(
       error: 'Network error. Please try again.',
       status: 0,
     };
+  }
+}
+
+// Try to refresh the access token
+async function tryRefreshToken(): Promise<string | null> {
+  const { refreshToken } = getAuthTokens();
+  if (!refreshToken) return null;
+
+  try {
+    const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    if (data.success && data.accessToken) {
+      // Update the zustand store via localStorage
+      try {
+        const stored = localStorage.getItem('naploo-auth');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          parsed.state.token = data.accessToken;
+          if (data.user) {
+            parsed.state.user = data.user;
+          }
+          localStorage.setItem('naploo-auth', JSON.stringify(parsed));
+        }
+      } catch {}
+      return data.accessToken;
+    }
+    return null;
+  } catch {
+    return null;
   }
 }
 
@@ -71,15 +144,57 @@ export const api = {
 
 // Auth API
 export const authApi = {
-  sendOtp: (phone: string) => api.post('/api/v1/auth/send-otp', { phone }),
-  verifyOtp: (phone: string, otp: string) =>
-    api.post<{ token: string; refreshToken: string; user: unknown }>(
-      '/api/v1/auth/verify-otp',
-      { phone, otp }
-    ),
+  sendOtp: (phone: string) => api.post<{ success: boolean; message: string; otp?: string }>('/api/v1/auth/send-otp', { phone }),
+  verifyOtp: (phone: string, otp: string, name?: string, email?: string) =>
+    api.post<{
+      success: boolean;
+      message: string;
+      isNewUser: boolean;
+      user: {
+        id: string;
+        phone: string;
+        email: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        avatar: string | null;
+        role: string;
+        status: string;
+      };
+      accessToken: string;
+      refreshToken: string;
+    }>('/api/v1/auth/verify-otp', { phone, otp, name, email }),
   refreshToken: (refreshToken: string) =>
-    api.post<{ token: string }>('/api/v1/auth/refresh', { refreshToken }),
-  logout: () => api.post('/api/v1/auth/logout', {}),
+    api.post<{ success: boolean; accessToken: string }>('/api/v1/auth/refresh', { refreshToken }),
+  getMe: () =>
+    api.get<{
+      success: boolean;
+      user: {
+        id: string;
+        phone: string;
+        email: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        avatar: string | null;
+        role: string;
+        status: string;
+        city: string | null;
+        state: string | null;
+        phoneVerified: boolean;
+        emailVerified: boolean;
+        createdAt: string;
+      };
+    }>('/api/v1/auth/me'),
+  updateProfile: (data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    avatar?: string;
+    city?: string;
+    state?: string;
+    address?: string;
+    pincode?: string;
+  }) => api.patch<{ success: boolean; message: string; user: unknown }>('/api/v1/auth/profile', data),
+  logout: (refreshToken?: string) => api.post('/api/v1/auth/logout', { refreshToken }),
 };
 
 // Pods API

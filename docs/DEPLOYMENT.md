@@ -1,8 +1,8 @@
 # Naploo(TM) Self-Hosted Deployment Guide
 
 > Complete deployment instructions for self-hosted Linux server at naploo.com  
-> **Version 3.0.0** - Microservices Architecture  
-> **Last Updated:** February 22, 2026
+> **Version 3.1.0** - Microservices Architecture  
+> **Last Updated:** February 23, 2026
 
 ---
 
@@ -16,7 +16,7 @@
 |-----------|--------|---------|
 | **naploo.com** (Customer Website) | ✅ Live | Next.js 14 on port 3100, managed by systemd |
 | **api.naploo.com** (API Gateway) | ✅ Live | Elysia/Bun on port 3000, managed by systemd |
-| **Auth Service** | ⚠️ Stub | Endpoints exist but no DB/MSG91 integration |
+| **Auth Service** | ✅ Live | Full auth with PostgreSQL, Drizzle ORM, dual JWT (access 15min + refresh 7d), OTP stored in DB |
 | **PostgreSQL 14** | ✅ Running | Database with 19 tables via Drizzle ORM |
 | **Redis 6** | ✅ Running | Installed, not yet actively used by app |
 | **RabbitMQ** | ✅ Installed | Not yet used by any service |
@@ -32,9 +32,9 @@
 
 Services are managed via **systemd** (not PM2 or Docker):
 ```bash
-sudo systemctl status naploo-web naploo-api   # Check status
-sudo systemctl restart naploo-web              # Restart web
-sudo journalctl -u naploo-api -f               # View logs
+sudo systemctl status naploo-web naploo-api naploo-auth   # Check all 3 services
+sudo systemctl restart naploo-auth naploo-api naploo-web   # Restart all
+sudo journalctl -u naploo-auth -f                          # View auth logs
 ```
 
 For detailed current operations, see **DEPLOYMENT_GUIDE.md**.

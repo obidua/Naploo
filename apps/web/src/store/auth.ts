@@ -4,9 +4,17 @@ import { persist } from 'zustand/middleware';
 interface User {
   id: string;
   phone: string;
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   avatar?: string;
+  role?: string;
+  status?: string;
+  city?: string;
+  state?: string;
+  phoneVerified?: boolean;
+  emailVerified?: boolean;
+  createdAt?: string;
 }
 
 interface AuthState {
@@ -18,13 +26,14 @@ interface AuthState {
   
   setUser: (user: User) => void;
   setTokens: (token: string, refreshToken: string) => void;
+  updateUser: (data: Partial<User>) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       refreshToken: null,
@@ -35,12 +44,25 @@ export const useAuthStore = create<AuthState>()(
       
       setTokens: (token, refreshToken) => set({ token, refreshToken }),
       
-      logout: () => set({
-        user: null,
-        token: null,
-        refreshToken: null,
-        isAuthenticated: false,
-      }),
+      updateUser: (data) => {
+        const current = get().user;
+        if (current) {
+          set({ user: { ...current, ...data } });
+        }
+      },
+      
+      logout: () => {
+        // Also clear legacy localStorage key
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('naploo_user');
+        }
+        set({
+          user: null,
+          token: null,
+          refreshToken: null,
+          isAuthenticated: false,
+        });
+      },
       
       setLoading: (isLoading) => set({ isLoading }),
     }),

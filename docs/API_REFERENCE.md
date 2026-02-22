@@ -1,8 +1,8 @@
 # Naploo API Reference
 
-> **Version:** 3.0.0  
+> **Version:** 3.1.0  
 > **Base URL:** `https://api.naploo.com`  
-> **Last Updated:** February 22, 2026
+> **Last Updated:** February 23, 2026
 
 ---
 
@@ -37,7 +37,7 @@ Interactive API documentation is available at: **https://api.naploo.com/swagger*
 
 ---
 
-> **The sections below describe the full planned API design for all services. Implement these endpoints as each service is built.**
+> **The sections below describe the full planned API design for all services. Auth endpoints (5.1) reflect the live implementation. Other endpoints describe future specifications.**
 
 ---
 
@@ -250,37 +250,36 @@ X-RateLimit-Reset: 1706007600
 
 ## 5. Endpoints
 
-## 5.1 Auth
+## 5.1 Auth ✅ LIVE
+
+> **Status:** All auth endpoints below are **fully implemented** and live at `https://api.naploo.com`. OTP is stored in PostgreSQL with 5-minute expiry. In development mode (`NODE_ENV=development`), the OTP is returned in the response for testing.
 
 ### Send OTP
 
-Send OTP to phone number for authentication.
+Send OTP to phone number for authentication. Rate limited to 5 requests per 10 minutes per phone number.
 
 ```http
-POST /auth/send-otp
+POST /api/v1/auth/send-otp
 ```
 
 **Request Body:**
 ```json
 {
-  "phone": "+919876543210",
-  "purpose": "LOGIN"
+  "phone": "9876543210"
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| phone | string | Yes | Phone with country code |
-| purpose | string | Yes | `LOGIN`, `REGISTER`, `RESET_PASSWORD` |
+| phone | string | Yes | 10-digit phone number (auto-prefixed with +91) |
 
 **Response:** `200 OK`
 ```json
 {
   "success": true,
-  "data": {
-    "expiresIn": 300,
-    "maskedPhone": "+91****3210"
-  }
+  "message": "OTP sent successfully",
+  "expiresIn": 300,
+  "devOtp": "123456"  // Only in NODE_ENV=development
 }
 ```
 
@@ -288,139 +287,61 @@ POST /auth/send-otp
 
 ### Verify OTP
 
-Verify the OTP code sent to phone.
+Verify the OTP code sent to phone. Creates a new user if phone is not registered. Returns JWT access and refresh tokens.
 
 ```http
-POST /auth/verify-otp
+POST /api/v1/auth/verify-otp
 ```
 
 **Request Body:**
 ```json
 {
-  "phone": "+919876543210",
-  "code": "123456",
-  "purpose": "LOGIN"
+  "phone": "9876543210",
+  "otp": "123456",
+  "name": "John Doe",     // Optional, used for new user registration
+  "email": "john@example.com"  // Optional
 }
 ```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| phone | string | Yes | 10-digit phone number |
+| otp | string | Yes | 6-digit OTP code |
+| name | string | No | Full name (for new users) |
+| email | string | No | Email (for new users) |
 
 **Response:** `200 OK`
 ```json
 {
   "success": true,
-  "data": {
-    "verified": true,
-    "isNewUser": false,
-    "verificationToken": "vt_xxxx"
-  }
+  "user": {
+    "id": "uuid",
+    "phone": "+919876543210",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "role": "CUSTOMER",
+    "status": "active",
+    "city": null,
+    "state": null,
+    "phoneVerified": true,
+    "emailVerified": false,
+    "createdAt": "2026-02-22T10:00:00.000Z"
+  },
+  "token": "eyJhbG...",
+  "refreshToken": "eyJhbG...",
+  "isNewUser": false
 }
 ```
 
 ---
 
-### Register
+### Get Profile (Me)
 
-Create a new user account.
-
-```http
-POST /auth/register
-Authorization: Bearer {verification_token}
-```
-
-**Request Body:**
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "phone": "+919876543210"
-}
-```
-
-**Response:** `201 Created`
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": "usr_xxxx",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "phone": "+919876543210",
-      "role": "CUSTOMER"
-    },
-    "accessToken": "eyJhbG...",
-    "refreshToken": "rt_xxxx",
-    "expiresIn": 900
-  }
-}
-```
-
----
-
-### Login
-
-Authenticate existing user after OTP verification.
+Get the authenticated user's profile.
 
 ```http
-POST /auth/login
-```
-
-**Request Body:**
-```json
-{
-  "phone": "+919876543210",
-  "verificationToken": "vt_xxxx"
-}
-```
-
-**Response:** `200 OK`
-```json
-{
-  "success": true,
-  "data": {
-    "user": { ... },
-    "accessToken": "eyJhbG...",
-    "refreshToken": "rt_xxxx",
-    "expiresIn": 900
-  }
-}
-```
-
----
-
-### Refresh Token
-
-Get new access token using refresh token.
-
-```http
-POST /auth/refresh
-```
-
-**Request Body:**
-```json
-{
-  "refreshToken": "rt_xxxx"
-}
-```
-
-**Response:** `200 OK`
-```json
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbG...",
-    "expiresIn": 900
-  }
-}
-```
-
----
-
-### Logout
-
-Invalidate current session.
-
-```http
-POST /auth/logout
+GET /api/v1/auth/me
 Authorization: Bearer {access_token}
 ```
 
@@ -428,13 +349,107 @@ Authorization: Bearer {access_token}
 ```json
 {
   "success": true,
-  "message": "Logged out successfully"
+  "user": {
+    "id": "uuid",
+    "phone": "+919876543210",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "role": "CUSTOMER",
+    "status": "active",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "phoneVerified": true,
+    "emailVerified": false,
+    "createdAt": "2026-02-22T10:00:00.000Z"
+  }
 }
 ```
 
 ---
 
-## 5.2 Users
+### Update Profile
+
+Update the authenticated user's profile fields.
+
+```http
+PATCH /api/v1/auth/profile
+Authorization: Bearer {access_token}
+```
+
+**Request Body:**
+```json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "email": "johnsmith@example.com",
+  "city": "Mumbai",
+  "state": "Maharashtra"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "user": { ... }
+}
+```
+
+---
+
+### Refresh Token
+
+Get new access and refresh tokens using a valid refresh token.
+
+```http
+POST /api/v1/auth/refresh
+```
+
+**Request Body:**
+```json
+{
+  "refreshToken": "eyJhbG..."
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "token": "eyJhbG...",
+  "refreshToken": "eyJhbG..."
+}
+```
+
+---
+
+### Logout
+
+Invalidate refresh token in the database.
+
+```http
+POST /api/v1/auth/logout
+```
+
+**Request Body:**
+```json
+{
+  "refreshToken": "eyJhbG..."
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Logged out"
+}
+```
+
+---
+
+## 5.2 Users (Planned)
 
 ### Get Profile
 

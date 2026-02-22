@@ -12,7 +12,8 @@
     "elysia": "^1.2.0",
     "@elysiajs/cors": "^1.1.0",
     "@elysiajs/jwt": "^1.1.0",
-    "@naploo/db": "workspace:*"
+    "@naploo/db": "workspace:*",
+    "drizzle-orm": "^0.39.0"
   },
   "devDependencies": {
     "typescript": "^5.3.0",

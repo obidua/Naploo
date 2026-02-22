@@ -20,7 +20,7 @@
 │   └── mobile/                 # ❌ Not Started
 ├── services/
 │   ├── api-gateway/            # ✅ API Gateway (Elysia/Bun) - LIVE
-│   ├── auth-service/           # ⚠️  Stub Only (endpoints exist, no DB integration)
+│   ├── auth-service/           # ✅ Auth Service (Elysia/Bun) - LIVE (real DB, JWT, OTP)
 │   ├── booking-service/        # ❌ Empty directory
 │   ├── hotel-service/          # ❌ Empty directory
 │   ├── payment-service/        # ❌ Empty directory
@@ -46,6 +46,7 @@
 |---------|-----|------|--------|
 | Customer Website | https://naploo.com | 3100 | ✅ Live |
 | API Gateway | https://api.naploo.com | 3000 | ✅ Live |
+| Auth Service | https://api.naploo.com/api/v1/auth/* | 3001 | ✅ Live |
 | Swagger Docs | https://api.naploo.com/swagger | 3000 | ✅ Available |
 
 ---
@@ -93,27 +94,32 @@ bun install
 
 ## 🚀 Production Services (systemd)
 
-Both services are managed via **systemd** and will:
+All three services are managed via **systemd** and will:
 - Auto-start on server boot
 - Auto-restart within 5 seconds if they crash
 - Run as user `awsclint`
 
 ### Service Files
 
-| Service | File | Port |
-|---------|------|------|
-| `naploo-web` | `/etc/systemd/system/naploo-web.service` | 3100 |
-| `naploo-api` | `/etc/systemd/system/naploo-api.service` | 3000 |
+| Service | File | Port | Details |
+|---------|------|------|--------|
+| `naploo-web` | `/etc/systemd/system/naploo-web.service` | 3100 | Next.js frontend |
+| `naploo-api` | `/etc/systemd/system/naploo-api.service` | 3000 | Elysia API Gateway |
+| `naploo-auth` | `/etc/systemd/system/naploo-auth.service` | 3001 | Auth microservice (NODE_ENV=development) |
 
 ### Common Commands
 
 ```bash
-# Check status
-sudo systemctl status naploo-web naploo-api
+# Check status of all services
+sudo systemctl status naploo-web naploo-api naploo-auth
 
-# Restart a service
+# Restart all services
+sudo systemctl restart naploo-auth naploo-api naploo-web
+
+# Restart a single service
 sudo systemctl restart naploo-web
 sudo systemctl restart naploo-api
+sudo systemctl restart naploo-auth
 
 # Stop a service
 sudo systemctl stop naploo-web
@@ -121,6 +127,7 @@ sudo systemctl stop naploo-web
 # View live logs
 sudo journalctl -u naploo-web -f
 sudo journalctl -u naploo-api -f
+sudo journalctl -u naploo-auth -f
 
 # View last 50 log lines
 sudo journalctl -u naploo-web -n 50 --no-pager
@@ -141,23 +148,24 @@ bun run build
 
 ### Step 2: Restart Services
 ```bash
-sudo systemctl restart naploo-web naploo-api
+sudo systemctl restart naploo-auth naploo-api naploo-web
 ```
 
 ### Step 3: Verify Deployment
 ```bash
-# Check services
-sudo systemctl status naploo-web naploo-api
+# Check all 3 services
+sudo systemctl status naploo-web naploo-api naploo-auth
 
 # Test locally
 curl -s -o /dev/null -w '%{http_code}' http://localhost:3100/
 curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/health
+curl -s http://localhost:3001/health
 
 # Check nginx
 sudo systemctl status nginx
 
 # Check ports
-ss -tlnp | grep -E '3100|3000'
+ss -tlnp | grep -E '3100|3000|3001'
 ```
 
 ---
@@ -196,7 +204,7 @@ cat /etc/nginx/sites-enabled/naploo
 
 ### PostgreSQL Connection
 ```
-Host: localhost
+Host: 127.0.0.1  (use IP, not 'localhost', for TCP/password auth)
 Port: 5432
 Database: naploo_db
 User: naploo
@@ -247,7 +255,7 @@ bun run studio     # Open Drizzle Studio GUI
 NODE_ENV=development          # ⚠️ Should be changed to "production"
 APP_URL=http://localhost:3100
 API_URL=http://localhost:3000
-DATABASE_URL=postgresql://naploo:Naploo@2026Secure@localhost:5432/naploo_db
+DATABASE_URL=postgresql://naploo:Naploo@2026Secure@127.0.0.1:5432/naploo_db
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=naploo-jwt-secret-key-change-in-production-2026
 JWT_EXPIRES_IN=15m
@@ -276,7 +284,9 @@ ASSOCIATE_PORT=3104
 RENTAL_PORT=3105
 ```
 
-> **⚠️ Production TODO:** Change `NODE_ENV` to `production`, use strong random JWT secrets, and set `APP_URL`/`API_URL` to actual domain URLs.
+> **⚠️ Production TODO:** Change `NODE_ENV` to `production` (note: this will stop returning devOtp in auth responses), use strong random JWT secrets, and set `APP_URL`/`API_URL` to actual domain URLs.
+
+> **Note:** `.env` is symlinked from the project root into `services/auth-service/.env` and `services/api-gateway/.env` so all services share the same environment variables.
 
 ---
 
@@ -284,14 +294,14 @@ RENTAL_PORT=3105
 
 ### Website Not Loading (502 Bad Gateway)
 ```bash
-# Check if services are running
-sudo systemctl status naploo-web naploo-api
+# Check if all services are running
+sudo systemctl status naploo-web naploo-api naploo-auth
 
 # If stopped, restart them
-sudo systemctl restart naploo-web naploo-api
+sudo systemctl restart naploo-auth naploo-api naploo-web
 
 # Check if ports are listening
-ss -tlnp | grep -E '3100|3000'
+ss -tlnp | grep -E '3100|3000|3001'
 
 # Check nginx
 sudo systemctl status nginx
@@ -349,6 +359,7 @@ psql -U naploo -d naploo_db -c "SELECT 1;"
 # Quick health check
 curl -s http://localhost:3100/ -o /dev/null -w "Web: %{http_code}\n"
 curl -s http://localhost:3000/health | head -1
+curl -s http://localhost:3001/health | head -1
 
 # System resources
 free -h
@@ -358,6 +369,7 @@ top -bn1 | head -5
 # Process memory
 sudo systemctl status naploo-web | grep Memory
 sudo systemctl status naploo-api | grep Memory
+sudo systemctl status naploo-auth | grep Memory
 ```
 
 ### View Logs
@@ -365,6 +377,7 @@ sudo systemctl status naploo-api | grep Memory
 # App logs (systemd journal)
 sudo journalctl -u naploo-web -f
 sudo journalctl -u naploo-api -f
+sudo journalctl -u naploo-auth -f
 
 # Nginx logs
 sudo tail -f /var/log/nginx/access.log
@@ -386,13 +399,14 @@ echo "Building web app..."
 bun run build
 
 echo "Restarting services..."
-sudo systemctl restart naploo-web naploo-api
+sudo systemctl restart naploo-auth naploo-api naploo-web
 
 sleep 5
 
 echo "Verifying..."
 curl -s -o /dev/null -w "Web: %{http_code}\n" http://localhost:3100/
 curl -s -o /dev/null -w "API: %{http_code}\n" http://localhost:3000/health
+curl -s -o /dev/null -w "Auth: %{http_code}\n" http://localhost:3001/health
 
 echo "=== Done ==="
 ```
@@ -401,8 +415,9 @@ echo "=== Done ==="
 
 ## 🔒 Security Notes
 
-1. **⚠️ NODE_ENV** is still set to `development` — change to `production`
+1. **⚠️ NODE_ENV** is still set to `development` for auth-service — OTP is returned in API response for testing. Change to `production` and integrate MSG91/Twilio before going live.
 2. **⚠️ JWT secrets** are placeholder values — use strong random strings
+3. **⚠️ DATABASE_URL** uses `127.0.0.1` (not `localhost`) to ensure TCP connection with password auth
 3. SSL certificates auto-renew via certbot timer
 4. Cloudflare provides WAF + DDoS protection
 5. Keep Bun and dependencies regularly updated
@@ -415,7 +430,7 @@ echo "=== Done ==="
 - **Project:** Naploo by BIDUA Industries
 - **Domain:** naploo.com
 - **Server:** AWS EC2 (ip-172-31-14-247)
-- **Documentation Updated:** February 22, 2026
+- **Documentation Updated:** February 23, 2026
 
 ---
 
