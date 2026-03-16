@@ -52,3 +52,17 @@ coverage/
 *.pid
 *.seed
 *.pid.lock
+
+# APK files
+*.apk
+
+# Android build artifacts
+apps/mobile/android/
+apps/partner/android/
+
+# iOS build artifacts
+apps/mobile/ios/
+apps/partner/ios/
+
+# Expo
+.expo/

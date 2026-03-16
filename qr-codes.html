@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html><head><title>Naploo QR Codes</title>
+<style>
+body { font-family: Arial; text-align: center; background: #1a1a2e; color: white; padding: 40px; }
+.card { display: inline-block; background: white; border-radius: 20px; padding: 30px; margin: 20px; color: #333; }
+.card h2 { margin-top: 0; }
+.customer h2 { color: #6366f1; }
+.partner h2 { color: #ea580c; }
+code { background: #f0f0f0; padding: 5px 10px; border-radius: 5px; font-size: 14px; }
+img { display: block; margin: 20px auto; }
+</style></head><body>
+<h1>Naploo App QR Codes</h1>
+<p>Scan with Expo Go app on your phone</p>
+<div class="card customer">
+<h2>Customer App</h2>
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=exp%3A%2F%2F160.187.80.181%3A8081" width="250" height="250">
+<p><code>exp://160.187.80.181:8081</code></p>
+</div>
+<div class="card partner">
+<h2>Partner App</h2>
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=exp%3A%2F%2F160.187.80.181%3A8082" width="250" height="250">
+<p><code>exp://160.187.80.181:8082</code></p>
+</div>
+<br><br>
+<h3>Or enter manually in Expo Go:</h3>
+<p>Open Expo Go → tap "Enter URL manually" → type the URL above</p>
+</body></html>

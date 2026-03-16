@@ -10,6 +10,7 @@ const navLinks = [
   { name: 'How It Works', href: '/how-it-works' },
   { name: 'Partner With Us', href: '/partner' },
   { name: 'Buy Pods', href: '/investor' },
+  { name: 'Download App', href: '/download' },
   { name: 'About', href: '/about' },
 ];
 
