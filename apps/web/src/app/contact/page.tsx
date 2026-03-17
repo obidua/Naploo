@@ -27,14 +27,14 @@ const contactMethods = [
     title: 'Office',
     description: 'Visit us at our headquarters',
     value: 'Delhi NCR, India',
-    action: '#'
+    action: '/about'
   },
   {
     icon: MessageSquare,
     title: 'Live Chat',
     description: 'Available 24/7',
     value: 'Start a conversation',
-    action: '#'
+    action: '/help'
   }
 ];
 
@@ -355,7 +355,7 @@ export default function ContactPage() {
           <div className="mt-12 text-center">
             <p className="text-slate-500 mb-4">Can&apos;t find what you&apos;re looking for?</p>
             <a
-              href="#"
+              href="/help"
               className="inline-flex items-center gap-2 text-primary-600 hover:text-violet-600 transition"
             >
               Visit our Help Center

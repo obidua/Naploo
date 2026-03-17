@@ -138,13 +138,12 @@ export default function HelpPage() {
                 <ul className="space-y-2">
                   {category.articles.map((article) => (
                     <li key={article}>
-                      <Link
-                        href="#"
-                        className="flex items-center gap-2 text-sm text-slate-500 hover:text-primary-600 transition-colors"
+                      <span
+                        className="flex items-center gap-2 text-sm text-slate-500 hover:text-primary-600 transition-colors cursor-default"
                       >
                         <ChevronRight className="w-4 h-4" />
                         {article}
-                      </Link>
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -160,14 +159,13 @@ export default function HelpPage() {
           <h2 className="text-2xl font-bold text-slate-800 mb-8">Popular Articles</h2>
           <div className="space-y-3">
             {popularArticles.map((article) => (
-              <Link
+              <div
                 key={article.title}
-                href="#"
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group cursor-default"
               >
                 <span className="text-slate-800 group-hover:text-primary-600 transition-colors">{article.title}</span>
                 <span className="text-sm text-slate-400">{article.views} views</span>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
