@@ -19,10 +19,12 @@ const footerLinks = {
     { name: 'Become a Partner', href: '/partner' },
     { name: 'Partner Benefits', href: '/partner#benefits' },
     { name: 'Buy Pods', href: '/investor' },
+    { name: 'Apply Now', href: '/apply' },
     { name: 'Contact Support', href: '/contact' },
   ],
   support: [
     { name: 'Help Center', href: '/help' },
+    { name: 'Support Tickets', href: '/tickets' },
     { name: 'Contact Us', href: '/contact' },
     { name: 'FAQs', href: '/faqs' },
     { name: 'Safety', href: '/safety' },
