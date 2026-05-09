@@ -1,7 +1,7 @@
 import type { Property, Pod, City, PodLayout, PodSlot, PodRow, PodSeries, PodAmenity, PodFeatures } from '@/types';
 
-// Image CDN — served from Next.js web app's public/ directory
-const IMG = 'http://160.187.80.181:3100';
+// Image CDN served from the public web host.
+const IMG = process.env.EXPO_PUBLIC_IMAGE_BASE_URL || 'https://naploo.com';
 
 export const cities: City[] = [
   { id: 'jaipur', name: 'Jaipur', state: 'Rajasthan', image: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=400', propertyCount: 2, podCount: 20, isPopular: true },

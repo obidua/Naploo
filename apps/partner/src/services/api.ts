@@ -1,9 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import type { AuthTokens } from '@/types';
 
-const API_BASE = __DEV__
-  ? 'http://160.187.80.181:3000'
-  : 'https://api.naploo.com';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://api.naploo.com';
 
 async function getToken(): Promise<string | null> {
   return SecureStore.getItemAsync('accessToken');

@@ -16,6 +16,9 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+const customerApkPath = '/downloads/naploo-customer.apk';
+const partnerApkPath = '/downloads/naploo-partner.apk';
+
 const features = [
   {
     icon: '🔍',
@@ -104,7 +107,7 @@ export default function DownloadPage() {
           {/* Direct APK Downloads */}
           <div className="flex flex-wrap gap-4 justify-center mb-6">
             <a
-              href="http://160.187.80.181:9090/naploo-customer.apk"
+              href={customerApkPath}
               className="flex items-center gap-3 px-6 py-3.5 bg-gradient-to-r from-primary-500 to-violet-500 text-white rounded-xl hover:from-primary-600 hover:to-violet-600 transition-all shadow-lg"
             >
               <span className="text-2xl">📥</span>
@@ -114,7 +117,7 @@ export default function DownloadPage() {
               </div>
             </a>
             <a
-              href="http://160.187.80.181:9090/naploo-partner.apk"
+              href={partnerApkPath}
               className="flex items-center gap-3 px-6 py-3.5 bg-gradient-to-r from-violet-500 to-primary-500 text-white rounded-xl hover:from-violet-600 hover:to-primary-600 transition-all shadow-lg"
             >
               <span className="text-2xl">📥</span>
@@ -225,7 +228,7 @@ export default function DownloadPage() {
           {/* Partner Download */}
           <div className="flex flex-wrap gap-4 justify-center mt-10">
             <a
-              href="http://160.187.80.181:9090/naploo-partner.apk"
+              href={partnerApkPath}
               className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-violet-500 to-primary-500 text-white rounded-xl hover:from-violet-600 hover:to-primary-600 transition-all shadow-lg"
             >
               <span className="text-xl">📥</span>

@@ -924,14 +924,14 @@ export default function HomePage() {
 
           {/* App Download Badges */}
           <div className="flex flex-wrap gap-3 sm:gap-4 justify-center mt-8 sm:mt-10">
-            <a href="http://160.187.80.181:9090/naploo-customer.apk" className="flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-primary-500/20 to-violet-500/20 backdrop-blur-xl border border-primary-500/30 rounded-lg sm:rounded-xl hover:from-primary-500/30 hover:to-violet-500/30 transition-all">
+            <a href="/downloads/naploo-customer.apk" className="flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-primary-500/20 to-violet-500/20 backdrop-blur-xl border border-primary-500/30 rounded-lg sm:rounded-xl hover:from-primary-500/30 hover:to-violet-500/30 transition-all">
               <span className="text-xl sm:text-2xl">📥</span>
               <div className="text-left">
                 <p className="text-[10px] sm:text-xs text-white/50">Download APK</p>
                 <p className="text-xs sm:text-sm font-semibold text-white">Customer App</p>
               </div>
             </a>
-            <a href="http://160.187.80.181:9090/naploo-partner.apk" className="flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-violet-500/20 to-primary-500/20 backdrop-blur-xl border border-violet-500/30 rounded-lg sm:rounded-xl hover:from-violet-500/30 hover:to-primary-500/30 transition-all">
+            <a href="/downloads/naploo-partner.apk" className="flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2.5 sm:py-3 bg-gradient-to-r from-violet-500/20 to-primary-500/20 backdrop-blur-xl border border-violet-500/30 rounded-lg sm:rounded-xl hover:from-violet-500/30 hover:to-primary-500/30 transition-all">
               <span className="text-xl sm:text-2xl">📥</span>
               <div className="text-left">
                 <p className="text-[10px] sm:text-xs text-white/50">Download APK</p>

@@ -408,7 +408,10 @@ const app = new Elysia()
     }),
   })
 
-  .listen(process.env.AUTH_SERVICE_PORT || 3001);
+  .listen({
+    hostname: process.env.AUTH_SERVICE_HOST || '127.0.0.1',
+    port: Number(process.env.AUTH_SERVICE_PORT || 3001),
+  });
 
 console.log(`
 🔐 Auth Service running at http://localhost:${app.server?.port}

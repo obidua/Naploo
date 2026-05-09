@@ -232,7 +232,10 @@ const app = new Elysia()
       })
   )
   
-  .listen(process.env.API_GATEWAY_PORT || 3000);
+  .listen({
+    hostname: process.env.API_GATEWAY_HOST || '127.0.0.1',
+    port: Number(process.env.API_GATEWAY_PORT || 3000),
+  });
 
 console.log(`
 🚀 Naploo API Gateway running at http://localhost:${app.server?.port}
