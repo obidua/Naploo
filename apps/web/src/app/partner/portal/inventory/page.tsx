@@ -15,7 +15,7 @@ export default function InventoryPage() {
   return (
     <PortalShell>
       <InventoryBody />
-    ../_lib/PortalShell>
+    </PortalShell>
   );
 }
 

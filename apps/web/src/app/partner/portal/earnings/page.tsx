@@ -15,7 +15,7 @@ export default function EarningsPage() {
   return (
     <PortalShell>
       <Body />
-    ../_lib/PortalShell>
+    </PortalShell>
   );
 }
 

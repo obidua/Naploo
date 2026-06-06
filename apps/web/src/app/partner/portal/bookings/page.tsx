@@ -9,7 +9,7 @@ export default function PartnerBookingsPage() {
   return (
     <PortalShell>
       <Body />
-    ../_lib/PortalShell>
+    </PortalShell>
   );
 }
 

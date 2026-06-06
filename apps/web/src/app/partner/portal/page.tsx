@@ -18,7 +18,7 @@ export default function PartnerDashboardPage() {
   return (
     <PortalShell>
       <DashboardBody />
-    ./_lib/PortalShell>
+    </PortalShell>
   );
 }
 
