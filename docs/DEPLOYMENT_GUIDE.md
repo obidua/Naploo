@@ -1,6 +1,6 @@
 # Naploo Platform - Deployment & Operations Guide
 
-> **Last Updated:** February 2026  
+> **Last Updated:** June 6, 2026  
 > **Server:** AWS EC2 (ip-172-31-14-247)  
 > **User:** awsclint
 
@@ -56,7 +56,7 @@
 | Component | Technology | Version |
 |-----------|------------|---------|
 | Runtime | Bun | 1.3.6 |
-| Frontend | Next.js + React 19 + Tailwind CSS | 14.2.35 |
+| Frontend | Next.js + React 18.3.1 + Tailwind CSS | Next 14.2.35 |
 | Backend | Elysia (Bun Framework) | ^1.2.0 |
 | Database | PostgreSQL | 14.20 |
 | ORM | Drizzle ORM | Latest |
@@ -68,6 +68,8 @@
 | Process Manager | systemd | — |
 
 > **Note:** Docker, Kafka, and Elasticsearch are NOT installed. The current deployment runs directly on the host using systemd services.
+>
+> **React 18.3.1 in `apps/web`:** Pinned via root `package.json` `overrides`/`resolutions` because Next.js 14 requires `react@^18.2.0` as a peer dependency. Mobile (`apps/mobile`) and partner (`apps/partner`) Expo apps continue to use React 19.
 
 ---
 
@@ -282,11 +284,54 @@ PARTNER_PORT=3102
 ADMIN_PORT=3103
 ASSOCIATE_PORT=3104
 RENTAL_PORT=3105
+
+# Bind-host hardening (added June 2026)
+BIND_HOST=127.0.0.1
+HOSTNAME=127.0.0.1
+API_GATEWAY_HOST=127.0.0.1
+AUTH_SERVICE_HOST=127.0.0.1
+BOOKING_SERVICE_HOST=127.0.0.1
+PAYMENT_SERVICE_HOST=127.0.0.1
+INVESTOR_SERVICE_HOST=127.0.0.1
+REFERRAL_SERVICE_HOST=127.0.0.1
+RENTAL_SERVICE_HOST=127.0.0.1
+HOTEL_SERVICE_HOST=127.0.0.1
+NOTIFICATION_SERVICE_HOST=127.0.0.1
+ANALYTICS_SERVICE_HOST=127.0.0.1
+SEARCH_SERVICE_HOST=127.0.0.1
 ```
 
 > **⚠️ Production TODO:** Change `NODE_ENV` to `production` (note: this will stop returning devOtp in auth responses), use strong random JWT secrets, and set `APP_URL`/`API_URL` to actual domain URLs.
 
 > **Note:** `.env` is symlinked from the project root into `services/auth-service/.env` and `services/api-gateway/.env` so all services share the same environment variables.
+
+---
+
+## 🔒 Port Binding & Network Hardening
+
+**All Naploo app/service ports bind to loopback only (`127.0.0.1`).** Public traffic enters exclusively through Nginx on 80/443 (which Cloudflare fronts). Direct connections to the application ports from outside the host are not possible.
+
+### Verify
+
+```bash
+ss -tlnp 2>/dev/null | grep -E ':(3000|3001|3002|3003|3004|3005|3006|3007|3008|3009|3010|3100|3101|3102|3103|3104|3105|4983)\b'
+```
+
+Every listed socket should show a local address of `127.0.0.1:<port>` (never `0.0.0.0:<port>` or `[::]:<port>`).
+
+### How services bind to loopback
+
+| Service | Binding mechanism |
+|---------|-------------------|
+| `naploo-web` (Next.js) | systemd unit runs `next start -H 127.0.0.1 -p 3100` (also `HOSTNAME=127.0.0.1` env) |
+| `naploo-api` (Elysia) | reads `API_GATEWAY_HOST` / `BIND_HOST=127.0.0.1` from `.env` |
+| `naploo-auth` (Elysia) | reads `AUTH_SERVICE_HOST` / `BIND_HOST=127.0.0.1` from `.env` |
+| Drizzle Studio | `drizzle-kit studio --host 127.0.0.1 --port 4983` (set in `packages/db/package.json`) |
+| PostgreSQL / Redis | local-only by default in `/etc/postgresql/**/postgresql.conf` and `/etc/redis/redis.conf` |
+
+### If you ever need to expose a service externally
+
+Add an Nginx `server { ... proxy_pass http://127.0.0.1:<port>; }` block instead of changing the bind address. This keeps Cloudflare WAF, SSL, and rate limiting in front of every public surface.
 
 ---
 
@@ -430,7 +475,7 @@ echo "=== Done ==="
 - **Project:** Naploo by BIDUA Industries
 - **Domain:** naploo.com
 - **Server:** AWS EC2 (ip-172-31-14-247)
-- **Documentation Updated:** February 23, 2026
+- **Documentation Updated:** June 6, 2026
 
 ---
 

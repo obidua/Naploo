@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/auth';
 
 const navLinks = [
-  { name: 'Explore Stays', href: '/pods' },
+  { name: 'Explore Stays', href: '/search' },
   { name: 'How It Works', href: '/how-it-works' },
   { name: 'Partner With Us', href: '/partner' },
   { name: 'Buy Pods', href: '/investor' },
@@ -14,22 +15,15 @@ const navLinks = [
   { name: 'About', href: '/about' },
 ];
 
-interface User {
-  id: string;
-  name?: string;
-  phone: string;
-  email?: string;
-  isLoggedIn: boolean;
-}
-
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isHeroSection, setIsHeroSection] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const displayName = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') : '';
 
   // Pages that have a dark hero section
   const hasDarkHero = pathname === '/';
@@ -45,30 +39,8 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Check for logged in user
-  useEffect(() => {
-    const checkUser = () => {
-      const storedUser = localStorage.getItem('naploo_user');
-      if (storedUser) {
-        try {
-          const parsed = JSON.parse(storedUser);
-          if (parsed.isLoggedIn) {
-            setUser(parsed);
-          }
-        } catch (e) {
-          console.error('Error parsing user:', e);
-        }
-      }
-    };
-    checkUser();
-    // Listen for storage changes
-    window.addEventListener('storage', checkUser);
-    return () => window.removeEventListener('storage', checkUser);
-  }, []);
-
   const handleLogout = () => {
-    localStorage.removeItem('naploo_user');
-    setUser(null);
+    logout();
     setShowProfileMenu(false);
     router.push('/');
   };
@@ -135,7 +107,7 @@ export function Navbar() {
 
             {/* Auth Section */}
             <div className="hidden lg:flex items-center gap-3">
-              {user ? (
+              {isAuthenticated && user ? (
                 // Logged in - Show Profile
                 <div className="relative">
                   <button
@@ -148,10 +120,10 @@ export function Navbar() {
                     )}
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center text-white text-sm font-semibold">
-                      {getInitials(user.name, user.phone)}
+                      {getInitials(displayName, user.phone)}
                     </div>
                     <div className="text-left hidden sm:block">
-                      <p className={cn("text-sm font-medium", useWhiteText ? "text-white" : "text-slate-800")}>{user.name || 'User'}</p>
+                      <p className={cn("text-sm font-medium", useWhiteText ? "text-white" : "text-slate-800")}>{displayName || 'User'}</p>
                       <p className={cn("text-xs", useWhiteText ? "text-white/60" : "text-slate-500")}>{user.phone}</p>
                     </div>
                     <svg className={cn("w-4 h-4 transition-transform", useWhiteText ? "text-white/60" : "text-slate-400", showProfileMenu && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,10 +137,10 @@ export function Navbar() {
                       <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center text-white font-bold text-lg">
-                            {getInitials(user.name, user.phone)}
+                            {getInitials(displayName, user.phone)}
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-800">{user.name || 'User'}</p>
+                            <p className="font-semibold text-slate-800">{displayName || 'User'}</p>
                             <p className="text-sm text-slate-500">{user.email || user.phone}</p>
                           </div>
                         </div>
@@ -178,7 +150,7 @@ export function Navbar() {
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                           My Profile
                         </Link>
-                        <Link href="/profile" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-gray-50 transition-colors">
+                        <Link href="/profile/bookings" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-gray-50 transition-colors">
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                           My Bookings
                         </Link>
@@ -239,13 +211,13 @@ export function Navbar() {
       >
         <div className="absolute inset-0 bg-white/98 backdrop-blur-xl" />
         <div className="relative flex flex-col items-center justify-center h-full gap-6 p-8">
-          {user && (
+          {isAuthenticated && user && (
             <div className="flex items-center gap-3 mb-4 px-4 py-3 bg-primary-50 rounded-xl">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center text-white font-semibold">
-                {getInitials(user.name, user.phone)}
+                {getInitials(displayName, user.phone)}
               </div>
               <div>
-                <p className="font-medium text-slate-800">{user.name || 'User'}</p>
+                <p className="font-medium text-slate-800">{displayName || 'User'}</p>
                 <p className="text-sm text-slate-500">{user.phone}</p>
               </div>
             </div>
@@ -264,10 +236,13 @@ export function Navbar() {
           ))}
           
           <div className="flex flex-col gap-4 mt-8 w-full max-w-xs">
-            {user ? (
+            {isAuthenticated && user ? (
               <>
                 <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-white bg-gradient-to-r from-primary-500 to-violet-600 rounded-xl font-semibold">
                   My Profile
+                </Link>
+                <Link href="/profile/bookings" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-slate-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium">
+                  My Bookings
                 </Link>
                 <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="w-full py-3 text-center text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
                   Logout

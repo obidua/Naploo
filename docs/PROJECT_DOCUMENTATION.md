@@ -1,14 +1,14 @@
 # Naploo Ecosystem - Complete Project Documentation
 
-> **Version:** 4.1.0  
-> **Last Updated:** February 23, 2026  
+> **Version:** 4.2.0  
+> **Last Updated:** June 6, 2026  
 > **Company:** BIDUA Industries Pvt Ltd  
 > **Project Lead:** Development Team  
 > **Domain:** naploo.com
 
 ---
 
-## ⚠️ Development Status Summary (February 2026)
+## ⚠️ Development Status Summary (June 2026)
 
 ### Overall Progress
 
@@ -18,17 +18,20 @@
 | Backend Services | 3 (gateway + auth + db) | 11 | ~27% |
 | Shared Packages | 1 (db) | 4 | 25% |
 | Database Tables | 19 | 19 | ✅ 100% |
-| Web Pages | 24 routes | 24+ | ✅ Complete |
+| Web Pages | 32 routes (App Router) | 32+ | ✅ Complete |
+| Customer Booking Flow | Search → Property → Checkout → Confirmation → My Bookings | — | ✅ Complete (mock booking store) |
 | Auth System | Fully dynamic | — | ✅ Complete |
 
 ### What's Live in Production
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| **naploo.com** | ✅ Live | Next.js 14.2.35 + React 19 + Tailwind CSS, 24 pages, systemd managed |
-| **api.naploo.com** | ✅ Live | Elysia/Bun API Gateway with Swagger docs, systemd managed |
+| **naploo.com** | ✅ Live | Next.js 14.2.35 + React 18.3.1 + Tailwind CSS, 32 App Router pages, systemd managed, bound to `127.0.0.1:3100` |
+| **api.naploo.com** | ✅ Live | Elysia/Bun API Gateway with Swagger docs, bound to `127.0.0.1:3000`, systemd managed |
+| **auth-service** | ✅ Live | Bun/Elysia OTP + JWT auth, bound to `127.0.0.1:3001` |
 | **Database Schema** | ✅ Complete | 19 tables via Drizzle ORM (PostgreSQL 14) covering all business entities |
-| **Nginx + SSL** | ✅ Running | Reverse proxy with Let's Encrypt, Cloudflare CDN/WAF |
+| **Nginx + SSL** | ✅ Running | Reverse proxy with Let's Encrypt, Cloudflare CDN/WAF — only entry point exposed publicly |
+| **Port hardening** | ✅ Hardened | All Naploo app/service ports bind to loopback (`127.0.0.1`) only — no direct public exposure (verified via `ss -tlnp`) |
 
 ### What's Partially Done
 
@@ -47,11 +50,13 @@
 | Infrastructure | Docker, Kafka, Elasticsearch, CI/CD pipelines, monitoring |
 | Integrations | Razorpay, MSG91, FCM, Google Maps, Sentry |
 
-### Web App Pages (24 routes implemented)
+### Web App Pages (32 routes implemented)
+
+Marketing & informational pages:
 
 | Route | Description |
 |-------|-------------|
-| `/` | Home page with hero slider |
+| `/` | Home with hero, **hero SearchBar** (mode toggle: hourly pods / nightly rooms), trending cities |
 | `/about` | About Naploo |
 | `/blog`, `/blog/[id]` | Blog listing and detail |
 | `/careers` | Careers page |
@@ -62,16 +67,41 @@
 | `/how-it-works` | How Naploo works |
 | `/investor` | Investor information |
 | `/locations` | Location listings |
-| `/login`, `/signup` | Authentication pages |
 | `/partner` | Partner information |
-| `/pods`, `/pods/[id]` | Pod browsing and detail |
 | `/press` | Press/media page |
 | `/pricing` | Pricing information |
 | `/privacy` | Privacy policy |
-| `/profile` | User profile |
 | `/refund` | Refund policy |
 | `/safety` | Safety information |
 | `/terms` | Terms of service |
+
+Auth, profile & admin:
+
+| Route | Description |
+|-------|-------------|
+| `/login`, `/signup` | Authentication pages (phone OTP) |
+| `/profile` | User profile |
+| `/profile/bookings` | **NEW** — Upcoming + past bookings, cancel flow, status badges |
+| `/admin` | Admin dashboard (page exists; full backend pending) |
+| `/apply` | Application form |
+| `/download`, `/tickets` | Misc links |
+
+Customer booking flow (NEW — OYO-style):
+
+| Route | Description |
+|-------|-------------|
+| `/search` | **NEW** — Property search results with sticky compact SearchBar, filter sidebar (property type, price range, amenity chips), mode-aware listings |
+| `/property/[id]` | **NEW** — Property detail: gallery, amenities, **Rooms** + **Sleeping Pods** tabs, sticky booking sidebar |
+| `/booking/checkout` | **NEW** — Guest details, payment method, coupon codes (`WELCOME10`, `NAPLOO50`), 12% GST breakdown |
+| `/booking/confirmation/[id]` | **NEW** — Success page with booking code (`NP######`), copy/print actions, OTP-unlock tip for pods |
+| `/pods`, `/pods/[id]` | Legacy pod browsing (`/pods/[id]` redirects to `/property/[id]`) |
+
+System pages:
+
+| Route | Description |
+|-------|-------------|
+| `/_not-found` | App Router 404 page (custom branded) |
+| `error.tsx` boundary | App Router global error UI |
 
 ---
 
@@ -691,20 +721,27 @@ Associate                   Frontend                   Backend
 > unauthenticated remote code execution. See react.dev/blog/2025/12/03 for details.
 >
 > **Required Minimum Versions:**
-> - React: 19.0.1, 19.1.2, or 19.2.1+
-> - Next.js: 14.2.35 (for 14.x), 15.1.11 (for 15.1.x), 15.2.8 (for 15.2.x)
+> - Next.js 14.2.35 with React 18.3.1 (current `apps/web` choice)
+> - Or Next.js 15.1.11+ / 15.2.8+ with React 19.0.1 / 19.1.2 / 19.2.1+
 > - React Native: Update react-server-dom-* packages if using monorepo
+>
+> **Why React 18.3.1 in `apps/web`:** Next.js 14 declares `react@^18.2.0` as a peer
+> dependency. Mixing React 19 with Next 14 causes `next build` to fail when prerendering
+> the legacy `_error` page (`Cannot read properties of null (reading 'useRef')`).
+> The web app pins React 18.3.1 (security-patched) via root `overrides`/`resolutions`
+> in `package.json` to keep all hoisted copies aligned. When the platform migrates to
+> Next.js 15, both web and mobile can move to React 19 together.
 
 ### 4.1 Frontend Technologies
 
 | Category | Technology | Version | Purpose | Status |
 |----------|------------|---------|---------|--------|
 | **Framework** | Next.js | 14.2.35 | React framework (SECURITY PATCHED) | ✅ In use |
-| **React** | React | 19.2.1 | UI library (SECURITY PATCHED) | ✅ In use |
+| **React** | React | 18.3.1 (web) / 19.x (mobile, partner) | UI library — web pinned to 18.3.1 for Next 14 peer compatibility | ✅ In use |
 | **Language** | TypeScript | 5.x | Type safety | ✅ In use |
 | **Styling** | Tailwind CSS | 3.4.17 | Utility-first CSS | ✅ In use |
-| **UI Components** | Custom (GlassCard, Button, Input, etc.) | — | In `apps/web/src/components/` | ✅ Built |
-| **State Management** | Zustand | 5.0.0 | Lightweight state | ✅ In use |
+| **UI Components** | Custom (GlassCard, Button, Input, **SearchBar**, **FilterPanel**, etc.) | — | In `apps/web/src/components/` | ✅ Built |
+| **State Management** | Zustand | 5.0.0 | Auth store + **bookings store** (persisted) | ✅ In use |
 | **Icons** | Lucide React | 0.468.0 | Icon library | ✅ In use |
 | **Date Utils** | date-fns | 4.1.0 | Date formatting | ✅ In use |
 | **Class Utils** | clsx + tailwind-merge | Latest | Conditional classes | ✅ In use |
@@ -798,15 +835,21 @@ naploo-ecosystem/
 |
 +-- apps/
 |   |
-|   +-- web/                        # ✅ Customer Website (Next.js 14)
+|   +-- web/                        # ✅ Customer Website (Next.js 14 + React 18.3.1)
 |   |   +-- src/
-|   |   |   +-- app/                # ✅ 24 routes (App Router)
-|   |   |   |   +-- page.tsx        # Home
+|   |   |   +-- app/                # ✅ 32 routes (App Router)
+|   |   |   |   +-- page.tsx        # Home (with hero SearchBar)
 |   |   |   |   +-- about/
+|   |   |   |   +-- admin/
+|   |   |   |   +-- apply/
 |   |   |   |   +-- blog/ + [id]/
+|   |   |   |   +-- booking/        # NEW: customer booking flow
+|   |   |   |   |   +-- checkout/
+|   |   |   |   |   +-- confirmation/[id]/
 |   |   |   |   +-- careers/
 |   |   |   |   +-- contact/
 |   |   |   |   +-- cookies/
+|   |   |   |   +-- download/
 |   |   |   |   +-- faqs/
 |   |   |   |   +-- help/
 |   |   |   |   +-- how-it-works/
@@ -814,29 +857,36 @@ naploo-ecosystem/
 |   |   |   |   +-- locations/
 |   |   |   |   +-- login/
 |   |   |   |   +-- partner/
-|   |   |   |   +-- pods/ + [id]/
+|   |   |   |   +-- pods/ + [id]/   # [id] redirects → /property/[id]
 |   |   |   |   +-- press/
 |   |   |   |   +-- pricing/
 |   |   |   |   +-- privacy/
 |   |   |   |   +-- profile/
+|   |   |   |   |   +-- bookings/   # NEW: My Bookings
+|   |   |   |   +-- property/[id]/  # NEW: property detail (rooms + pods tabs)
 |   |   |   |   +-- refund/
 |   |   |   |   +-- safety/
+|   |   |   |   +-- search/         # NEW: search results + filters
 |   |   |   |   +-- signup/
 |   |   |   |   +-- terms/
+|   |   |   |   +-- tickets/
+|   |   |   |   +-- not-found.tsx   # NEW: App Router 404
+|   |   |   |   +-- error.tsx       # NEW: App Router error boundary
 |   |   |   |   +-- layout.tsx
 |   |   |   |   +-- globals.css
 |   |   |   +-- components/
 |   |   |   |   +-- ui/             # Button, GlassCard, HeroPodSlider, ImageSlider, Input
 |   |   |   |   +-- layout/         # Navbar, Footer, LayoutWrapper, MobileBottomNav
 |   |   |   |   +-- pods/           # FilterSection, PodCard, PropertyCard
+|   |   |   |   +-- search/         # NEW: SearchBar (hero + compact variants)
 |   |   |   |   +-- PWAInstallPrompt.tsx
 |   |   |   +-- lib/                # api.ts, seo.ts, utils.ts
-|   |   |   +-- store/              # auth.ts (Zustand)
-|   |   |   +-- data/               # properties.ts (mock data)
+|   |   |   +-- store/              # auth.ts + bookings.ts (Zustand persisted)
+|   |   |   +-- data/               # properties.ts, rooms.ts (NEW), search.ts (NEW)
 |   |   +-- .next/                  # ✅ Production build exists
 |   |   +-- next.config.js
 |   |   +-- tailwind.config.js
-|   |   +-- package.json
+|   |   +-- package.json            # react/react-dom pinned to 18.3.1
 |   |
 |   +-- admin/                      # ❌ Empty
 |   +-- partner/                    # ❌ Empty

@@ -65,8 +65,14 @@ const app = new Elysia()
       verified: false,
     });
 
-    // TODO: Send OTP via MSG91/Twilio in production
+    // Send OTP via notification-service (MSG91 in prod, mock in dev)
     console.log(`📱 OTP for ${normalizedPhone}: ${otp}`);
+    const notifyUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3008';
+    fetch(`${notifyUrl}/notify/otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: normalizedPhone, otp }),
+    }).catch((e) => console.error('notification-service unreachable:', e?.message));
 
     return {
       success: true,

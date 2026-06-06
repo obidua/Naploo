@@ -1,7 +1,7 @@
 # Naploo™ UI/UX Design System
 
 > Complete design specifications and guidelines for the Naploo™ ecosystem  
-> **Last Updated:** February 23, 2026
+> **Last Updated:** June 6, 2026
 
 ---
 
@@ -18,14 +18,20 @@
 | HeroPodSlider | `components/ui/HeroPodSlider.tsx` | Hero section image slider |
 | ImageSlider | `components/ui/ImageSlider.tsx` | Generic image carousel |
 | Input | `components/ui/Input.tsx` | Form input with validation |
-| Navbar | `components/layout/Navbar.tsx` | Main navigation header |
+| Navbar | `components/layout/Navbar.tsx` | Main navigation header (now driven by Zustand `useAuthStore`) |
 | Footer | `components/layout/Footer.tsx` | Site footer |
 | LayoutWrapper | `components/layout/LayoutWrapper.tsx` | Page layout wrapper |
 | MobileBottomNav | `components/layout/MobileBottomNav.tsx` | Mobile bottom navigation |
 | PWAInstallPrompt | `components/PWAInstallPrompt.tsx` | PWA install banner |
-| FilterSection | `components/pods/FilterSection.tsx` | Pod filtering controls |
+| FilterSection | `components/pods/FilterSection.tsx` | Pod filtering controls (legacy /pods page) |
 | PodCard | `components/pods/PodCard.tsx` | Pod listing card |
 | PropertyCard | `components/pods/PropertyCard.tsx` | Property listing card |
+| **SearchBar** | `components/search/SearchBar.tsx` | OYO-style search: hero + compact variants, mode toggle (hourly pods / nightly rooms), location autocomplete, date+duration / check-in+out, guest stepper. Must be wrapped in `<Suspense>` on statically rendered pages because it uses `useSearchParams`. |
+| **FilterPanel** | `app/search/SearchPageClient.tsx` (inline) | Search results filters: property type, price range slider, amenity chips |
+| **Property page rooms/pods tabs** | `app/property/[id]/PropertyPageClient.tsx` | Tabbed booking surface with sticky sidebar |
+| **CheckoutClient** | `app/booking/checkout/CheckoutClient.tsx` | Guest details, payment method radios, coupon code, GST breakdown |
+| **Confirmation page** | `app/booking/confirmation/[id]/page.tsx` | Branded success state + booking code (`NP######`) |
+| **My Bookings** | `app/profile/bookings/page.tsx` | Auth-gated upcoming + past sections, status badges, cancel flow |
 
 ---
 

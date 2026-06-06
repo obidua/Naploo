@@ -1,14 +1,33 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GlassCard } from '@/components/ui/GlassCard';
 import ImageSlider from '@/components/ui/ImageSlider';
 import HeroPodSlider from '@/components/ui/HeroPodSlider';
+import SearchBar from '@/components/search/SearchBar';
+import { properties } from '@/data/properties';
 
-// Partner Hotels & Homestays Data
-const partnerProperties = [
+// Partner Hotels & Homestays Data — derived from canonical /data/properties.ts so
+// the IDs here match the IDs the /property/[id] page resolves via getPropertyById.
+const partnerProperties = properties.map((p) => ({
+  id: p.id,
+  name: p.name,
+  type: p.type,
+  city: p.city,
+  rating: p.rating,
+  pods: p.podsCount,
+  rooms: p.roomsCount,
+  podPrice: p.podStartPrice,
+  roomPrice: p.roomStartPrice,
+  images: p.images,
+}));
+
+// Legacy hardcoded list (kept commented for reference) — replaced June 2026
+// because IDs '1'..'8' did not exist in /data/properties.ts and clicking
+// a card produced a 404 on /property/[id].
+const _legacyPartnerProperties = [
   {
     id: '1',
     name: 'Hotel Grand Imperial',
@@ -372,7 +391,7 @@ export default function HomePage() {
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start mb-8 sm:mb-10">
                 <Link
-                  href="/pods"
+                  href="/search"
                   className="group px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-primary-500 via-violet-500 to-primary-600 text-white font-semibold rounded-xl sm:rounded-2xl hover:shadow-glow-lg transition-all duration-500 flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base"
                 >
                   <span>Find Pods Near You</span>
@@ -427,6 +446,27 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Search Bar - overlapping hero */}
+      <section className="relative z-20 -mt-10 sm:-mt-16 px-4 sm:px-6 lg:px-8 pb-2">
+        <div className="max-w-5xl mx-auto">
+          <Suspense fallback={<div className="h-32 bg-white rounded-3xl shadow-2xl border border-gray-100 animate-pulse" />}>
+            <SearchBar variant="hero" />
+          </Suspense>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
+            <span className="text-slate-500">Trending:</span>
+            {['Mumbai', 'Delhi', 'Bangalore', 'Jaipur', 'Goa'].map((c) => (
+              <Link
+                key={c}
+                href={`/search?location=${encodeURIComponent(c)}&mode=pods`}
+                className="px-3 py-1 rounded-full bg-white border border-gray-200 text-slate-700 hover:border-primary-300 hover:text-primary-700 transition-colors"
+              >
+                {c}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Stats Bar */}
       <section className="relative py-8 sm:py-12 border-y border-gray-100 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -457,7 +497,7 @@ export default function HomePage() {
               <p className="text-slate-500 mt-2 text-sm sm:text-base">Book pods hourly or rooms for your stay</p>
             </div>
             <Link
-              href="/pods"
+              href="/search"
               className="text-primary-600 hover:text-primary-700 font-medium flex items-center gap-2 transition-colors text-sm sm:text-base"
             >
               View All Properties
@@ -473,7 +513,7 @@ export default function HomePage() {
               {partnerProperties.map((property) => (
                 <Link
                   key={property.id}
-                  href={`/pods/${property.id}`}
+                  href={`/property/${property.id}`}
                   className="flex-shrink-0 w-[280px] sm:w-[350px] snap-start"
                 >
                   <GlassCard className="overflow-hidden group cursor-pointer h-full">
