@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { router } from 'expo-router';
 import { useTheme } from '@/theme/useTheme';
 import { BorderRadius, FontSize, FontWeight, Shadow, Spacing } from '@/theme';
 import { PropertyCard } from '@/components/PropertyCard';
-import { getCities, filterProperties } from '@/store/app';
+import { getCities, filterProperties, useDataStore } from '@/store/app';
 import type { Property } from '@/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -31,7 +31,17 @@ export default function ExploreScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showSortModal, setShowSortModal] = useState(false);
 
-  const allCities = getCities();
+  // Subscribe to live store
+  const storeProperties = useDataStore((s) => s.properties);
+  const storeCities = useDataStore((s) => s.cities);
+  const storeLoading = useDataStore((s) => s.loading);
+  const loadAll = useDataStore((s) => s.loadAll);
+
+  useEffect(() => {
+    loadAll().catch(() => {});
+  }, [loadAll]);
+
+  const allCities = storeCities.length ? storeCities : getCities();
 
   const filteredProperties = useMemo(() => {
     return filterProperties({
@@ -39,7 +49,7 @@ export default function ExploreScreen() {
       type: selectedType,
       sortBy: sortBy,
     });
-  }, [selectedCity, selectedType, sortBy]);
+  }, [selectedCity, selectedType, sortBy, storeProperties]);
 
   const sortLabel: Record<SortOption, string> = {
     rating: 'Top Rated',

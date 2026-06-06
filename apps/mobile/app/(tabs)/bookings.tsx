@@ -33,16 +33,21 @@ export default function BookingsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { isAuthenticated } = useAuthStore();
-  const { getByStatus } = useBookingsStore();
+  const { getByStatus, reload, bookings } = useBookingsStore();
   const [activeTab, setActiveTab] = useState<Tab>('upcoming');
   const [refreshing, setRefreshing] = useState(false);
 
-  const filteredBookings = getByStatus(activeTab);
+  React.useEffect(() => {
+    if (isAuthenticated) reload();
+  }, [isAuthenticated, reload]);
 
-  const onRefresh = () => {
+  // Recompute when bookings change
+  const filteredBookings = React.useMemo(() => getByStatus(activeTab), [activeTab, bookings, getByStatus]);
+
+  const onRefresh = async () => {
     setRefreshing(true);
-    // Re-read from store triggers re-render
-    setTimeout(() => setRefreshing(false), 500);
+    await reload();
+    setRefreshing(false);
   };
 
   if (!isAuthenticated) {

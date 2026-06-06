@@ -1,8 +1,65 @@
 import { create } from 'zustand';
 import type { Property, Pod, Booking, City, BookingStatus } from '@/types';
-import { properties, pods, cities, deals, podLayouts, searchProperties } from '@/data/properties';
+import { propertiesApi, bookingsApi } from '@/services/api';
 
-// ─── Favorites Store ───
+const IMAGE_BASE = process.env.EXPO_PUBLIC_IMAGE_BASE_URL || 'https://naploo.com';
+
+function absolutize(path?: string): string {
+  if (!path) return `${IMAGE_BASE}/Pods_Images/For%20Website%20main%20images/Main%20Pods%20Image.png`;
+  if (path.startsWith('http')) return path;
+  return `${IMAGE_BASE}${path}`;
+}
+
+// ─── Hotel → Property/Pod adapters ────────────────────────────
+function hotelToProperty(h: any): Property {
+  return {
+    id: h.id,
+    name: h.name,
+    type: h.type === 'homestay' ? 'homestay' : 'hotel',
+    city: h.city,
+    state: h.state || '',
+    address: h.address,
+    description: h.description || `${h.name} in ${h.city}. Premium accommodation with Naploo sleeping pods.`,
+    rating: h.rating || 0,
+    reviewsCount: h.reviews || 0,
+    images: (h.images || []).map(absolutize),
+    amenities: h.amenities || [],
+    podsCount: h.podsCount || 0,
+    roomsCount: h.roomsCount || 0,
+    podStartPrice: h.podStartPrice || 0,
+    roomStartPrice: h.roomStartPrice || 0,
+    latitude: h.latitude,
+    longitude: h.longitude,
+    distance: h.distanceKm,
+    isVerified: true,
+    checkInTime: '14:00',
+    checkOutTime: '11:00',
+    policies: ['No smoking in rooms', 'Government ID required'],
+  } as unknown as Property;
+}
+
+function backendPodSetToPod(ps: any, hotel: any): Pod {
+  return {
+    id: ps.id,
+    name: `Sleeping Pod ${ps.setNumber || ''}`.trim(),
+    propertyId: hotel.id,
+    propertyName: hotel.name || hotel.businessName,
+    city: hotel.city,
+    image: hotel.images?.[0] ? absolutize(hotel.images[0]) : absolutize(),
+    series: ps.section || 'Naploo Smart Pod',
+    type: 'single',
+    position: 'upper',
+    status: 'available',
+    features: { ac: true, charger: true, tv: false, light: true, ventilation: true },
+    hourlyRate: ps.hourlyRate || 150,
+    rating: hotel.rating || 0,
+    reviewsCount: hotel.reviews || 0,
+    available: ps.available !== false,
+    amenities: ['AC', 'Charger', 'Reading Light', 'Ventilation'],
+  } as unknown as Pod;
+}
+
+// ─── Favorites Store ─────────────────────────────────────────
 interface FavoritesState {
   favoriteIds: Set<string>;
   toggle: (id: string) => void;
@@ -21,168 +78,218 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
   isFavorite: (id) => get().favoriteIds.has(id),
 }));
 
-// ─── Bookings Store ───
-let bookingCounter = 3;
-
-const initialBookings: Booking[] = [
-  {
-    id: '1',
-    bookingNumber: 'NAP-260315-001',
-    userId: '1',
-    propertyId: 'hotel-sapphire',
-    propertyName: 'Hotel Sapphire',
-    propertyImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
-    bookingType: 'pod',
-    podId: 'pod-1',
-    checkIn: '2026-03-20T14:00:00Z',
-    checkOut: '2026-03-20T18:00:00Z',
-    duration: 4,
-    guestCount: 1,
-    baseRate: 199,
-    subtotal: 796,
-    extraCharges: 0,
-    discount: 0,
-    gst: 96,
-    totalAmount: 892,
-    status: 'confirmed',
-    paymentStatus: 'paid',
-    createdAt: '2026-03-15T10:00:00Z',
-    city: 'Jaipur',
-  },
-  {
-    id: '2',
-    bookingNumber: 'NAP-260310-002',
-    userId: '1',
-    propertyId: 'beach-bliss',
-    propertyName: 'Beach Bliss Resort',
-    propertyImage: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=400',
-    bookingType: 'room',
-    roomId: 'room-1',
-    checkIn: '2026-03-25T14:00:00Z',
-    checkOut: '2026-03-27T11:00:00Z',
-    guestCount: 2,
-    baseRate: 2199,
-    subtotal: 4398,
-    extraCharges: 0,
-    discount: 500,
-    gst: 468,
-    totalAmount: 4366,
-    status: 'confirmed',
-    paymentStatus: 'paid',
-    createdAt: '2026-03-10T10:00:00Z',
-    city: 'Goa',
-  },
-  {
-    id: '3',
-    bookingNumber: 'NAP-260301-003',
-    userId: '1',
-    propertyId: 'city-star',
-    propertyName: 'City Star Hotel',
-    propertyImage: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400',
-    bookingType: 'pod',
-    podId: 'pod-5',
-    checkIn: '2026-03-05T08:00:00Z',
-    checkOut: '2026-03-05T11:00:00Z',
-    duration: 3,
-    guestCount: 1,
-    baseRate: 179,
-    subtotal: 537,
-    extraCharges: 0,
-    discount: 0,
-    gst: 65,
-    totalAmount: 602,
-    status: 'checked_out',
-    paymentStatus: 'paid',
-    createdAt: '2026-03-01T10:00:00Z',
-    city: 'Delhi',
-  },
-];
-
-interface BookingsState {
-  bookings: Booking[];
-  addBooking: (booking: Omit<Booking, 'id' | 'bookingNumber' | 'createdAt'>) => Booking;
-  cancelBooking: (id: string) => void;
-  getBooking: (id: string) => Booking | undefined;
-  getByStatus: (tab: 'upcoming' | 'past' | 'cancelled') => Booking[];
+// ─── Live Data Store (replaces static data/properties) ───────
+interface DataState {
+  properties: Property[];
+  pods: Pod[];
+  cities: City[];
+  loadedAt: number | null;
+  loading: boolean;
+  error: string | null;
+  loadAll: (force?: boolean) => Promise<void>;
 }
 
-export const useBookingsStore = create<BookingsState>((set, get) => ({
-  bookings: initialBookings,
+const DEAL_IMG = `${IMAGE_BASE}/Pods_Images/For%20Website%20main%20images/Main%20Pods%20Image.png`;
+const DEALS_STATIC = [
+  { id: 'd1', title: 'First Pod Free!', subtitle: 'Book your first pod stay & get ₹100 off', code: 'WELCOME10', color: '#7c3aed', image: DEAL_IMG },
+  { id: 'd2', title: 'Weekend Special', subtitle: 'Flat 30% off bookings', code: 'WEEKEND30', color: '#ec4899', image: DEAL_IMG },
+  { id: 'd3', title: 'NAPLOO50', subtitle: 'Flat ₹50 off any booking', code: 'NAPLOO50', color: '#10b981', image: DEAL_IMG },
+];
 
-  addBooking: (data) => {
-    bookingCounter++;
-    const now = new Date().toISOString();
-    const num = `NAP-${now.slice(2, 10).replace(/-/g, '')}-${String(bookingCounter).padStart(3, '0')}`;
-    const booking: Booking = {
-      ...data,
-      id: String(bookingCounter),
-      bookingNumber: num,
-      createdAt: now,
-    };
-    set((state) => ({ bookings: [booking, ...state.bookings] }));
-    return booking;
-  },
-
-  cancelBooking: (id) =>
-    set((state) => ({
-      bookings: state.bookings.map((b) =>
-        b.id === id ? { ...b, status: 'cancelled' as BookingStatus, paymentStatus: 'refunded' as const } : b
-      ),
-    })),
-
-  getBooking: (id) => get().bookings.find((b) => b.id === id || b.bookingNumber === id),
-
-  getByStatus: (tab) => {
-    const all = get().bookings;
-    if (tab === 'upcoming') return all.filter((b) => ['pending', 'confirmed', 'checked_in'].includes(b.status));
-    if (tab === 'past') return all.filter((b) => ['checked_out'].includes(b.status));
-    return all.filter((b) => ['cancelled', 'no_show'].includes(b.status));
+export const useDataStore = create<DataState>((set, get) => ({
+  properties: [],
+  pods: [],
+  cities: [],
+  loadedAt: null,
+  loading: false,
+  error: null,
+  loadAll: async (force = false) => {
+    const state = get();
+    if (!force && state.loadedAt && Date.now() - state.loadedAt < 60 * 1000) return; // 60s cache
+    set({ loading: true, error: null });
+    try {
+      const [searchRes, citiesRes] = await Promise.all([
+        propertiesApi.search({}),
+        propertiesApi.getCities(),
+      ]);
+      const hotelCards = searchRes.data || [];
+      const properties = hotelCards.map(hotelToProperty);
+      // Synthesize a Pod entry per partner so the home page Pod sections render
+      const pods: Pod[] = hotelCards
+        .filter((h: any) => h.podsCount > 0)
+        .map((h: any) =>
+          backendPodSetToPod(
+            { id: `${h.id}-set`, setNumber: '01', hourlyRate: h.podStartPrice || 150, available: true },
+            h
+          )
+        );
+      const cities: City[] = (citiesRes.cities || []).map((c) => ({
+        id: c.city.toLowerCase().replace(/\s+/g, '-'),
+        name: c.city,
+        state: c.state,
+        propertyCount: c.count,
+        podCount: 0,
+        isPopular: true,
+        image: absolutize('/Pods_Images/Home Page Images/Cozy Forest Hostel.png'),
+      })) as unknown as City[];
+      set({ properties, pods, cities, loadedAt: Date.now(), loading: false });
+    } catch (e: any) {
+      set({ error: e?.message || 'Failed to load', loading: false });
+    }
   },
 }));
 
-// ─── Coupons ───
-interface CouponDef {
-  code: string;
-  discountType: 'percentage' | 'flat';
-  discountValue: number;
-  maxDiscount: number;
-  minAmount: number;
-  description: string;
+// ─── Live Bookings Store ─────────────────────────────────────
+interface BookingsState {
+  bookings: Booking[];
+  loading: boolean;
+  loadedAt: number | null;
+  reload: () => Promise<void>;
+  cancelBooking: (id: string, reason?: string) => Promise<boolean>;
+  getByStatus: (filter: 'upcoming' | 'past' | 'cancelled' | 'all') => Booking[];
+  getById: (id: string) => Booking | undefined;
+  getBooking: (id: string) => Booking | undefined;
+  addBooking: (b: Partial<Booking>) => Booking;
 }
 
-const COUPONS: CouponDef[] = [
-  { code: 'FIRSTPOD', discountType: 'flat', discountValue: 199, maxDiscount: 199, minAmount: 0, description: '₹199 off on your first pod booking' },
-  { code: 'WEEKEND30', discountType: 'percentage', discountValue: 30, maxDiscount: 1000, minAmount: 500, description: '30% off weekend bookings (max ₹1000)' },
-  { code: 'GOAVIBES', discountType: 'flat', discountValue: 50, maxDiscount: 50, minAmount: 0, description: '₹50 off on Goa bookings' },
-  { code: 'COUPLE499', discountType: 'flat', discountValue: 100, maxDiscount: 100, minAmount: 400, description: '₹100 off couple pod pack' },
-  { code: 'NAPLOO10', discountType: 'percentage', discountValue: 10, maxDiscount: 500, minAmount: 200, description: '10% off any booking (max ₹500)' },
+function adaptBookingToLocal(b: any): Booking {
+  const propName = b.propertyName || 'Naploo Stay';
+  return {
+    id: b.id,
+    bookingNumber: b.bookingNumber,
+    userId: '',
+    propertyId: '',
+    propertyName: propName,
+    propertyImage: absolutize(),
+    bookingType: b.kind || b.bookingType || 'pod',
+    podId: '',
+    checkIn: b.checkIn,
+    checkOut: b.checkOut,
+    duration: b.hours || 0,
+    guestCount: b.guests || 1,
+    baseRate: 0,
+    subtotal: b.subtotal || 0,
+    extraCharges: 0,
+    discount: 0,
+    gst: b.taxes || 0,
+    totalAmount: b.total || 0,
+    status: b.status as BookingStatus,
+    paymentStatus: ['confirmed', 'checked_in', 'checked_out'].includes(b.status) ? 'paid' : 'pending',
+    createdAt: b.createdAt,
+    city: '',
+  } as Booking;
+}
+
+export const useBookingsStore = create<BookingsState>((set, get) => ({
+  bookings: [],
+  loading: false,
+  loadedAt: null,
+  reload: async () => {
+    set({ loading: true });
+    try {
+      const res = await bookingsApi.list();
+      set({
+        bookings: (res.data || []).map(adaptBookingToLocal),
+        loadedAt: Date.now(),
+        loading: false,
+      });
+    } catch {
+      set({ loading: false });
+    }
+  },
+  cancelBooking: async (id: string, reason?: string) => {
+    const res = await bookingsApi.cancel(id, reason);
+    if (res.success) {
+      await get().reload();
+      return true;
+    }
+    return false;
+  },
+  getByStatus: (filter) => {
+    const all = get().bookings;
+    if (filter === 'all') return all;
+    if (filter === 'cancelled') return all.filter((b) => b.status === 'cancelled');
+    if (filter === 'past') return all.filter((b) => b.status === 'checked_out');
+    // upcoming
+    return all.filter((b) => b.status === 'pending' || b.status === 'confirmed' || b.status === 'checked_in');
+  },
+  getById: (id) => get().bookings.find((b) => b.id === id),
+  getBooking: (id) => get().bookings.find((b) => b.id === id),
+  // Optimistic local add used by checkout confirm screens before the real API booking lands.
+  addBooking: (b) => {
+    const draft = {
+      id: b.id || `local-${Date.now()}`,
+      bookingNumber: b.bookingNumber || `NPL-LOCAL-${Date.now()}`,
+      userId: b.userId || '',
+      propertyId: b.propertyId || '',
+      propertyName: b.propertyName || 'Naploo Stay',
+      propertyImage: b.propertyImage || '',
+      bookingType: b.bookingType || 'pod',
+      podId: b.podId || '',
+      checkIn: b.checkIn || new Date().toISOString(),
+      checkOut: b.checkOut || new Date().toISOString(),
+      duration: b.duration || 0,
+      guestCount: b.guestCount || 1,
+      baseRate: b.baseRate || 0,
+      subtotal: b.subtotal || 0,
+      extraCharges: b.extraCharges || 0,
+      discount: b.discount || 0,
+      gst: b.gst || 0,
+      totalAmount: b.totalAmount || 0,
+      status: b.status || 'pending',
+      paymentStatus: b.paymentStatus || 'pending',
+      createdAt: b.createdAt || new Date().toISOString(),
+      city: b.city || '',
+    } as Booking;
+    set((s) => ({ bookings: [draft, ...s.bookings] }));
+    return draft;
+  },
+}));
+
+// ─── Coupons (static — same codes the web checkout accepts) ──
+const COUPONS = [
+  { code: 'WELCOME10', discountType: 'percent' as const, discountValue: 10, minAmount: 0, maxDiscount: 500, description: '10% off your stay' },
+  { code: 'NAPLOO50', discountType: 'flat' as const, discountValue: 50, minAmount: 0, maxDiscount: 50, description: 'Flat ₹50 off' },
+  { code: 'WEEKEND30', discountType: 'percent' as const, discountValue: 30, minAmount: 1000, maxDiscount: 1000, description: '30% off weekend bookings' },
 ];
 
 export function validateCoupon(code: string, amount: number): { valid: boolean; discount: number; message: string } {
   const coupon = COUPONS.find((c) => c.code === code.toUpperCase().trim());
   if (!coupon) return { valid: false, discount: 0, message: 'Invalid coupon code' };
-  if (amount < coupon.minAmount) return { valid: false, discount: 0, message: `Minimum booking amount ₹${coupon.minAmount} required` };
-  const discount = coupon.discountType === 'flat'
-    ? Math.min(coupon.discountValue, coupon.maxDiscount)
-    : Math.min(Math.round(amount * coupon.discountValue / 100), coupon.maxDiscount);
+  if (amount < coupon.minAmount) return { valid: false, discount: 0, message: `Minimum amount ₹${coupon.minAmount} required` };
+  const discount =
+    coupon.discountType === 'flat'
+      ? Math.min(coupon.discountValue, coupon.maxDiscount)
+      : Math.min(Math.round((amount * coupon.discountValue) / 100), coupon.maxDiscount);
   return { valid: true, discount, message: coupon.description };
 }
 
-// ─── App Data Helpers (centralized data access) ───
-export function getProperties(): Property[] { return properties; }
-export function getCities(): City[] { return cities; }
-export function getDeals() { return deals; }
-export function getPods(): Pod[] { return pods; }
+// ─── Public accessors (backwards-compatible with static API) ─
+export function getProperties(): Property[] {
+  return useDataStore.getState().properties;
+}
+export function getCities(): City[] {
+  return useDataStore.getState().cities;
+}
+export function getDeals() {
+  return DEALS_STATIC;
+}
+export function getPods(): Pod[] {
+  return useDataStore.getState().pods;
+}
 
 export function getHeroStats() {
-  const totalPods = properties.reduce((s, p) => s + p.podsCount, 0);
-  const totalCities = new Set(properties.map((p) => p.city)).size;
-  const minPrice = Math.min(...pods.map((p) => p.hourlyRate));
-  const avgRating = (properties.reduce((s, p) => s + p.rating, 0) / properties.length).toFixed(1);
+  const state = useDataStore.getState();
+  const totalPods = state.properties.reduce((s, p) => s + (p.podsCount || 0), 0);
+  const totalCities = state.cities.length || new Set(state.properties.map((p) => p.city)).size;
+  const podRates = state.pods.map((p) => p.hourlyRate).filter((n) => n > 0);
+  const minPrice = podRates.length ? Math.min(...podRates) : 0;
+  const ratings = state.properties.map((p) => p.rating).filter((n) => n > 0);
+  const avgRating = ratings.length ? (ratings.reduce((s, r) => s + r, 0) / ratings.length).toFixed(1) : '0.0';
   return [
     { num: `${totalPods}+`, label: 'Pods' },
     { num: `${totalCities}+`, label: 'Cities' },
-    { num: `₹${minPrice}`, label: 'Starting' },
+    { num: minPrice > 0 ? `₹${minPrice}` : '—', label: 'Starting' },
     { num: `${avgRating}★`, label: 'Rating' },
   ];
 }
@@ -196,7 +303,16 @@ export function filterProperties(opts: {
   priceMax?: number;
   sortBy?: 'rating' | 'price_low' | 'price_high' | 'reviews' | 'relevance';
 }): Property[] {
-  let result = opts.query ? searchProperties(opts.query) : [...properties];
+  let result = [...useDataStore.getState().properties];
+  if (opts.query) {
+    const q = opts.query.toLowerCase();
+    result = result.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.city.toLowerCase().includes(q) ||
+        p.address.toLowerCase().includes(q)
+    );
+  }
   if (opts.city) result = result.filter((p) => p.city.toLowerCase() === opts.city!.toLowerCase());
   if (opts.type && opts.type !== 'all') result = result.filter((p) => p.type === opts.type);
   if (opts.minRating && opts.minRating > 0) result = result.filter((p) => p.rating >= opts.minRating!);
@@ -204,10 +320,18 @@ export function filterProperties(opts: {
   if (opts.priceMax != null) result = result.filter((p) => p.podStartPrice <= opts.priceMax!);
 
   switch (opts.sortBy) {
-    case 'price_low': result.sort((a, b) => a.podStartPrice - b.podStartPrice); break;
-    case 'price_high': result.sort((a, b) => b.podStartPrice - a.podStartPrice); break;
-    case 'rating': result.sort((a, b) => b.rating - a.rating); break;
-    case 'reviews': result.sort((a, b) => b.reviewsCount - a.reviewsCount); break;
+    case 'price_low':
+      result.sort((a, b) => a.podStartPrice - b.podStartPrice);
+      break;
+    case 'price_high':
+      result.sort((a, b) => b.podStartPrice - a.podStartPrice);
+      break;
+    case 'rating':
+      result.sort((a, b) => b.rating - a.rating);
+      break;
+    case 'reviews':
+      result.sort((a, b) => b.reviewsCount - a.reviewsCount);
+      break;
   }
   return result;
 }
@@ -222,22 +346,31 @@ export function filterPods(opts: {
   priceMax?: number;
   sortBy?: 'price_low' | 'price_high' | 'rating';
 }): Pod[] {
-  let result = [...pods];
+  let result = [...useDataStore.getState().pods];
   if (opts.query) {
     const q = opts.query.toLowerCase();
-    result = result.filter((p) => p.name.toLowerCase().includes(q) || p.propertyName.toLowerCase().includes(q) || p.city.toLowerCase().includes(q) || p.series.toLowerCase().includes(q));
+    result = result.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.propertyName.toLowerCase().includes(q) ||
+        p.city.toLowerCase().includes(q)
+    );
   }
   if (opts.city) result = result.filter((p) => p.city.toLowerCase() === opts.city!.toLowerCase());
-  if (opts.type) result = result.filter((p) => p.type === opts.type);
-  if (opts.series) result = result.filter((p) => p.series === opts.series);
   if (opts.minRating && opts.minRating > 0) result = result.filter((p) => p.rating >= opts.minRating!);
   if (opts.priceMin != null) result = result.filter((p) => p.hourlyRate >= opts.priceMin!);
   if (opts.priceMax != null) result = result.filter((p) => p.hourlyRate <= opts.priceMax!);
 
   switch (opts.sortBy) {
-    case 'price_low': result.sort((a, b) => a.hourlyRate - b.hourlyRate); break;
-    case 'price_high': result.sort((a, b) => b.hourlyRate - a.hourlyRate); break;
-    case 'rating': result.sort((a, b) => b.rating - a.rating); break;
+    case 'price_low':
+      result.sort((a, b) => a.hourlyRate - b.hourlyRate);
+      break;
+    case 'price_high':
+      result.sort((a, b) => b.hourlyRate - a.hourlyRate);
+      break;
+    case 'rating':
+      result.sort((a, b) => b.rating - a.rating);
+      break;
   }
   return result;
 }

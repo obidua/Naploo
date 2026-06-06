@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,7 @@ import { PropertyCard } from '@/components/PropertyCard';
 import { PodCard } from '@/components/PodCard';
 import { NearbyPodsBar } from '@/components/NearbyPodsBar';
 import { getPopularCities } from '@/data/properties';
-import { getHeroStats, getProperties, getPods, getDeals, useFavoritesStore } from '@/store/app';
+import { getHeroStats, getProperties, getPods, getDeals, useFavoritesStore, useDataStore } from '@/store/app';
 import { formatCurrency } from '@/utils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -28,10 +28,21 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const popularCities = getPopularCities();
-  const heroStats = getHeroStats();
-  const properties = getProperties();
-  const pods = getPods();
+  // Subscribe to the live data store — re-renders after loadAll() resolves
+  const storeProperties = useDataStore((s) => s.properties);
+  const storePods = useDataStore((s) => s.pods);
+  const storeCities = useDataStore((s) => s.cities);
+  const loadAll = useDataStore((s) => s.loadAll);
+
+  useEffect(() => {
+    loadAll().catch(() => {});
+  }, [loadAll]);
+
+  // storeProperties is used as a dependency so heroStats refresh after fetch
+  const popularCities = storeCities.length ? storeCities.slice(0, 8) : getPopularCities();
+  const heroStats = useMemo(() => getHeroStats(), [storeProperties, storePods, storeCities]);
+  const properties = storeProperties.length ? storeProperties : getProperties();
+  const pods = storePods.length ? storePods : getPods();
   const deals = getDeals();
 
   return (

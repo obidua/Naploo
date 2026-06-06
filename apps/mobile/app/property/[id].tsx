@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,7 +22,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Rating } from '@/components/ui/Rating';
 import { PodSeatMap } from '@/components/PodSeatMap';
 import { BookingDateTimePicker } from '@/components/BookingDateTimePicker';
-import { getPropertyById, getPodsByProperty, getPodLayout } from '@/data/properties';
+import { getPropertyById, getPodsByProperty, getPodLayout, loadPropertyDetail } from '@/data/properties';
+import { useDataStore } from '@/store/app';
 import { useFavoritesStore } from '@/store/app';
 import { useSearchStore } from '@/store/search';
 import { formatCurrency } from '@/utils';
@@ -92,11 +93,33 @@ export default function PropertyDetailScreen() {
   const insets = useSafeAreaInsets();
   const searchParams = useSearchStore((s) => s.params);
 
-  const property = getPropertyById(id);
-  const propertyPods = useMemo(() => (property ? getPodsByProperty(property.id) : []), [id]);
-  const podLayout = useMemo(() => (property ? getPodLayout(property.id) : undefined), [id]);
-  const rooms = useMemo(() => (property ? generateRooms(property.id, property.roomsCount, property.roomStartPrice) : []), [id]);
-  const reviews = useMemo(() => (property ? generateReviews(property.id, property.rating, 6) : []), [id]);
+  // Subscribe to the live data store so we re-render after loadAll().
+  const storeProperties = useDataStore((s) => s.properties);
+  const [livePods, setLivePods] = useState<Pod[]>([]);
+  const [liveProperty, setLiveProperty] = useState<any | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(true);
+
+  useEffect(() => {
+    // Make sure list-level data is loaded too (in case user deep-links here).
+    useDataStore.getState().loadAll().catch(() => {});
+    setLoadingDetail(true);
+    loadPropertyDetail(id)
+      .then((res) => {
+        if (res) {
+          setLiveProperty(res.property);
+          setLivePods(res.pods);
+        }
+        setLoadingDetail(false);
+      })
+      .catch(() => setLoadingDetail(false));
+  }, [id]);
+
+  // Prefer the detailed fetch; fall back to the list entry while it loads.
+  const property = liveProperty || storeProperties.find((p) => p.id === id) || getPropertyById(id);
+  const propertyPods = useMemo(() => (livePods.length ? livePods : property ? getPodsByProperty(property.id) : []), [property, livePods]);
+  const podLayout = useMemo(() => (property ? getPodLayout(property.id) : undefined), [property]);
+  const rooms = useMemo(() => (property ? generateRooms(property.id, property.roomsCount, property.roomStartPrice) : []), [property]);
+  const reviews = useMemo(() => (property ? generateReviews(property.id, property.rating, 6) : []), [property]);
   const { toggle: toggleFav, isFavorite } = useFavoritesStore();
   const isFav = property ? isFavorite(property.id) : false;
 
@@ -290,7 +313,7 @@ export default function PropertyDetailScreen() {
             </View>
           </View>
           <View style={styles.dots}>
-            {property.images.map((_, i) => (
+            {property.images.map((_: any, i: number) => (
               <View key={i} style={[styles.dot, { backgroundColor: i === imageIndex ? '#fff' : 'rgba(255,255,255,0.5)' }]} />
             ))}
           </View>
@@ -354,7 +377,7 @@ export default function PropertyDetailScreen() {
 
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Amenities</Text>
             <View style={styles.amenitiesGrid}>
-              {property.amenities.map((a) => (
+              {property.amenities.map((a: string) => (
                 <View key={a} style={[styles.amenityItem, { backgroundColor: colors.surface }]}>
                   <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                   <Text style={[styles.amenityLabel, { color: colors.textSecondary }]}>{a}</Text>
@@ -363,7 +386,7 @@ export default function PropertyDetailScreen() {
             </View>
 
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Policies</Text>
-            {property.policies.map((p) => (
+            {property.policies.map((p: string) => (
               <View key={p} style={styles.policyRow}>
                 <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
                 <Text style={[styles.policyText, { color: colors.textSecondary }]}>{p}</Text>
@@ -387,22 +410,38 @@ export default function PropertyDetailScreen() {
               </View>
             </View>
 
-            {/* Quick Book CTA */}
-            <TouchableOpacity
-              onPress={() => setActiveTab('pods')}
-              style={[styles.quickBookCta, { backgroundColor: colors.primary + '10', borderColor: colors.primary }]}
-            >
-              <View style={styles.quickBookLeft}>
-                <Ionicons name="flash" size={24} color={colors.primary} />
-                <View>
-                  <Text style={[styles.quickBookTitle, { color: colors.primary }]}>Book a Pod Now</Text>
-                  <Text style={[styles.quickBookSub, { color: colors.textSecondary }]}>
-                    Select your pod on the interactive seat map
-                  </Text>
+            {/* Quick Book CTAs — Pod (hourly) AND Room (nightly) */}
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+              <TouchableOpacity
+                onPress={() => setActiveTab('pods')}
+                style={[styles.quickBookCta, { flex: 1, backgroundColor: colors.primary + '10', borderColor: colors.primary }]}
+              >
+                <View style={styles.quickBookLeft}>
+                  <Ionicons name="bed" size={22} color={colors.primary} />
+                  <View>
+                    <Text style={[styles.quickBookTitle, { color: colors.primary }]}>Book Pod</Text>
+                    <Text style={[styles.quickBookSub, { color: colors.textSecondary }]}>
+                      {`From ${formatCurrency(property.podStartPrice)}/hr`}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.primary} />
-            </TouchableOpacity>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setActiveTab('rooms')}
+                style={[styles.quickBookCta, { flex: 1, backgroundColor: '#10b98110', borderColor: '#10b981' }]}
+              >
+                <View style={styles.quickBookLeft}>
+                  <Ionicons name="business" size={22} color="#10b981" />
+                  <View>
+                    <Text style={[styles.quickBookTitle, { color: '#10b981' }]}>Book Room</Text>
+                    <Text style={[styles.quickBookSub, { color: colors.textSecondary }]}>
+                      {`From ${formatCurrency(property.roomStartPrice)}/night`}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
