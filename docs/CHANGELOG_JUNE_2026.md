@@ -717,3 +717,73 @@ Run `expo start` so the user can scan the QR code with Expo Go.
 - **Real keys**: Razorpay live keys, MSG91 + template IDs, Resend.
 - Reviews, wishlist, map view.
 - Push to GitHub.
+
+---
+
+# Naploo — June 7, 2026 (FINAL session checkpoint)
+
+## ✅ DELIVERED IN THIS WAVE
+
+### Brand / contact (web)
+- Single source of truth in `apps/web/src/data/company.ts`.
+- Live across Footer (+ GSTIN + legal name), Contact, Safety, Careers.
+- Real values: **BIDUA Industries Pvt Ltd · GSTIN 09AANCB0882D1ZM · Suite 209, C-104, Sector 65, Noida 201301 · +91 95129 21903 · support@biduapods.com · biduaindustries@gmail.com.**
+
+### Admin dashboard — data tabs wired
+- `apps/web/src/app/admin/data.ts` is now a **Zustand store** that fetches from `/admin/*` + `/analytics/*` and exposes the original `mockX` arrays (now live data).
+- Auto-loads on auth, every View calls `useAdminData()` → reactive.
+- `getDashboardStats()` derives KPIs from the real `overview` payload + bookings/tickets/applications.
+
+### Partner web portal — full + advanced
+Routes under `/partner/portal/*`:
+- `/login` — email + password sign-in, role-gated (partner/admin only).
+- `/` — dashboard (KPIs, recent bookings, quick action cards).
+- `/inventory` — list rooms + pod sets, **inline pricing edit**, modal-based add (room and pod set; pod set auto-creates 2 stacked pods).
+- `/bookings` — filterable list (upcoming/past/all) with revenue split.
+- `/earnings` — totals, 30-day window, revenue-split explainer.
+
+Wired to:
+- New `GET /hotels/me` on hotel-service (uses x-user-id → finds partner's hotel).
+- `POST /hotels/:id/rooms`, `PATCH /rooms/:id`, `POST /hotels/:id/pod-sets`, `PATCH /pod-sets/:id` (partner role gated at gateway).
+- `GET /partner/:partnerId/bookings` (gateway now routes `partner` segment to booking-service).
+
+### Customer mobile (Expo) — api wired
+`apps/mobile/src/services/api.ts` rewritten with **real endpoints + adapters**:
+- `authApi`: sendOtp, verifyOtp, **login (email/pass)**, getMe, updateProfile, logout.
+- `propertiesApi.search/.nearby/.getById/.getRooms/.getPods/.getCities` → mapped to `/api/v1/search`, `/nearby`, `/hotels/:id` (returns the app's existing `Property`/`Room`/`Pod` shape).
+- `bookingsApi.quote/.create/.list/.getById/.cancel` → `/api/v1/quote`, `/bookings`, etc.
+- `paymentsApi.createOrder/.verify` → Razorpay mock + real (when keys added).
+- Token storage in SecureStore + refresh on 401 (already there) preserved.
+- `tsc --noEmit` clean.
+
+### Partner mobile (Expo) — api wired
+`apps/partner/src/services/api.ts` rewritten:
+- `authApi.login/.sendOtp/.verifyOtp/.getMe`.
+- `partnerApi.getMyHotel/.createRoom/.updateRoom/.createPodSet/.updatePodSet/.getBookings` → real gateway endpoints with shape adapters.
+- `tsc --noEmit` clean.
+
+### Expo dev servers running (tunnel mode)
+Both Expo dev servers are live; **open in Expo Go**:
+
+| App | Tunnel URL (for Expo Go) |
+|-----|---------------------------|
+| **Customer** | `exp://ckefzwo-anonymous-8081.exp.direct` |
+| **Partner** | `exp://wndvzcu-anonymous-8082.exp.direct` |
+
+> In Expo Go on your phone, hit "Enter URL manually" and paste the `exp://…` URL — or open `https://ckefzwo-anonymous-8081.exp.direct` in mobile Chrome to scan with Expo Go.
+
+### Test credentials (set this session)
+- Admin: `admin@naploo.com` / `Naploo@Admin2026`
+- Partner (Hotel Grand Imperial): `rajesh@hotelgrand.com` / `Partner@Naploo2026` *(password set for all partner users this session — change after testing)*
+
+### Misc
+- Killed stale duplicate `bun` processes that were sometimes serving an old gateway code (`Unknown route` errors disappeared after).
+- All work committed in stages on branch `feature/backend-and-web-wiring` (5 commits this wave); **not pushed to GitHub**.
+
+## ❌ STILL TO DO (visual QA needed; backend ready for all of it)
+
+1. **Customer mobile screens** still read from `apps/mobile/src/data/properties.ts` (static). The api.ts now has real `propertiesApi.search()` etc., so swapping `getPropertyById` for a real fetch is the next iteration — best done with phone-in-hand QA.
+2. **Partner mobile screens** ditto: dashboard/inventory/bookings still render the old store; they need to call `partnerApi.getMyHotel()` etc.
+3. **Investor mobile app** (third app, `apps/investor` is currently empty). Not built yet.
+4. **Real keys**: Razorpay live keys, MSG91 + template IDs, Resend.
+5. Push the branch to GitHub when ready.
