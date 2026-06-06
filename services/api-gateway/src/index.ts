@@ -30,6 +30,7 @@ const ROUTES: Record<string, { base: string; strip?: string }> = {
   bookings: { base: BOOKING },
   availability: { base: BOOKING },
   quote: { base: BOOKING },
+  partner: { base: BOOKING },
   payments: { base: PAYMENT },
   notify: { base: NOTIFY },
   investors: { base: INVESTOR, strip: '/investors' },
