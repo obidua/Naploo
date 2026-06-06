@@ -155,6 +155,32 @@ const app = new Elysia()
     { query: t.Object({ city: t.Optional(t.String()), type: t.Optional(t.String()) }) }
   )
 
+  // ─── My hotel (partner portal) — resolves via gateway-injected x-user-id
+  .get('/hotels/me', async ({ headers, set }) => {
+    const userId = headers['x-user-id'] as string | undefined;
+    if (!userId) {
+      set.status = 401;
+      return { success: false, message: 'Authentication required' };
+    }
+    const [p] = await db.select().from(partners).where(eq(partners.userId, userId));
+    if (!p) {
+      set.status = 404;
+      return { success: false, message: 'No partner profile for this user' };
+    }
+    const pRooms = await db.select().from(rooms).where(eq(rooms.partnerId, p.id));
+    const pSets = await db.select().from(podSets).where(eq(podSets.partnerId, p.id));
+    const setIds = pSets.map((s) => s.id);
+    const pPods = setIds.length ? await db.select().from(pods).where(inArray(pods.podSetId, setIds)) : [];
+    return {
+      success: true,
+      hotel: {
+        ...shapeHotel(p),
+        rooms: pRooms.map(shapeRoom),
+        podSets: pSets.map((s) => shapePodSet(s, pPods)),
+      },
+    };
+  })
+
   // ─── Hotel detail with full inventory ───────────────────────
   .get('/hotels/:id', async ({ params, set }) => {
     const [p] = await db.select().from(partners).where(eq(partners.id, params.id));
