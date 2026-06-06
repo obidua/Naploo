@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth';
 import { authApi } from '@/lib/api';
 import type { AdminPage } from './types';
 import * as D from './data';
+import { useAdminData } from './data';
 import {
   LayoutDashboard, Users, Building2, Calendar, Ticket, FileText,
   CreditCard, MapPin, Settings, Bell, LogOut, ChevronRight,
@@ -281,6 +282,13 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  // Load live admin data once authenticated
+  useEffect(() => {
+    if (adminAuth) {
+      useAdminData.getState().loadAll();
+    }
+  }, [adminAuth]);
+
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
     // Real authentication against the backend (JWT) with admin role gate
     const res = await authApi.login(email, password);
@@ -426,6 +434,7 @@ export default function AdminDashboard() {
 // DASHBOARD VIEW
 // ============================
 function DashboardView() {
+  const D = useAdminData();
   const stats = D.getDashboardStats();
   return (
     <div className="space-y-6">
@@ -535,6 +544,7 @@ function DashboardView() {
 // USERS VIEW
 // ============================
 function UsersView() {
+  const D = useAdminData();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const filtered = useMemo(() => {
@@ -579,6 +589,7 @@ function UsersView() {
 // PARTNERS VIEW
 // ============================
 function PartnersView() {
+  const D = useAdminData();
   const [search, setSearch] = useState('');
   const filtered = D.mockPartners.filter(p => !search || p.businessName.toLowerCase().includes(search.toLowerCase()) || p.city.toLowerCase().includes(search.toLowerCase()));
   return (
@@ -614,6 +625,7 @@ function PartnersView() {
 // INVESTORS VIEW
 // ============================
 function InvestorsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -669,6 +681,7 @@ function InvestorsView() {
 // ASSOCIATES VIEW (MLM Referral Network)
 // ============================
 function AssociatesView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -700,6 +713,7 @@ function AssociatesView() {
 // PODS VIEW
 // ============================
 function PodsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -732,6 +746,7 @@ function PodsView() {
 // ROOMS VIEW
 // ============================
 function RoomsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -764,6 +779,7 @@ function RoomsView() {
 // BOOKINGS VIEW
 // ============================
 function BookingsView() {
+  const D = useAdminData();
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
   const filtered = useMemo(() => {
@@ -812,6 +828,7 @@ function BookingsView() {
 // PAYMENTS VIEW
 // ============================
 function PaymentsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -842,6 +859,7 @@ function PaymentsView() {
 // PAYOUTS VIEW
 // ============================
 function PayoutsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -876,6 +894,7 @@ function PayoutsView() {
 // COUPONS VIEW
 // ============================
 function CouponsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -909,6 +928,7 @@ function CouponsView() {
 // TICKETS VIEW
 // ============================
 function TicketsView() {
+  const D = useAdminData();
   const [statusFilter, setStatusFilter] = useState('all');
   const filtered = statusFilter === 'all' ? D.mockTickets : D.mockTickets.filter(t => t.status === statusFilter);
   return (
@@ -949,6 +969,7 @@ function TicketsView() {
 // APPLICATIONS VIEW
 // ============================
 function ApplicationsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -979,6 +1000,7 @@ function ApplicationsView() {
 // REVIEWS VIEW
 // ============================
 function ReviewsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -1017,6 +1039,7 @@ function ReviewsView() {
 // LOCATIONS VIEW
 // ============================
 function LocationsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -1049,6 +1072,7 @@ function LocationsView() {
 // COMMISSIONS VIEW (MLM Config)
 // ============================
 function CommissionsView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
@@ -1083,6 +1107,7 @@ function CommissionsView() {
 // STAFF VIEW
 // ============================
 function StaffView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <PageHeader count={String(D.mockStaff.length)}><AddBtn label="Add Staff" /></PageHeader>
@@ -1107,6 +1132,7 @@ function StaffView() {
 // ANALYTICS VIEW
 // ============================
 function AnalyticsView() {
+  const D = useAdminData();
   const stats = D.getDashboardStats();
   return (
     <div className="space-y-6">
@@ -1151,6 +1177,7 @@ function AnalyticsView() {
 // MARKETING VIEW
 // ============================
 function MarketingView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -1185,6 +1212,7 @@ function MarketingView() {
 // CONTENT VIEW
 // ============================
 function ContentView() {
+  const D = useAdminData();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1224,6 +1252,7 @@ function ContentView() {
 // NOTIFICATIONS VIEW
 // ============================
 function NotificationsView() {
+  const D = useAdminData();
   const notifications = [
     { type: 'ticket', title: 'New urgent ticket: AC not working in Pod #12', time: '30m ago', read: false },
     { type: 'booking', title: 'Booking BK-4521 confirmed by Rahul Sharma', time: '2h ago', read: false },
@@ -1252,6 +1281,7 @@ function NotificationsView() {
 // SETTINGS VIEW
 // ============================
 function SettingsView() {
+  const D = useAdminData();
   return (
     <div className="max-w-3xl space-y-6">
       {[

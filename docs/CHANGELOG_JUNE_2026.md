@@ -644,3 +644,76 @@ Previously the admin dashboard accepted a hardcoded `admin123`/client-side passw
 | Reviews, wishlist, map | not built | Nice-to-haves on the existing data layer. |
 
 These are visual UIs best completed with browser-based QA rather than blind generation.
+
+---
+
+# Naploo — June 7, 2026 (Status Update)
+
+> Consolidated status checkpoint after backend + security + admin auth + contact info work.
+
+## ✅ COMPLETED
+
+### Backend (live, JWT-gated)
+- **api-gateway** (:3000) — verifies JWT, injects `x-user-id` / `x-user-role`, gates routes by role (public/authed/partner/admin).
+- **auth-service** (:3001) — OTP login + email/password login (`POST /auth/login`, Bun.password argon2id). OTPs delivered via notification-service.
+- **hotel-service** (:3007) — list/detail hotels + rooms + pod sets; partner add/edit room & pod-set + pricing.
+- **search-service** (:3010) — text search, geo-`/nearby` (haversine), `/cities`.
+- **booking-service** (:3002) — availability, `/quote`, create/cancel/check-in/out; uses **token identity** (no spoofing).
+- **payment-service** (:3003) — Razorpay create-order/verify/webhook/refund; MOCK mode until keys added.
+- **notification-service** (:3008) — MSG91 SMS/OTP + Resend email; MOCK mode until keys added.
+- **analytics-service** (:3009) — `/overview`, `/revenue?days=`, `/top-hotels`.
+- **investor-service** (:3004) — `/enroll`, `/me`, `/invest` (₹5L/set + 18% GST + 3× guarantee), earnings.
+- **referral-service** (:3005) — `/associates/enroll` (5-level upline), `/me`.
+- **rental-service** (:3006) — `/rentals/enquiry` (home/office lead → notify; **public**).
+- **admin-service** (:3011) — users (+`/:id/status`), partners (+approve/suspend), bookings (enriched), payments, payouts, investors (+approve).
+
+### Customer Website (`apps/web`, live at naploo.com)
+- Search → property → checkout → confirmation → my-bookings all wired to live gateway.
+- Authoritative pricing via backend `/quote`.
+- Razorpay checkout integrated (auto-confirms in MOCK; opens real checkout when keys present).
+- All journey steps verified through public `api.naploo.com`.
+
+### Admin (web `/admin`)
+- **Login is real** (`authApi.login` → JWT → role-gated to admin/super_admin → stored in shared auth store). Hardcoded `admin123` removed.
+- Credentials: `admin@naploo.com` / `Naploo@Admin2026`.
+- 16 entity tabs **still render from `admin/data.ts` mock arrays** (not yet wired — see Remaining).
+
+### Brand / Contact info
+- Single source of truth: `apps/web/src/data/company.ts` (COMPANY/EMAILS/PHONES/ADDRESS).
+- Wired into Footer (contact rail + GSTIN), Contact page (real Noida HQ), Safety (helpline), Careers (mailto).
+- Live values: BIDUA Industries Pvt Ltd · GSTIN 09AANCB0882D1ZM · Suite 209, C-104, Sector 65, Noida 201301 · +91 95129 21903 · support@biduapods.com · biduaindustries@gmail.com.
+
+### Ops
+- All 12 PM2 processes online (`pm2 save` persisted).
+- systemd `naploo-web` redeployed onto fresh build (34 routes).
+- All changes committed on branch `feature/backend-and-web-wiring` (not pushed to GitHub yet).
+
+---
+
+## ❌ REMAINING (in the order being executed now)
+
+### 1. Admin dashboard data tabs → real APIs
+Replace 16 mock arrays in `apps/web/src/app/admin/data.ts` (users, partners, bookings, podSets, rooms, investors, associates, payments, payouts, coupons, tickets, applications, reviews, locations, commissions, staff) with live data from `/admin/*` + `/analytics/*`. Admin login JWT is already in the auth store, so calls are auto-authorized.
+
+### 2. Partner web portal (full + advanced)
+New section under `apps/web` for hotel/merchant partners (not built yet). Backend endpoints **are ready**:
+- Add room / add pod set: `POST /hotels/:id/rooms`, `POST /hotels/:id/pod-sets`.
+- Edit pricing & inventory: `PATCH /rooms/:id`, `PATCH /pod-sets/:id`.
+- Bookings: `GET /partner/:partnerId/bookings`.
+- Earnings: aggregate from booking `ownerShare` field.
+Needs: partner login (email/pass via `/auth/login` is ready, role-gated to `partner`), dashboard, inventory CRUD, pricing screens, bookings inbox, earnings.
+
+### 3. Customer mobile app (`apps/mobile`, Expo, ~15 screens)
+Today: UI scaffold, auth-only wired. Needs: explore/search, property detail, booking flow, payment, my-bookings → all wired to gateway (same shape as web). User will QA via Expo Go.
+
+### 4. Partner mobile app (`apps/partner`, Expo, 13 src files)
+Today: UI scaffold (dashboard, inventory, bookings, earnings, profile, pods/rooms management, payout request). **Does exist** — needs API wiring. User will QA via Expo Go.
+
+### Then (after the 4 above): build + start Expo for QA
+Run `expo start` so the user can scan the QR code with Expo Go.
+
+### Deferred / nice-to-haves (not in this wave)
+- **Investor mobile app** — third app per the long-term plan (apps/investor — currently empty). Will be built after the 4 above are verified.
+- **Real keys**: Razorpay live keys, MSG91 + template IDs, Resend.
+- Reviews, wishlist, map view.
+- Push to GitHub.
