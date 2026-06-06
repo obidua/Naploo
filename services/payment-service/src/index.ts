@@ -121,6 +121,91 @@ const app = new Elysia()
     { body: t.Object({ bookingId: t.String() }) }
   )
 
+  // ─── Hosted checkout page (for mobile WebView) ──────────────
+  // Mobile opens this URL in a WebView. The page loads Razorpay checkout.js,
+  // handles success/failure, then sends `naploo://payment-success` or
+  // `naploo://payment-failed` so React Native can detect it via deep link / nav state.
+  .get('/payments/checkout/:bookingId', async ({ params, set }) => {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, params.bookingId));
+    if (!booking) {
+      set.status = 404;
+      return 'Booking not found';
+    }
+    const amountPaise = Math.round(Number(booking.total) * 100);
+    let order;
+    try {
+      order = await createRazorpayOrder(amountPaise, booking.bookingNumber, { bookingId: booking.id });
+    } catch (e: any) {
+      set.status = 502;
+      return `Could not create order: ${e.message}`;
+    }
+    // Upsert payment row
+    const [existing] = await db.select().from(payments).where(eq(payments.bookingId, booking.id));
+    if (existing) {
+      await db.update(payments).set({ razorpayOrderId: order.id, status: 'pending', updatedAt: new Date() }).where(eq(payments.id, existing.id));
+    } else {
+      await db.insert(payments).values({
+        userId: booking.userId,
+        bookingId: booking.id,
+        amount: String(booking.total),
+        currency: 'INR',
+        razorpayOrderId: order.id,
+        paymentMethod: 'razorpay',
+        status: 'pending',
+      });
+    }
+
+    set.headers['Content-Type'] = 'text/html; charset=utf-8';
+    return `<!doctype html>
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pay ${booking.bookingNumber}</title>
+<style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#0f0a1e;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:20px}
+.card{max-width:340px;background:#1e1b4b;border:1px solid #312e81;border-radius:24px;padding:32px}
+h1{margin:0 0 8px;font-size:20px}.amount{font-size:32px;font-weight:bold;color:#a78bfa;margin:8px 0 24px}
+button{width:100%;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;border:0;padding:16px;border-radius:12px;font-size:16px;font-weight:600}
+.status{margin-top:16px;font-size:13px;color:#a8a0c8}
+</style></head><body>
+<div class="card">
+<h1>Booking ${booking.bookingNumber}</h1>
+<div class="amount">₹${booking.total}</div>
+<button id="pay">Pay with Razorpay</button>
+<div class="status" id="status">Tap to open the secure checkout</div>
+</div>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+const opts = {
+  key: ${JSON.stringify(KEY_ID || 'rzp_test_MOCK')},
+  amount: ${amountPaise},
+  currency: 'INR',
+  order_id: ${JSON.stringify(order.id)},
+  name: 'Naploo',
+  description: 'Stay booking ${booking.bookingNumber}',
+  theme: { color: '#7c3aed' },
+  handler: async function(resp){
+    document.getElementById('status').textContent = 'Verifying payment…';
+    try {
+      const r = await fetch('/payments/verify', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({razorpay_order_id:resp.razorpay_order_id,razorpay_payment_id:resp.razorpay_payment_id,razorpay_signature:resp.razorpay_signature})
+      });
+      const j = await r.json();
+      if (j.success) {
+        document.getElementById('status').textContent = 'Payment successful!';
+        // Redirect to deep-link so the mobile WebView can detect success
+        window.location.href = 'naploo://payment-success?bookingId=' + ${JSON.stringify(booking.id)};
+      } else {
+        document.getElementById('status').textContent = 'Verification failed: ' + (j.message||'unknown');
+      }
+    } catch(e){ document.getElementById('status').textContent = 'Network error'; }
+  },
+  modal: { ondismiss: function(){ window.location.href = 'naploo://payment-cancelled?bookingId=' + ${JSON.stringify(booking.id)}; } }
+};
+document.getElementById('pay').onclick = function(){ new Razorpay(opts).open(); };
+// Auto-open on load
+setTimeout(()=>document.getElementById('pay').click(), 300);
+</script>
+</body></html>`;
+  })
+
   // ─── Verify payment (checkout callback) ─────────────────────
   .post(
     '/payments/verify',

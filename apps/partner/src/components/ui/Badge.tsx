@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '@/theme';
+import { View, Text, StyleSheet } from "react-native";
+import { FontSize, FontWeight, Spacing, BorderRadius } from "@/theme";
+import { useTheme } from '@/theme/useTheme';
 
 type BadgeVariant = 'success' | 'warning' | 'error' | 'info' | 'default';
 
@@ -10,8 +11,7 @@ interface BadgeProps {
 }
 
 export function Badge({ text, variant = 'default' }: BadgeProps) {
-  const scheme = useColorScheme() ?? 'light';
-  const c = Colors[scheme];
+  const { colors: c } = useTheme();
 
   const variantColors: Record<BadgeVariant, { bg: string; fg: string }> = {
     success: { bg: c.successLight, fg: c.success },

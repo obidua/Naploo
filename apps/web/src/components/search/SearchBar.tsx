@@ -133,9 +133,9 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-0 md:divide-x md:divide-gray-200 rounded-2xl md:border md:border-gray-200 md:bg-white overflow-visible">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-0 md:divide-x md:divide-gray-200 rounded-2xl md:border md:border-gray-200 md:bg-white overflow-visible items-stretch">
         {/* Location */}
-        <div className="relative md:col-span-4" ref={sugRef}>
+        <div className="relative md:col-span-3" ref={sugRef}>
           <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
             Where to?
           </label>
@@ -180,7 +180,7 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
         {/* Dates / Time */}
         {state.mode === 'rooms' ? (
           <>
-            <div className="md:col-span-3">
+            <div className="md:col-span-2">
               <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
                 Check-in
               </label>
@@ -202,7 +202,7 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
                 />
               </div>
             </div>
-            <div className="md:col-span-3">
+            <div className="md:col-span-2">
               <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
                 Check-out
               </label>
@@ -220,7 +220,7 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
           </>
         ) : (
           <>
-            <div className="md:col-span-3">
+            <div className="md:col-span-2">
               <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
                 Date & Start
               </label>
@@ -241,7 +241,7 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
                 />
               </div>
             </div>
-            <div className="md:col-span-3">
+            <div className="md:col-span-2">
               <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
                 Duration
               </label>
@@ -308,8 +308,8 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
           )}
         </div>
 
-        {/* Submit */}
-        <div className="md:col-span-12 md:hidden">
+        {/* Submit — mobile (full row), and desktop (inline at end) */}
+        <div className="md:col-span-1 md:hidden">
           <button
             type="submit"
             className="w-full mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white font-semibold shadow-md"
@@ -317,15 +317,15 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
             <Search className="w-4 h-4" /> Search
           </button>
         </div>
-      </div>
-
-      <div className="hidden md:flex justify-end mt-3">
-        <button
-          type="submit"
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
-        >
-          <Search className="w-4 h-4" /> Search
-        </button>
+        <div className="hidden md:flex md:col-span-1 items-center justify-center p-2">
+          <button
+            type="submit"
+            aria-label="Search"
+            className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white shadow-md hover:shadow-lg transition-all"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </form>
   );

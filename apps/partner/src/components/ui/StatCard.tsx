@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '@/theme';
+import { View, Text, StyleSheet } from "react-native";
+import { FontSize, FontWeight, Spacing, BorderRadius } from "@/theme";
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from './Card';
+import { useTheme } from '@/theme/useTheme';
 
 interface StatCardProps {
   title: string;
@@ -13,8 +14,7 @@ interface StatCardProps {
 }
 
 export function StatCard({ title, value, icon, color, subtitle }: StatCardProps) {
-  const scheme = useColorScheme() ?? 'light';
-  const c = Colors[scheme];
+  const { colors: c } = useTheme();
   const iconColor = color ?? c.primary;
 
   return (

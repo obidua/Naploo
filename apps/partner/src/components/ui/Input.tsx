@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
-import { View, TextInput, Text, StyleSheet, useColorScheme, type TextInputProps } from 'react-native';
-import { Colors, BorderRadius, FontSize, Spacing } from '@/theme';
+import { View, TextInput, Text, StyleSheet, type TextInputProps } from 'react-native';
+import { BorderRadius, FontSize, Spacing } from "@/theme";
+import { useTheme } from '@/theme/useTheme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -9,8 +10,7 @@ interface InputProps extends TextInputProps {
 }
 
 export const Input = forwardRef<TextInput, InputProps>(function Input({ label, error, icon, style, ...props }, ref) {
-  const scheme = useColorScheme() ?? 'light';
-  const c = Colors[scheme];
+  const { colors: c } = useTheme();
 
   return (
     <View style={styles.container}>

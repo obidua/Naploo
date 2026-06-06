@@ -273,6 +273,10 @@ export const paymentsApi = {
       '/api/v1/payments/verify',
       { method: 'POST', body: { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature } }
     ),
+  // Hosted-checkout URL — open this in a WebView. The page auto-launches
+  // Razorpay checkout, verifies the signature server-side, and redirects to
+  // `naploo://payment-success?bookingId=...` (or payment-cancelled) on completion.
+  getCheckoutUrl: (bookingId: string) => `${API_BASE}/api/v1/payments/checkout/${encodeURIComponent(bookingId)}`,
 };
 
 export { clearTokens, getToken };

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, useColorScheme, type ViewStyle } from 'react-native';
-import { Colors, BorderRadius, Spacing } from '@/theme';
+import { View, StyleSheet, type ViewStyle } from 'react-native';
+import { BorderRadius, Spacing } from '@/theme';
+import { useTheme } from '@/theme/useTheme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -9,8 +10,7 @@ interface CardProps {
 }
 
 export function Card({ children, style, padded = true }: CardProps) {
-  const scheme = useColorScheme() ?? 'light';
-  const c = Colors[scheme];
+  const { colors: c } = useTheme();
 
   return (
     <View

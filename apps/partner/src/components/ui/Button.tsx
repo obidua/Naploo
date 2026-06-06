@@ -7,8 +7,8 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
-import { Colors, BorderRadius, FontSize, FontWeight, Spacing } from '@/theme';
-import { useColorScheme } from 'react-native';
+import { BorderRadius, FontSize, FontWeight, Spacing } from "@/theme";
+import { useTheme } from '@/theme/useTheme';
 
 interface ButtonProps {
   title: string;
@@ -33,8 +33,7 @@ export function Button({
   textStyle,
   icon,
 }: ButtonProps) {
-  const scheme = useColorScheme() ?? 'light';
-  const c = Colors[scheme];
+  const { colors: c } = useTheme();
 
   const bgColor = {
     primary: c.primary,

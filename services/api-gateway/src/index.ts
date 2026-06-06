@@ -44,12 +44,18 @@ const ROUTES: Record<string, { base: string; strip?: string }> = {
 type Access = 'public' | 'authed' | 'partner' | 'admin';
 
 // Decide the access level required for a request
-function accessFor(method: string, seg: string): Access {
+function accessFor(method: string, seg: string, fullPath?: string): Access {
   if (seg === 'admin' || seg === 'analytics') return 'admin';
   if (seg === 'notify') return 'admin';
   // Partner inventory writes (listings + pricing)
   if (['hotels', 'rooms', 'pod-sets'].includes(seg) && ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) return 'partner';
   if (seg === 'partner') return 'partner';
+  // Special-cases under /payments: the hosted checkout page and verify
+  // are public (HTML page + Razorpay HMAC signature is the auth).
+  if (seg === 'payments' && fullPath) {
+    if (method === 'GET' && fullPath.startsWith('/payments/checkout/')) return 'public';
+    if (method === 'POST' && (fullPath === '/payments/verify' || fullPath === '/payments/webhook')) return 'public';
+  }
   // Authenticated customer areas
   if (['bookings', 'payments', 'investors', 'associates', 'referrals'].includes(seg)) return 'authed';
   // public: auth, search, nearby, cities, quote, availability, GET hotels/rooms/pod-sets, rentals (lead capture)
@@ -126,7 +132,7 @@ const app = new Elysia()
     }
 
     // Enforce access policy
-    const need = accessFor(request.method, seg);
+    const need = accessFor(request.method, seg, subPath);
     if (need !== 'public') {
       if (!userId) {
         set.status = 401;
