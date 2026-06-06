@@ -2,31 +2,32 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { 
+import {
   Phone, Mail, MapPin, Clock, Send, MessageSquare,
   Twitter, Instagram, Linkedin, Youtube, ArrowRight
 } from 'lucide-react';
+import { COMPANY, EMAILS, PHONES, ADDRESS } from '@/data/company';
 
 const contactMethods = [
   {
     icon: Phone,
     title: 'Phone',
     description: 'Mon-Sat, 9am-6pm IST',
-    value: '+91 98765 43210',
-    action: 'tel:+919876543210'
+    value: PHONES.primary,
+    action: `tel:${PHONES.primaryRaw}`
   },
   {
     icon: Mail,
     title: 'Email',
     description: 'We reply within 24 hours',
-    value: 'hello@naploo.com',
-    action: 'mailto:hello@naploo.com'
+    value: EMAILS.support,
+    action: `mailto:${EMAILS.support}`
   },
   {
     icon: MapPin,
     title: 'Office',
     description: 'Visit us at our headquarters',
-    value: 'Delhi NCR, India',
+    value: `${ADDRESS.city}, ${ADDRESS.state}`,
     action: '/about'
   },
   {
@@ -40,22 +41,10 @@ const contactMethods = [
 
 const offices = [
   {
-    city: 'Delhi NCR',
-    address: 'Tower A, Cyber City, Sector 24, Gurugram, Haryana 122002',
-    phone: '+91 98765 43210',
+    city: `${COMPANY.brand} HQ — ${ADDRESS.city}`,
+    address: `${ADDRESS.line1}, ${ADDRESS.line2}`,
+    phone: PHONES.primary,
     isPrimary: true
-  },
-  {
-    city: 'Mumbai',
-    address: 'Level 5, One BKC, Bandra Kurla Complex, Mumbai 400051',
-    phone: '+91 98765 43211',
-    isPrimary: false
-  },
-  {
-    city: 'Bangalore',
-    address: 'WeWork, Embassy Tech Village, Outer Ring Road, Bangalore 560103',
-    phone: '+91 98765 43212',
-    isPrimary: false
   }
 ];
 

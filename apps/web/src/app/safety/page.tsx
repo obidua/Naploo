@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PHONES } from '@/data/company';
 
 export const metadata: Metadata = {
   title: "Safety & Hygiene | Naploo Sleep Pods",
@@ -62,7 +63,7 @@ const safetyTips = [
 ];
 
 const emergencyContacts = [
-  { label: 'Naploo 24/7 Helpline', number: '+91 98765 43210' },
+  { label: 'Naploo Helpline', number: PHONES.primary },
   { label: 'Police Emergency', number: '100' },
   { label: 'Ambulance', number: '102' },
   { label: 'Fire Emergency', number: '101' },
@@ -145,7 +146,7 @@ export default function SafetyPage() {
             {emergencyContacts.map((contact) => (
               <a
                 key={contact.label}
-                href={`tel:${contact.number}`}
+                href={`tel:${contact.number.replace(/\s+/g, '')}`}
                 className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 flex items-center justify-between hover:ring-2 hover:ring-emerald-500/50 transition-all"
               >
                 <div className="flex items-center gap-4">

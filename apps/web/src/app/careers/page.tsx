@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 import React from 'react';
 import Link from 'next/link';
 import { Briefcase, MapPin, Clock, Heart, Zap, Users, Code, Paintbrush, TrendingUp, Headphones, ArrowRight } from 'lucide-react';
+import { EMAILS } from '@/data/company';
 
 const benefits = [
   { icon: Heart, title: 'Health & Wellness', desc: 'Free gym membership, mental health support, and wellness programs' },
@@ -200,7 +201,7 @@ export default function CareersPage() {
           <div className="text-center mt-12">
             <p className="text-slate-500 mb-4">Don&apos;t see a role that fits?</p>
             <Link
-              href="mailto:careers@naploo.com"
+              href={`mailto:${EMAILS.careers}`}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 hover:bg-gray-100 transition-colors"
             >
               Send Us Your Resume
@@ -222,7 +223,7 @@ export default function CareersPage() {
             Join us in building India&apos;s largest sleeping pod network.
           </p>
           <a
-            href="mailto:careers@naploo.com"
+            href={`mailto:${EMAILS.careers}`}
             className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary-500 to-violet-600 text-white font-semibold rounded-xl hover:shadow-glow-lg transition-all"
           >
             Apply Now

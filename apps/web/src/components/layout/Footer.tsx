@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { COMPANY, EMAILS, PHONES, ADDRESS } from '@/data/company';
 
 const footerLinks = {
   product: [
@@ -151,6 +152,29 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Contact rail */}
+        <div className="border-t border-white/10 pt-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-white/70">
+            <div>
+              <h4 className="font-semibold text-white mb-2">Email</h4>
+              <a href={`mailto:${EMAILS.support}`} className="hover:text-white block">{EMAILS.support}</a>
+              <a href={`mailto:${EMAILS.primary}`} className="hover:text-white block">{EMAILS.primary}</a>
+            </div>
+            <div>
+              <h4 className="font-semibold text-white mb-2">Phone</h4>
+              <a href={`tel:${PHONES.primaryRaw}`} className="hover:text-white">{PHONES.primary}</a>
+            </div>
+            <div>
+              <h4 className="font-semibold text-white mb-2">Location</h4>
+              <p>{ADDRESS.line1}</p>
+              <p>{ADDRESS.line2}</p>
+            </div>
+          </div>
+          <div className="mt-6 text-xs text-white/40">
+            {COMPANY.legalName} • GSTIN: {COMPANY.gstin}
+          </div>
+        </div>
+
         {/* Newsletter */}
         <div className="border-t border-white/10 pt-8 mb-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -178,7 +202,7 @@ export function Footer() {
         <div className="border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-white/40">
-              © 2026 Naploo. All rights reserved. A BIDUA Industries Product.
+              © 2026 {COMPANY.brand}. All rights reserved. {COMPANY.tagline}.
             </p>
             <div className="flex items-center gap-6">
               <span className="text-sm text-white/40">Made with ❤️ in India</span>
