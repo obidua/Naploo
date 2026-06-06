@@ -27,6 +27,29 @@ const app = new Elysia()
     timestamp: new Date().toISOString(),
   }))
 
+  // ─── Dev helper: fetch latest unverified OTP for a phone ────
+  // ENABLED in non-production environments only (so QA can self-serve while
+  // SMS keys are not configured). Returns 404 in production.
+  .get('/dev-otp/:phone', async ({ params, set }) => {
+    if (process.env.NODE_ENV === 'production') {
+      set.status = 404;
+      return { success: false, message: 'Not available in production' };
+    }
+    const phone = decodeURIComponent(params.phone);
+    const normalized = phone.startsWith('+91') ? phone : `+91${phone.replace(/^0+/, '')}`;
+    const row = await db
+      .select()
+      .from(otps)
+      .where(and(eq(otps.phone, normalized), eq(otps.verified, false)))
+      .orderBy(desc(otps.createdAt))
+      .limit(1);
+    if (row.length === 0) {
+      set.status = 404;
+      return { success: false, message: 'No OTP found — send one first' };
+    }
+    return { success: true, phone: normalized, otp: row[0].otp, expiresAt: row[0].expiresAt };
+  })
+
   // ─── Send OTP ───────────────────────────────────────────────
   .post('/send-otp', async ({ body, set }) => {
     const { phone } = body;
