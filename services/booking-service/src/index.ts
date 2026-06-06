@@ -133,7 +133,9 @@ const app = new Elysia()
   // ─── Create booking ─────────────────────────────────────────
   .post(
     '/bookings',
-    async ({ body, set }) => {
+    async ({ body, set, headers }) => {
+      // Prefer the gateway-verified identity over any client-supplied userId
+      const userId = (headers['x-user-id'] as string) || body.userId;
       const quote = await computeQuote(body, set);
       if (!quote.success) return quote;
 
@@ -172,7 +174,7 @@ const app = new Elysia()
         .insert(bookings)
         .values({
           bookingNumber: genBookingNumber(),
-          userId: body.userId,
+          userId,
           bookingType: body.bookingType,
           podId,
           roomId,
@@ -201,7 +203,7 @@ const app = new Elysia()
     },
     {
       body: t.Object({
-        userId: t.String(),
+        userId: t.Optional(t.String()),
         bookingType: t.Union([t.Literal('pod'), t.Literal('room')]),
         roomId: t.Optional(t.String()),
         podSetId: t.Optional(t.String()),
@@ -220,16 +222,17 @@ const app = new Elysia()
   // ─── List bookings for a user ───────────────────────────────
   .get(
     '/bookings',
-    async ({ query }) => {
+    async ({ query, headers }) => {
+      const userId = (headers['x-user-id'] as string) || query.userId;
       const rows = await db
         .select()
         .from(bookings)
-        .where(eq(bookings.userId, query.userId))
+        .where(eq(bookings.userId, userId))
         .orderBy(desc(bookings.createdAt));
       const enriched = await enrich(rows);
       return { success: true, count: enriched.length, bookings: enriched };
     },
-    { query: t.Object({ userId: t.String() }) }
+    { query: t.Object({ userId: t.Optional(t.String()) }) }
   )
 
   // ─── Bookings for a partner (portal) ────────────────────────

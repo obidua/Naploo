@@ -118,6 +118,34 @@
         "typescript": "^5.3.0",
       },
     },
+    "services/admin-service": {
+      "name": "@naploo/admin-service",
+      "version": "1.0.0",
+      "dependencies": {
+        "@elysiajs/cors": "^1.1.0",
+        "@naploo/db": "workspace:*",
+        "drizzle-orm": "^0.39.0",
+        "elysia": "^1.2.0",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.3.0",
+      },
+    },
+    "services/analytics-service": {
+      "name": "@naploo/analytics-service",
+      "version": "1.0.0",
+      "dependencies": {
+        "@elysiajs/cors": "^1.1.0",
+        "@naploo/db": "workspace:*",
+        "drizzle-orm": "^0.39.0",
+        "elysia": "^1.2.0",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.3.0",
+      },
+    },
     "services/api-gateway": {
       "name": "@naploo/api-gateway",
       "version": "1.0.0",
@@ -178,6 +206,20 @@
         "typescript": "^5.3.0",
       },
     },
+    "services/investor-service": {
+      "name": "@naploo/investor-service",
+      "version": "1.0.0",
+      "dependencies": {
+        "@elysiajs/cors": "^1.1.0",
+        "@naploo/db": "workspace:*",
+        "drizzle-orm": "^0.39.0",
+        "elysia": "^1.2.0",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.3.0",
+      },
+    },
     "services/notification-service": {
       "name": "@naploo/notification-service",
       "version": "1.0.0",
@@ -199,6 +241,34 @@
       "dependencies": {
         "@elysiajs/cors": "^1.1.0",
         "@elysiajs/swagger": "^1.1.0",
+        "@naploo/db": "workspace:*",
+        "drizzle-orm": "^0.39.0",
+        "elysia": "^1.2.0",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.3.0",
+      },
+    },
+    "services/referral-service": {
+      "name": "@naploo/referral-service",
+      "version": "1.0.0",
+      "dependencies": {
+        "@elysiajs/cors": "^1.1.0",
+        "@naploo/db": "workspace:*",
+        "drizzle-orm": "^0.39.0",
+        "elysia": "^1.2.0",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.3.0",
+      },
+    },
+    "services/rental-service": {
+      "name": "@naploo/rental-service",
+      "version": "1.0.0",
+      "dependencies": {
+        "@elysiajs/cors": "^1.1.0",
         "@naploo/db": "workspace:*",
         "drizzle-orm": "^0.39.0",
         "elysia": "^1.2.0",
@@ -575,6 +645,10 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
+    "@naploo/admin-service": ["@naploo/admin-service@workspace:services/admin-service"],
+
+    "@naploo/analytics-service": ["@naploo/analytics-service@workspace:services/analytics-service"],
+
     "@naploo/api-gateway": ["@naploo/api-gateway@workspace:services/api-gateway"],
 
     "@naploo/auth-service": ["@naploo/auth-service@workspace:services/auth-service"],
@@ -585,6 +659,8 @@
 
     "@naploo/hotel-service": ["@naploo/hotel-service@workspace:services/hotel-service"],
 
+    "@naploo/investor-service": ["@naploo/investor-service@workspace:services/investor-service"],
+
     "@naploo/mobile": ["@naploo/mobile@workspace:apps/mobile"],
 
     "@naploo/notification-service": ["@naploo/notification-service@workspace:services/notification-service"],
@@ -592,6 +668,10 @@
     "@naploo/partner": ["@naploo/partner@workspace:apps/partner"],
 
     "@naploo/payment-service": ["@naploo/payment-service@workspace:services/payment-service"],
+
+    "@naploo/referral-service": ["@naploo/referral-service@workspace:services/referral-service"],
+
+    "@naploo/rental-service": ["@naploo/rental-service@workspace:services/rental-service"],
 
     "@naploo/search-service": ["@naploo/search-service@workspace:services/search-service"],
 

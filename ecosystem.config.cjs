@@ -22,5 +22,10 @@ module.exports = {
     svc('payment', 'payment-service'),
     svc('search', 'search-service'),
     svc('notification', 'notification-service'),
+    svc('investor', 'investor-service'),
+    svc('referral', 'referral-service'),
+    svc('rental', 'rental-service'),
+    svc('analytics', 'analytics-service'),
+    svc('admin', 'admin-service'),
   ],
 };
