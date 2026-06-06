@@ -586,3 +586,61 @@ A clean data layer that calls the gateway (reusing `src/lib/api.ts`'s auth+refre
 All of today's work (5 services, gateway, ecosystem.config.cjs, 6 web files) is on disk and running but **not yet committed**. Recommend a feature branch.
 
 ---
+
+---
+
+# Naploo — June 7, 2026 (Part 2): Full Backend + Security + Admin Auth
+
+> Continuation of the June 7 update. After wiring the customer website, the user took full control and requested completing all remaining backend + security work.
+
+## 6. Backend completed — all 11 services live
+
+Added the final 5 services (same Elysia/PM2 pattern), bringing the platform from 7 → **12 PM2 processes** (11 API services + gateway; web is systemd).
+
+| Service | Port | Endpoints (under `/api/v1`) |
+|---------|------|------------------------------|
+| **analytics-service** | 3009 | `/analytics/overview` (revenue, bookings, users-by-role, inventory counts, avg booking value), `/analytics/revenue?days=`, `/analytics/top-hotels` |
+| **investor-service** | 3004 | `/investors/enroll`, `/investors/me`, `/investors/invest` (₹5L/set, 18% GST, 3× guarantee), `/investors/investments/:id/earnings` |
+| **referral-service** | 3005 | `/associates/enroll` (builds 5-level upline from referral code), `/associates/me`, `/referrals/me` |
+| **rental-service** | 3006 | `/rentals/enquiry` (home/office pod lead capture → notification-service; public) |
+| **admin-service** | 3011 | `/admin/users` (+`/:id/status`), `/admin/partners` (+`/:id/approve`,`/suspend`), `/admin/bookings` (enriched), `/admin/payments`, `/admin/payouts`, `/admin/investors` (+`/:id/approve`) |
+
+Verified through the gateway with real data: analytics overview returns 19 users (8 partner / 10 customer / 1 admin), 8 partners, 54 rooms, 68 pods; admin partner list returns all 8; investor enroll, associate enroll, and rental enquiry all succeed.
+
+## 7. Security — JWT auth + role gating at the gateway
+
+The gateway now **verifies the JWT** on every `/api/v1/*` request, injects `x-user-id` / `x-user-role` headers downstream, and enforces an access policy:
+
+- **public:** auth, search, nearby, cities, quote, availability, `GET` hotels/rooms/pods, rental enquiry
+- **authed (any logged-in user):** bookings, payments, investors, associates, referrals
+- **partner (partner/admin):** hotel/room/pod **writes** (add listing, set pricing), `/partner/:id/bookings`
+- **admin (admin/super_admin):** `/admin/*`, `/analytics/*`, `/notify/*`
+
+Verified: public search `200` without token; `POST /bookings` without token → `401`; admin route with a customer token → `403`. **booking-service now uses the token identity** (`x-user-id`), not a client-supplied `userId` — a user can no longer book as someone else.
+
+## 8. Real admin authentication (replaces hardcoded password)
+
+Previously the admin dashboard accepted a hardcoded `admin123`/client-side password. Now:
+- **auth-service** gained `POST /auth/login` (email + password) using **Bun's built-in `Bun.password`** (argon2id — note: the npm `argon2` native module does **not** load under Bun, so we use the runtime built-in).
+- The admin user's password hash was set in the DB; admin login now issues a real JWT and is **role-gated** (`admin`/`super_admin` only).
+- `apps/web/src/app/admin/page.tsx` login rewired: `authApi.login()` → role check → stores JWT in the shared auth store → all admin API calls now carry the token. Logout clears the store. Build verified (`/admin` compiles, 32/32 routes).
+
+> **Admin credentials:** `admin@naploo.com` / `Naploo@Admin2026` (change after first login).
+
+## 9. State after Part 2
+
+- **PM2:** gateway + auth, booking, hotel, payment, search, notification, investor, referral, rental, analytics, admin — all online. `pm2 save` persisted.
+- **Git:** committed in stages on branch `feature/backend-and-web-wiring` (not pushed to GitHub).
+
+## 10. Remaining work (frontend wiring — backend is ready for all of it)
+
+| Item | Status | Note |
+|------|--------|------|
+| Admin dashboard **data tabs** | mock (`admin/data.ts`) | Login is real; 16 entity tabs still render mock arrays. Wire to `/admin/*` + `/analytics/*`. |
+| **Partner web portal** | not built | Backend ready: hotel-service write endpoints + `/partner/:id/bookings`. Needs onboarding + inventory/pricing UI. |
+| **Customer mobile app** (Expo) | auth-only | Wire explore/property/booking/payment/my-bookings to the gateway (same as web). |
+| **Partner mobile app** (Expo) | UI scaffold | Wire inventory/pricing/bookings/earnings to the gateway. |
+| Real keys | mock | Razorpay / MSG91 / Resend — drop into `.env`. |
+| Reviews, wishlist, map | not built | Nice-to-haves on the existing data layer. |
+
+These are visual UIs best completed with browser-based QA rather than blind generation.

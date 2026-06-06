@@ -144,6 +144,14 @@ export const api = {
 
 // Auth API
 export const authApi = {
+  login: (email: string, password: string) =>
+    api.post<{
+      success: boolean;
+      message: string;
+      user: { id: string; phone: string; email: string | null; firstName: string | null; lastName: string | null; role: string; status: string };
+      accessToken: string;
+      refreshToken: string;
+    }>('/api/v1/auth/login', { email, password }),
   sendOtp: (phone: string) => api.post<{ success: boolean; message: string; otp?: string }>('/api/v1/auth/send-otp', { phone }),
   verifyOtp: (phone: string, otp: string, name?: string, email?: string) =>
     api.post<{

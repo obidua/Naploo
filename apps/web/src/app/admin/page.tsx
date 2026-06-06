@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { authApi } from '@/lib/api';
 import type { AdminPage } from './types';
 import * as D from './data';
 import {
@@ -22,22 +23,21 @@ import {
 // ============================
 // ADMIN AUTH LOGIN PAGE
 // ============================
-function AdminLogin({ onLogin }: { onLogin: (email: string, pass: string) => boolean }) {
+function AdminLogin({ onLogin }: { onLogin: (email: string, pass: string) => Promise<boolean> }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      if (!onLogin(email, password)) {
-        setError('Invalid credentials. Access denied.');
-      }
-      setLoading(false);
-    }, 800);
+    const ok = await onLogin(email, password);
+    if (!ok) {
+      setError('Invalid credentials or insufficient privileges.');
+    }
+    setLoading(false);
   };
 
   return (
@@ -281,28 +281,30 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  const handleLogin = (email: string, password: string): boolean => {
-    // Admin credentials - in production these validate against the DB
-    const validCredentials = [
-      { email: 'admin@naploo.com', password: 'Naploo@Admin2026' },
-      { email: 'super@naploo.com', password: 'NaplooSuper@2026' },
-    ];
-    const match = validCredentials.find(c => c.email === email && c.password === password);
-    if (match) {
-      sessionStorage.setItem('naploo-admin-session', JSON.stringify({
-        authenticated: true,
-        email: match.email,
-        loginAt: Date.now(),
-        expires: Date.now() + 8 * 60 * 60 * 1000, // 8 hours
-      }));
-      setAdminAuth(true);
-      return true;
-    }
-    return false;
+  const handleLogin = async (email: string, password: string): Promise<boolean> => {
+    // Real authentication against the backend (JWT) with admin role gate
+    const res = await authApi.login(email, password);
+    if (res.error || !res.data?.success) return false;
+    const { user, accessToken, refreshToken } = res.data;
+    if (!['admin', 'super_admin'].includes(user.role)) return false;
+    // Persist into the shared auth store so admin API calls carry the JWT
+    const store = useAuthStore.getState();
+    store.setTokens(accessToken, refreshToken);
+    store.setUser(user as any);
+    sessionStorage.setItem('naploo-admin-session', JSON.stringify({
+      authenticated: true,
+      email: user.email,
+      role: user.role,
+      loginAt: Date.now(),
+      expires: Date.now() + 8 * 60 * 60 * 1000, // 8 hours
+    }));
+    setAdminAuth(true);
+    return true;
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem('naploo-admin-session');
+    useAuthStore.getState().logout();
     setAdminAuth(false);
   };
 

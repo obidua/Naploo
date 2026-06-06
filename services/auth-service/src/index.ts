@@ -284,6 +284,61 @@ const app = new Elysia()
     }),
   })
 
+  // ─── Email + Password Login (admin / staff / partner) ─────
+  .post('/login', async ({ body, jwt, refreshJwt, set }) => {
+    const email = body.email.toLowerCase().trim();
+    const found = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (found.length === 0 || !found[0].passwordHash) {
+      set.status = 401;
+      return { success: false, message: 'Invalid email or password' };
+    }
+    const u = found[0];
+    // Bun's built-in password verifier (argon2id) — supports argon2 + bcrypt hashes
+    const ok = await Bun.password.verify(body.password, u.passwordHash as string).catch(() => false);
+    if (!ok) {
+      set.status = 401;
+      return { success: false, message: 'Invalid email or password' };
+    }
+    if (u.status !== 'active') {
+      set.status = 403;
+      return { success: false, message: 'Account is not active' };
+    }
+    const accessToken = await jwt.sign({
+      userId: u.id,
+      role: u.role,
+      phone: u.phone,
+      exp: Math.floor(Date.now() / 1000) + 15 * 60,
+    });
+    const refreshTokenValue = await refreshJwt.sign({
+      userId: u.id,
+      tokenId: randomUUID(),
+      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
+    });
+    await db.insert(refreshTokens).values({
+      userId: u.id,
+      token: refreshTokenValue,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+    return {
+      success: true,
+      message: 'Login successful',
+      user: {
+        id: u.id,
+        phone: u.phone,
+        email: u.email,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        avatar: u.avatar,
+        role: u.role,
+        status: u.status,
+      },
+      accessToken,
+      refreshToken: refreshTokenValue,
+    };
+  }, {
+    body: t.Object({ email: t.String(), password: t.String() }),
+  })
+
   // ─── Get Current User (Protected) ──────────────────────────
   .get('/me', async ({ headers, jwt, set }) => {
     const authHeader = headers.authorization;
