@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform, AppState } from 'react-native';
 import { create } from 'zustand';
 
@@ -90,8 +91,22 @@ export async function setupNotifications(): Promise<string | null> {
     });
   }
 
-  const token = (await Notifications.getExpoPushTokenAsync()).data;
-  return token;
+  // Skip push token in dev / when no EAS projectId is configured.
+  // (Local notifications still work without it; only Expo's push server needs it.)
+  const projectId =
+    (Constants.expoConfig?.extra as any)?.eas?.projectId ||
+    (Constants as any).easConfig?.projectId;
+  if (!projectId) {
+    console.log('[smartAlerts] No EAS projectId — skipping push token registration');
+    return null;
+  }
+  try {
+    const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    return token;
+  } catch (e) {
+    console.warn('[smartAlerts] getExpoPushTokenAsync failed:', e);
+    return null;
+  }
 }
 
 // ─── Location Permission ───
