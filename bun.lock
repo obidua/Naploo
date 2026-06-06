@@ -252,6 +252,21 @@
         "typescript": "^5.3.0",
       },
     },
+    "services/pms-service": {
+      "name": "@naploo/pms-service",
+      "version": "1.0.0",
+      "dependencies": {
+        "@elysiajs/cors": "^1.1.0",
+        "@elysiajs/swagger": "^1.1.0",
+        "@naploo/db": "workspace:*",
+        "drizzle-orm": "^0.39.0",
+        "elysia": "^1.2.0",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.3.0",
+      },
+    },
     "services/referral-service": {
       "name": "@naploo/referral-service",
       "version": "1.0.0",
@@ -692,6 +707,8 @@
     "@naploo/partner": ["@naploo/partner@workspace:apps/partner"],
 
     "@naploo/payment-service": ["@naploo/payment-service@workspace:services/payment-service"],
+
+    "@naploo/pms-service": ["@naploo/pms-service@workspace:services/pms-service"],
 
     "@naploo/referral-service": ["@naploo/referral-service@workspace:services/referral-service"],
 

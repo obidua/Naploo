@@ -15,6 +15,7 @@ const REFERRAL = process.env.REFERRAL_SERVICE_URL || 'http://localhost:3005';
 const RENTAL = process.env.RENTAL_SERVICE_URL || 'http://localhost:3006';
 const ANALYTICS = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:3009';
 const ADMIN = process.env.ADMIN_SERVICE_URL || 'http://localhost:3011';
+const PMS = process.env.PMS_SERVICE_URL || 'http://localhost:3012';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'naploo-jwt-secret-key-change-in-production-2026';
 
@@ -39,6 +40,7 @@ const ROUTES: Record<string, { base: string; strip?: string }> = {
   rentals: { base: RENTAL, strip: '/rentals' },
   analytics: { base: ANALYTICS, strip: '/analytics' },
   admin: { base: ADMIN, strip: '/admin' },
+  pms: { base: PMS, strip: '/pms' },
 };
 
 type Access = 'public' | 'authed' | 'partner' | 'admin';
@@ -49,7 +51,7 @@ function accessFor(method: string, seg: string, fullPath?: string): Access {
   if (seg === 'notify') return 'admin';
   // Partner inventory writes (listings + pricing)
   if (['hotels', 'rooms', 'pod-sets'].includes(seg) && ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) return 'partner';
-  if (seg === 'partner') return 'partner';
+  if (seg === 'partner' || seg === 'pms') return 'partner';
   // Special-cases under /payments: the hosted checkout page and verify
   // are public (HTML page + Razorpay HMAC signature is the auth).
   if (seg === 'payments' && fullPath) {
@@ -86,7 +88,7 @@ const app = new Elysia()
   )
 
   .get('/health', async () => {
-    const targets = { auth: AUTH, hotel: HOTEL, search: SEARCH, booking: BOOKING, payment: PAYMENT, notification: NOTIFY, investor: INVESTOR, referral: REFERRAL, rental: RENTAL, analytics: ANALYTICS, admin: ADMIN };
+    const targets = { auth: AUTH, hotel: HOTEL, search: SEARCH, booking: BOOKING, payment: PAYMENT, notification: NOTIFY, investor: INVESTOR, referral: REFERRAL, rental: RENTAL, analytics: ANALYTICS, admin: ADMIN, pms: PMS };
     const checks = await Promise.allSettled(
       Object.entries(targets).map(async ([name, base]) => {
         try {

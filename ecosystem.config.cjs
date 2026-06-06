@@ -42,5 +42,6 @@ module.exports = {
     svc('rental', 'rental-service'),
     svc('analytics', 'analytics-service'),
     svc('admin', 'admin-service'),
+    svc('pms', 'pms-service'),
   ],
 };

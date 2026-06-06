@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, integer, decimal, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, boolean, integer, decimal, pgEnum, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users';
 
@@ -68,6 +68,14 @@ export const partners = pgTable('partners', {
   rating: decimal('rating', { precision: 2, scale: 1 }).default('0'),
   totalReviews: integer('total_reviews').default(0),
   
+  // Tier-aware PMS fields (added in PMS migration)
+  tier: text('tier'),
+  roomCountBand: varchar('room_count_band', { length: 20 }),
+  featuresEnabled: jsonb('features_enabled'),
+  checkInTime: text('check_in_time'),
+  checkOutTime: text('check_out_time'),
+  currency: varchar('currency', { length: 3 }),
+  timezone: varchar('timezone', { length: 50 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
