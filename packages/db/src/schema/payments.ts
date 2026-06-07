@@ -99,6 +99,22 @@ export const payouts = pgTable('payouts', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Refund requests / operations (customer cancellation, staff/admin manual refund)
+export const refunds = pgTable('refunds', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  bookingId: uuid('booking_id').references(() => bookings.id),
+  paymentId: uuid('payment_id').references(() => payments.id),
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  reason: text('reason'),
+  status: varchar('status', { length: 40 }).default('requested').notNull(),
+  requestedBy: uuid('requested_by').references(() => users.id),
+  processedBy: uuid('processed_by').references(() => users.id),
+  gatewayRefundId: varchar('gateway_refund_id', { length: 120 }),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Wallet (For quick payouts / cashback)
 export const wallets = pgTable('wallets', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -145,3 +161,5 @@ export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
 export type Payout = typeof payouts.$inferSelect;
 export type NewPayout = typeof payouts.$inferInsert;
+export type Refund = typeof refunds.$inferSelect;
+export type NewRefund = typeof refunds.$inferInsert;

@@ -173,6 +173,49 @@ async function getCashfreeOrder(orderId: string) {
   return data;
 }
 
+async function createCashfreeRefund(payment: typeof payments.$inferSelect, amount: number, reason?: string) {
+  if (!CASHFREE_ENABLED) throw new Error('Cashfree credentials are not configured');
+  if (!payment.razorpayOrderId) throw new Error('Cashfree order id is missing');
+  const refundId = `NPL_REF_${payment.id.replace(/-/g, '').slice(0, 18)}_${Date.now()}`.slice(0, 40);
+  const res = await fetch(`${CASHFREE_BASE_URL}/orders/${encodeURIComponent(payment.razorpayOrderId)}/refunds`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-client-id': CASHFREE_APP_ID,
+      'x-client-secret': CASHFREE_SECRET_KEY,
+      'x-api-version': CASHFREE_API_VERSION,
+    },
+    body: JSON.stringify({
+      refund_id: refundId,
+      refund_amount: amount,
+      refund_note: reason || 'Naploo booking refund',
+    }),
+  });
+  const data = await res.json().catch(async () => ({ message: await res.text() }));
+  if (!res.ok) throw new Error(`Cashfree refund failed: ${res.status} ${JSON.stringify(data)}`);
+  return { provider: 'cashfree', refundId, gateway: data };
+}
+
+async function createRazorpayRefund(payment: typeof payments.$inferSelect, amount: number, reason?: string) {
+  if (RAZORPAY_MOCK) return { provider: 'razorpay', refundId: `rfnd_MOCK${Date.now().toString(36)}`, gateway: { mock: true } };
+  if (!payment.razorpayPaymentId) throw new Error('Razorpay payment id is missing');
+  const res = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(payment.razorpayPaymentId)}/refund`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64')}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      amount: Math.round(amount * 100),
+      speed: 'normal',
+      notes: { reason: reason || 'Naploo booking refund', source: 'naploo' },
+    }),
+  });
+  const data = await res.json().catch(async () => ({ message: await res.text() }));
+  if (!res.ok) throw new Error(`Razorpay refund failed: ${res.status} ${JSON.stringify(data)}`);
+  return { provider: 'razorpay', refundId: data.id, gateway: data };
+}
+
 // Verify checkout signature: HMAC_SHA256(order_id|payment_id, key_secret)
 function verifySignature(orderId: string, paymentId: string, signature: string): boolean {
   if (RAZORPAY_MOCK) return true; // accept in mock mode
@@ -581,7 +624,7 @@ setTimeout(()=>document.getElementById('pay').click(), 300);
     return { success: true, received: true };
   })
 
-  // ─── Refund (mark refunded; real refund call when live) ─────
+  // ─── Refund ─────────────────────────────────────────────────
   .post(
     '/payments/:id/refund',
     async ({ params, body, set }) => {
@@ -590,25 +633,73 @@ setTimeout(()=>document.getElementById('pay').click(), 300);
         set.status = 404;
         return { success: false, message: 'Payment not found' };
       }
-      if (payment.status !== 'completed') {
+      if (!['completed', 'partially_refunded'].includes(payment.status)) {
         set.status = 400;
         return { success: false, message: 'Only completed payments can be refunded' };
       }
-      const refundAmount = body?.amount ?? Number(payment.amount);
+      const totalAmount = Number(payment.amount);
+      const alreadyRefunded = Number(payment.refundedAmount || 0);
+      const refundAmount = body?.amount ?? (totalAmount - alreadyRefunded);
+      if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
+        set.status = 400;
+        return { success: false, message: 'Refund amount must be greater than zero' };
+      }
+      if (refundAmount > totalAmount - alreadyRefunded + 0.01) {
+        set.status = 400;
+        return { success: false, message: 'Refund amount exceeds refundable balance' };
+      }
+
+      const metadata = paymentMetadata(payment);
+      const provider = (metadata.provider || payment.paymentMethod || 'razorpay') as PaymentProvider;
+      let gatewayRefund;
+      try {
+        gatewayRefund = provider === 'cashfree'
+          ? await createCashfreeRefund(payment, refundAmount, body?.reason)
+          : await createRazorpayRefund(payment, refundAmount, body?.reason);
+      } catch (e: any) {
+        set.status = 502;
+        return { success: false, message: e.message };
+      }
+
+      const nextRefundedAmount = alreadyRefunded + refundAmount;
+      const refundHistory = Array.isArray(metadata.refunds) ? metadata.refunds : [];
       const [updated] = await db
         .update(payments)
         .set({
-          status: refundAmount >= Number(payment.amount) ? 'refunded' : 'partially_refunded',
-          refundedAmount: String(refundAmount),
+          status: nextRefundedAmount >= totalAmount - 0.01 ? 'refunded' : 'partially_refunded',
+          refundedAmount: String(nextRefundedAmount),
           refundReason: body?.reason ?? null,
           refundedAt: new Date(),
+          metadata: JSON.stringify({
+            ...metadata,
+            refunds: [
+              ...refundHistory,
+              {
+                amount: refundAmount,
+                reason: body?.reason ?? null,
+                source: body?.source ?? 'manual',
+                initiatedBy: body?.initiatedBy ?? null,
+                initiatedByRole: body?.initiatedByRole ?? null,
+                createdAt: new Date().toISOString(),
+                gatewayRefund,
+              },
+            ],
+          }),
           updatedAt: new Date(),
         })
         .where(eq(payments.id, payment.id))
         .returning();
-      return { success: true, payment: updated };
+      return { success: true, payment: updated, refund: gatewayRefund };
     },
-    { body: t.Optional(t.Object({ amount: t.Optional(t.Number()), reason: t.Optional(t.String()) })) }
+    {
+      body: t.Optional(t.Object({
+        amount: t.Optional(t.Number()),
+        reason: t.Optional(t.String()),
+        source: t.Optional(t.String()),
+        initiatedBy: t.Optional(t.String()),
+        initiatedByRole: t.Optional(t.String()),
+      })),
+    }
   )
 
   .get('/payments/:id', async ({ params, set }) => {

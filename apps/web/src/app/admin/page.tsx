@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
-import { authApi } from '@/lib/api';
+import { api, authApi } from '@/lib/api';
 import type { AdminPage } from './types';
 import * as D from './data';
 import { useAdminData } from './data';
@@ -253,7 +253,7 @@ const statusColors: Record<string, string> = {
   'kyc_pending': 'bg-amber-50 text-amber-600', verified: 'bg-green-50 text-green-600', 'not_started': 'bg-slate-50 text-slate-500',
   published: 'bg-green-50 text-green-600', flagged: 'bg-red-50 text-red-600', hidden: 'bg-slate-50 text-slate-500',
   expired: 'bg-slate-50 text-slate-500', 'on-leave': 'bg-amber-50 text-amber-600',
-  'partial_refund': 'bg-orange-50 text-orange-600',
+  partially_refunded: 'bg-orange-50 text-orange-600',
 };
 
 
@@ -841,6 +841,16 @@ function BookingsView() {
 // ============================
 function PaymentsView() {
   const D = useAdminData();
+  async function initiateRefund(paymentId: string, maxAmount: number) {
+    const amountText = window.prompt('Refund amount', String(maxAmount));
+    if (!amountText) return;
+    const amount = Number(amountText);
+    if (!Number.isFinite(amount) || amount <= 0) { alert('Enter a valid refund amount'); return; }
+    const reason = window.prompt('Refund reason', 'Admin initiated refund') || 'Admin initiated refund';
+    const res = await api.post<{ success: boolean; message?: string }>(`/api/v1/admin/payments/${paymentId}/refund`, { amount, reason, source: 'admin_manual' });
+    if (res.error || res.data?.success === false) { alert(res.error || res.data?.message || 'Refund failed'); return; }
+    await useAdminData.getState().loadAll();
+  }
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -849,16 +859,21 @@ function PaymentsView() {
         <StatCard label="UPI Payments" value={String(D.mockPayments.filter(p => p.paymentMethod === 'upi').length)} icon={IndianRupee} color="from-blue-500 to-cyan-500" />
         <StatCard label="Card Payments" value={String(D.mockPayments.filter(p => p.paymentMethod === 'card').length)} icon={CreditCard} color="from-violet-500 to-purple-500" />
       </div>
-      <DataTable headers={[{ label: 'Transaction' }, { label: 'User' }, { label: 'Booking' }, { label: 'Method', align: 'center' }, { label: 'Razorpay', align: 'center' }, { label: 'Amount', align: 'right' }, { label: 'Status', align: 'center' }]}>
+      <DataTable headers={[{ label: 'Transaction' }, { label: 'User' }, { label: 'Booking' }, { label: 'Method', align: 'center' }, { label: 'Gateway ID', align: 'center' }, { label: 'Amount', align: 'right' }, { label: 'Status', align: 'center' }, { label: 'Actions', align: 'right' }]}>
         {D.mockPayments.map(p => (
           <tr key={p.id} className="hover:bg-gray-50/50 transition">
             <td className="px-5 py-3"><p className="text-sm font-mono text-slate-600">{p.id}</p><p className="text-[10px] text-slate-400">{p.createdAt}</p></td>
             <td className="px-5 py-3 text-sm text-slate-600">{p.userName}</td>
             <td className="px-5 py-3 text-sm font-mono text-primary-600">{p.bookingNumber}</td>
-            <td className="text-center"><StatusBadge status={p.paymentMethod} map={{ upi: 'bg-green-50 text-green-600', card: 'bg-blue-50 text-blue-600', wallet: 'bg-violet-50 text-violet-600', netbanking: 'bg-amber-50 text-amber-600', cod: 'bg-slate-50 text-slate-600' }} /></td>
+            <td className="text-center"><StatusBadge status={p.paymentMethod} map={{ cashfree: 'bg-emerald-50 text-emerald-600', razorpay: 'bg-blue-50 text-blue-600', upi: 'bg-green-50 text-green-600', card: 'bg-blue-50 text-blue-600', wallet: 'bg-violet-50 text-violet-600', netbanking: 'bg-amber-50 text-amber-600', cash: 'bg-slate-50 text-slate-600' }} /></td>
             <td className="text-center text-[10px] text-slate-400 font-mono">{p.razorpayPaymentId || '—'}</td>
             <td className={`text-right px-5 text-sm font-semibold ${p.status === 'refunded' ? 'text-red-600' : 'text-green-600'}`}>{p.status === 'refunded' ? '-' : '+'}₹{p.amount.toLocaleString()}</td>
             <td className="text-center"><StatusBadge status={p.status} map={statusColors} /></td>
+            <td className="text-right px-5">
+              {(p.status === 'completed' || p.status === 'partially_refunded') && (
+                <button onClick={() => initiateRefund(p.id, Math.max(0, p.amount - (p.refundAmount || 0)))} className="px-2.5 py-1 text-[10px] font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100">Refund</button>
+              )}
+            </td>
           </tr>
         ))}
       </DataTable>
@@ -872,6 +887,18 @@ function PaymentsView() {
 // ============================
 function PayoutsView() {
   const D = useAdminData();
+  async function generatePartnerSettlements() {
+    const res = await api.post<{ success: boolean; created: number; skipped: number; message?: string }>('/api/v1/admin/payouts/generate-partner-settlements', {});
+    if (res.error || res.data?.success === false) { alert(res.error || res.data?.message || 'Settlement generation failed'); return; }
+    alert(`Created ${res.data?.created || 0} settlement payout(s). Skipped ${res.data?.skipped || 0}.`);
+    await useAdminData.getState().loadAll();
+  }
+  async function processPayout(id: string, status: 'processing' | 'completed') {
+    const transferId = status === 'completed' ? (window.prompt('Bank transfer/reference ID', '') || undefined) : undefined;
+    const res = await api.post<{ success: boolean; message?: string }>(`/api/v1/admin/payouts/${id}/process`, { status, transferId, transferMode: 'manual_bank_transfer' });
+    if (res.error || res.data?.success === false) { alert(res.error || res.data?.message || 'Payout update failed'); return; }
+    await useAdminData.getState().loadAll();
+  }
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -880,7 +907,7 @@ function PayoutsView() {
         <StatCard label="Pending" value={String(D.mockPayouts.filter(p => p.status === 'pending').length)} icon={Clock} color="from-blue-500 to-cyan-500" />
         <StatCard label="Processing" value={String(D.mockPayouts.filter(p => p.status === 'processing').length)} icon={RefreshCw} color="from-violet-500 to-purple-500" />
       </div>
-      <PageHeader><FilterBtn /><ExportBtn /></PageHeader>
+      <PageHeader><AddBtn label="Generate partner settlements" onClick={generatePartnerSettlements} /><FilterBtn /><ExportBtn /></PageHeader>
       <DataTable headers={[{ label: 'Payout' }, { label: 'Recipient' }, { label: 'Type', align: 'center' }, { label: 'Amount' }, { label: 'TDS' }, { label: 'Net Amount' }, { label: 'Bank' }, { label: 'Period' }, { label: 'Status', align: 'center' }, { label: 'Actions', align: 'right' }]}>
         {D.mockPayouts.map(p => (
           <tr key={p.id} className="hover:bg-gray-50/50 transition">
@@ -893,7 +920,10 @@ function PayoutsView() {
             <td className="px-5 py-3"><p className="text-[10px] text-slate-600">{p.bankName}</p><p className="text-[10px] text-slate-400">{p.bankAccount} · {p.bankIfsc}</p></td>
             <td className="px-5 py-3 text-[10px] text-slate-400">{p.periodStart} —<br/>{p.periodEnd}</td>
             <td className="text-center"><StatusBadge status={p.status} map={statusColors} /></td>
-            <td className="text-right px-5">{p.status === 'pending' && <button className="px-2.5 py-1 text-[10px] font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100">Process</button>}</td>
+            <td className="text-right px-5">
+              {p.status === 'pending' && <button onClick={() => processPayout(p.id, 'processing')} className="px-2.5 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">Process</button>}
+              {p.status === 'processing' && <button onClick={() => processPayout(p.id, 'completed')} className="px-2.5 py-1 text-[10px] font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100">Mark paid</button>}
+            </td>
           </tr>
         ))}
       </DataTable>

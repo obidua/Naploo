@@ -226,8 +226,8 @@ export interface Associate {
 }
 
 // Payment - from payments table
-export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded' | 'partial_refund';
-export type PaymentMethod = 'upi' | 'card' | 'wallet' | 'netbanking' | 'cod';
+export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'partially_refunded';
+export type PaymentMethod = 'razorpay' | 'cashfree' | 'upi' | 'card' | 'wallet' | 'netbanking' | 'cash';
 
 export interface Payment {
   id: string;

@@ -3,7 +3,21 @@ import { registerAdminQlo } from "./qlo-parity";
 import { cors } from '@elysiajs/cors';
 import { db } from '@naploo/db';
 import { users, partners, bookings, payments, payouts, rooms, pods, podSets, investors } from '@naploo/db/schema';
-import { eq, desc, inArray } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
+
+const PAYMENT = process.env.PAYMENT_SERVICE_URL || 'http://127.0.0.1:3003';
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function monthBounds() {
+  const now = new Date();
+  return {
+    start: new Date(now.getFullYear(), now.getMonth(), 1),
+    end: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
+  };
+}
 
 // Gateway mounts this at /api/v1/admin/* (admin role enforced there) and
 // strips the /admin prefix, so handlers see /users, /partners, etc.
@@ -101,6 +115,132 @@ const appBase = new Elysia()
   .get('/payouts', async () => {
     const rows = await db.select().from(payouts).orderBy(desc(payouts.createdAt)).limit(200);
     return { success: true, count: rows.length, payouts: rows };
+  })
+
+  .post('/payments/:id/refund', async ({ params, body, headers, set }) => {
+    const res = await fetch(`${PAYMENT}/payments/${params.id}/refund`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: body.amount,
+        reason: body.reason || 'Admin initiated refund',
+        source: body.source || 'admin_manual',
+        initiatedBy: headers['x-user-id'] || null,
+        initiatedByRole: headers['x-user-role'] || 'admin',
+      }),
+    });
+    const data = await res.json().catch(async () => ({ message: await res.text() }));
+    set.status = res.status;
+    return data;
+  }, {
+    body: t.Object({
+      amount: t.Optional(t.Number()),
+      reason: t.Optional(t.String()),
+      source: t.Optional(t.String()),
+    }),
+  })
+
+  .post('/payouts/generate-partner-settlements', async ({ body }) => {
+    const input = body || {};
+    const defaults = monthBounds();
+    const periodStart = input.periodStart ? new Date(input.periodStart) : defaults.start;
+    const periodEnd = input.periodEnd ? new Date(input.periodEnd) : defaults.end;
+    const tdsPercent = input.tdsPercent ?? 0;
+
+    const bookingRows = await db
+      .select()
+      .from(bookings)
+      .where(and(eq(bookings.status, 'checked_out'), gte(bookings.checkOut, periodStart), lte(bookings.checkOut, periodEnd)));
+    if (!bookingRows.length) return { success: true, created: 0, skipped: 0, payouts: [] };
+
+    const bookingIds = bookingRows.map((b) => b.id);
+    const paidRows = await db.select().from(payments).where(and(inArray(payments.bookingId, bookingIds), eq(payments.status, 'completed')));
+    const paidBookingIds = new Set(paidRows.map((p) => p.bookingId).filter(Boolean));
+    const payableBookings = bookingRows.filter((b) => paidBookingIds.has(b.id));
+
+    const roomIds = [...new Set(payableBookings.map((b) => b.roomId).filter(Boolean))] as string[];
+    const podIds = [...new Set(payableBookings.map((b) => b.podId).filter(Boolean))] as string[];
+    const roomRows = roomIds.length ? await db.select().from(rooms).where(inArray(rooms.id, roomIds)) : [];
+    const podRows = podIds.length ? await db.select().from(pods).where(inArray(pods.id, podIds)) : [];
+    const setRows = await db.select().from(podSets);
+    const partnerRows = await db.select().from(partners);
+    const existing = await db.select().from(payouts).where(and(eq(payouts.payoutType, 'partner'), gte(payouts.periodStart, periodStart), lte(payouts.periodEnd, periodEnd)));
+    const existingUsers = new Set(existing.map((p) => p.userId));
+
+    const totals = new Map<string, number>();
+    for (const booking of payableBookings) {
+      let payoutUserId: string | null = null;
+      let amount = 0;
+      if (booking.roomId) {
+        const room = roomRows.find((r) => r.id === booking.roomId);
+        const partner = partnerRows.find((p) => p.id === room?.partnerId);
+        payoutUserId = partner?.userId || null;
+        amount = Number(booking.ownerShare);
+      } else if (booking.podId) {
+        const pod = podRows.find((p) => p.id === booking.podId);
+        const set = setRows.find((s) => s.id === pod?.podSetId);
+        const partner = partnerRows.find((p) => p.id === set?.partnerId);
+        if (set?.ownership === 'partner') {
+          payoutUserId = set.ownerId || partner?.userId || null;
+          amount = Number(booking.ownerShare);
+        } else if (Number(booking.partnerCommission || 0) > 0) {
+          payoutUserId = partner?.userId || null;
+          amount = Number(booking.partnerCommission);
+        }
+      }
+      if (!payoutUserId || amount <= 0) continue;
+      totals.set(payoutUserId, round2((totals.get(payoutUserId) || 0) + amount));
+    }
+
+    const created = [];
+    let skipped = 0;
+    for (const [userId, amount] of totals) {
+      if (existingUsers.has(userId)) { skipped += 1; continue; }
+      const tdsDeducted = round2(amount * (tdsPercent / 100));
+      const [payout] = await db.insert(payouts).values({
+        userId,
+        payoutType: 'partner',
+        amount: String(amount),
+        tdsDeducted: String(tdsDeducted),
+        netAmount: String(round2(amount - tdsDeducted)),
+        status: 'pending',
+        periodStart,
+        periodEnd,
+      }).returning();
+      created.push(payout);
+    }
+
+    return { success: true, created: created.length, skipped, payouts: created };
+  }, {
+    body: t.Optional(t.Object({
+      periodStart: t.Optional(t.String()),
+      periodEnd: t.Optional(t.String()),
+      tdsPercent: t.Optional(t.Number()),
+    })),
+  })
+
+  .post('/payouts/:id/process', async ({ params, body, set }) => {
+    const status = body.status || 'processing';
+    const [updated] = await db.update(payouts).set({
+      status: status as any,
+      transferId: body.transferId ?? null,
+      transferMode: body.transferMode ?? 'manual_bank_transfer',
+      failureReason: body.failureReason ?? null,
+      processedAt: ['completed', 'failed'].includes(status) ? new Date() : null,
+      updatedAt: new Date(),
+    }).where(eq(payouts.id, params.id)).returning();
+    if (!updated) {
+      set.status = 404;
+      return { success: false, message: 'Payout not found' };
+    }
+    return { success: true, payout: updated };
+  }, {
+    body: t.Object({
+      status: t.Optional(t.Union([t.Literal('processing'), t.Literal('completed'), t.Literal('failed')])) ,
+      transferId: t.Optional(t.String()),
+      transferMode: t.Optional(t.String()),
+      failureReason: t.Optional(t.String()),
+    }),
   })
 
   // ─── Investors (approve) ────────────────────────────────────

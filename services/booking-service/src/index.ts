@@ -2,13 +2,14 @@ import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { db } from '@naploo/db';
-import { bookings, rooms, pods, podSets, partners } from '@naploo/db/schema';
+import { bookings, rooms, pods, podSets, partners, payments } from '@naploo/db/schema';
 import { eq, and, inArray, or, lt, gt, desc } from 'drizzle-orm';
 
 // ─── Revenue / tax config ─────────────────────────────────────
 const POD_OWNER_SHARE = 0.6; // 60% to pod owner (investor/partner/naploo)
 const ROOM_HOTEL_SHARE = 0.82; // ~82% to hotel, rest to Naploo
 const ACTIVE_STATUSES = ['pending', 'confirmed', 'checked_in'] as const;
+const PAYMENT = process.env.PAYMENT_SERVICE_URL || 'http://127.0.0.1:3003';
 
 // India accommodation GST: <= ₹7500/night => 12%, above => 18%
 function gstRateFor(nightlyOrHourly: number, type: 'pod' | 'room'): number {
@@ -24,6 +25,45 @@ function genBookingNumber(): string {
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.floor(100 + Math.random() * 900);
   return `NPL${ts}${rand}`;
+}
+
+function cancellationRefundAmount(booking: typeof bookings.$inferSelect, now = new Date()) {
+  if (booking.status === 'checked_in') return { amount: 0, policy: 'no_refund_after_check_in' };
+  const checkIn = new Date(booking.checkIn);
+  const hoursBeforeCheckIn = (checkIn.getTime() - now.getTime()) / 36e5;
+  const total = Number(booking.total);
+  if (hoursBeforeCheckIn >= 2) return { amount: round2(total), policy: 'full_refund_2h_before_check_in' };
+  if (hoursBeforeCheckIn > 0) return { amount: round2(total * 0.5), policy: 'half_refund_before_check_in' };
+  return { amount: 0, policy: 'no_refund_after_check_in_time' };
+}
+
+async function initiateCancellationRefund(booking: typeof bookings.$inferSelect, reason: string | null, headers: Record<string, unknown>) {
+  const policy = cancellationRefundAmount(booking);
+  if (policy.amount <= 0) return { attempted: false, amount: 0, policy: policy.policy };
+  const [payment] = await db
+    .select()
+    .from(payments)
+    .where(and(eq(payments.bookingId, booking.id), inArray(payments.status, ['completed', 'partially_refunded'] as any)))
+    .limit(1);
+  if (!payment) return { attempted: false, amount: policy.amount, policy: policy.policy, message: 'No refundable completed payment found' };
+
+  try {
+    const res = await fetch(`${PAYMENT}/payments/${payment.id}/refund`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: policy.amount,
+        reason: reason || `Booking cancelled: ${policy.policy}`,
+        source: 'booking_cancel',
+        initiatedBy: headers['x-user-id'] || null,
+        initiatedByRole: headers['x-user-role'] || 'customer',
+      }),
+    });
+    const data = await res.json().catch(async () => ({ message: await res.text() }));
+    return { attempted: true, amount: policy.amount, policy: policy.policy, ok: res.ok, response: data };
+  } catch (e: any) {
+    return { attempted: true, amount: policy.amount, policy: policy.policy, ok: false, message: e?.message || 'Refund call failed' };
+  }
 }
 
 // Find bookings for a given inventory id that overlap [checkIn, checkOut)
@@ -265,7 +305,7 @@ const app = new Elysia()
   })
 
   // ─── Cancel ─────────────────────────────────────────────────
-  .post('/bookings/:id/cancel', async ({ params, body, set }) => {
+  .post('/bookings/:id/cancel', async ({ params, body, headers, set }) => {
     const [b] = await db.select().from(bookings).where(eq(bookings.id, params.id));
     if (!b) {
       set.status = 404;
@@ -280,7 +320,8 @@ const app = new Elysia()
       .set({ status: 'cancelled', cancelledAt: new Date(), cancelReason: body?.reason ?? null, updatedAt: new Date() })
       .where(eq(bookings.id, params.id))
       .returning();
-    return { success: true, booking: updated };
+    const refund = await initiateCancellationRefund(b, body?.reason ?? null, headers as Record<string, unknown>);
+    return { success: true, booking: updated, refund };
   }, { body: t.Optional(t.Object({ reason: t.Optional(t.String()) })) })
 
   // ─── Status transitions (confirm / check-in / check-out) ────

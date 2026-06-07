@@ -34,12 +34,13 @@ interface BackendInvestor {
 interface BackendPayment {
   id: string; userId: string; bookingId: string | null; amount: string; currency: string;
   status: string; paymentMethod: string | null; razorpayOrderId: string | null;
-  razorpayPaymentId: string | null; createdAt: string;
+  razorpayPaymentId: string | null; refundedAmount?: string | null; refundReason?: string | null; createdAt: string;
 }
 interface BackendPayout {
   id: string; userId: string; payoutType: string; amount: string; tdsDeducted: string;
-  netAmount: string; bankAccountNumber: string | null; transferId: string | null;
-  transferMode: string | null; status: string; createdAt: string; processedAt: string | null;
+  netAmount: string; bankAccountNumber: string | null; bankIfsc?: string | null; bankName?: string | null;
+  transferId: string | null; transferMode: string | null; status: string; periodStart?: string | null;
+  periodEnd?: string | null; createdAt: string; processedAt: string | null;
 }
 interface OverviewResp {
   totalRevenue: number; naplooRevenue: number; partnerRevenue: number; amountCollected: number;
@@ -160,6 +161,8 @@ function toPayment(p: BackendPayment): T.Payment {
     razorpayPaymentId: p.razorpayPaymentId || undefined,
     paymentMethod: (p.paymentMethod as any) || 'razorpay',
     status: p.status as any,
+    refundAmount: Number(p.refundedAmount || 0),
+    refundReason: p.refundReason || undefined,
     createdAt: p.createdAt,
   };
 }
@@ -174,12 +177,12 @@ function toPayout(p: BackendPayout): T.Payout {
     tdsAmount: Number(p.tdsDeducted),
     netAmount: Number(p.netAmount),
     bankAccount: p.bankAccountNumber || '',
-    bankIfsc: '',
-    bankName: '',
+    bankIfsc: p.bankIfsc || '',
+    bankName: p.bankName || '',
     transferId: p.transferId || undefined,
     status: p.status as any,
-    periodStart: '',
-    periodEnd: '',
+    periodStart: p.periodStart || '',
+    periodEnd: p.periodEnd || '',
     createdAt: p.createdAt,
   };
 }
