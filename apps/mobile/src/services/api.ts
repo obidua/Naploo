@@ -213,12 +213,30 @@ export const propertiesApi = {
   getById: async (id: string) => {
     const data = await request<{ success: boolean; hotel: any }>(`/api/v1/hotels/${encodeURIComponent(id)}`, { auth: false });
     const h = data.hotel;
+    const rooms = (h.rooms || []).map(adaptRoom);
+    const podSets = (h.podSets || []);
+    const pods = podSets.map((s: any) => adaptPodSet(s, h));
+    // The /hotels/:id detail endpoint does NOT include a `summary` block,
+    // so derive Pods/Rooms counts and start prices from the actual arrays
+    // (each pod set holds 2 sleeping pods — upper + lower).
+    const podCount = podSets.reduce((acc: number, s: any) => acc + (s.pods?.length || 2), 0);
+    const minRoomRate = rooms.length
+      ? Math.min(...rooms.map((r: any) => Number(r.pricePerNight) || Infinity).filter((n: number) => Number.isFinite(n)))
+      : 0;
+    const minPodRate = podSets.length
+      ? Math.min(...podSets.map((s: any) => Number(s.hourlyRate) || Infinity).filter((n: number) => Number.isFinite(n)))
+      : 0;
+    const card = adaptHotelCard(h);
     return {
       success: true,
       data: {
-        ...adaptHotelCard(h),
-        rooms: (h.rooms || []).map(adaptRoom),
-        pods: (h.podSets || []).map((s: any) => adaptPodSet(s, h)),
+        ...card,
+        podsCount: podCount || card.podsCount,
+        roomsCount: rooms.length || card.roomsCount,
+        podStartPrice: Number.isFinite(minPodRate) && minPodRate > 0 ? minPodRate : card.podStartPrice,
+        roomStartPrice: Number.isFinite(minRoomRate) && minRoomRate > 0 ? minRoomRate : card.roomStartPrice,
+        rooms,
+        pods,
       },
     };
   },

@@ -215,13 +215,29 @@ export default function PropertyDetailScreen() {
     checkIn.setHours(h, m, 0, 0);
     const checkOut = addHours(checkIn, podHours);
 
+    // The visual seat-map ids (e.g. `propertyId-A1-upper`) are synthetic; the
+    // backend booking + payment service expects a real podSet UUID. Map the
+    // selected slot to a real pod from the API (livePods) by index so the
+    // server-side booking call in /booking/confirm can succeed and the
+    // in-app Cashfree checkout can open. If no live pods are loaded, fall
+    // back to the synthetic id (confirm.tsx then takes the local path).
+    let bookingItemId: string = selectedPodSlot.id;
+    if (livePods.length > 0) {
+      const slotIndex = Math.max(
+        0,
+        (selectedPodSlot.row || 0) * 2 + (selectedPodSlot.position === 'upper' ? 1 : 0)
+      );
+      const realPod = livePods[Math.min(slotIndex, livePods.length - 1)];
+      if (realPod?.id) bookingItemId = realPod.id;
+    }
+
     router.push({
       pathname: '/booking/confirm',
       params: {
         propertyId: property.id,
         propertyName: property.name,
         type: 'pod',
-        itemId: selectedPodSlot.id,
+        itemId: bookingItemId,
         itemName: `Pod ${selectedPodSlot.label} (${selectedPodSlot.series})`,
         rate: String(selectedPodSlot.hourlyRate),
         duration: String(podHours),

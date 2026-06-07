@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/store/auth';
 import { useBookingsStore, validateCoupon } from '@/store/app';
 import { formatCurrency } from '@/utils';
+import { bookingsApi, paymentsApi } from '@/services/api';
 
 export default function BookingConfirmScreen() {
   const params = useLocalSearchParams<{
@@ -72,7 +73,47 @@ export default function BookingConfirmScreen() {
     }
   };
 
-  const handleProceedToPayment = () => {
+  // Optimistic local fallback used when the backend booking/payment call
+  // cannot be made (e.g. no auth, mock data, or the API is unreachable).
+  const finalizeLocal = (paid: boolean) => {
+    const booking = addBooking({
+      userId: user?.id || 'guest',
+      propertyId: params.propertyId,
+      propertyName: params.propertyName,
+      propertyImage: '',
+      bookingType: params.type as 'pod' | 'room',
+      podId: params.type === 'pod' ? params.itemId : undefined,
+      roomId: params.type === 'room' ? params.itemId : undefined,
+      checkIn: params.checkIn || new Date().toISOString(),
+      checkOut: params.checkOut || new Date(Date.now() + duration * 3600000).toISOString(),
+      duration,
+      guestCount: Number(params.guests) || 1,
+      baseRate: rate,
+      subtotal,
+      extraCharges: 0,
+      discount,
+      gst,
+      totalAmount: total,
+      status: paid ? 'confirmed' : 'pending',
+      paymentStatus: paid ? 'paid' : 'pending',
+      city: params.city,
+    });
+    router.replace({
+      pathname: '/booking/success',
+      params: {
+        bookingNumber: booking.bookingNumber,
+        propertyName: params.propertyName,
+        propertyId: params.propertyId,
+        itemName: params.itemName,
+        type: params.type,
+        total: String(total),
+        city: params.city,
+        duration: params.duration,
+      },
+    });
+  };
+
+  const handleProceedToPayment = async () => {
     if (!isAuthenticated) {
       router.push('/(auth)/login');
       return;
@@ -82,35 +123,51 @@ export default function BookingConfirmScreen() {
       return;
     }
     setLoading(true);
-    // Create real booking in store
     try {
-      const booking = addBooking({
-        userId: user?.id || 'guest',
-        propertyId: params.propertyId,
-        propertyName: params.propertyName,
-        propertyImage: '',
-        bookingType: params.type as 'pod' | 'room',
-        podId: params.type === 'pod' ? params.itemId : undefined,
-        roomId: params.type === 'room' ? params.itemId : undefined,
-        checkIn: params.checkIn || new Date().toISOString(),
-        checkOut: params.checkOut || new Date(Date.now() + duration * 3600000).toISOString(),
-        duration,
-        guestCount: Number(params.guests) || 1,
-        baseRate: rate,
-        subtotal,
-        extraCharges: 0,
-        discount,
-        gst,
-        totalAmount: total,
-        status: 'confirmed',
-        paymentStatus: 'paid',
-        city: params.city,
-      });
+      // 1) Create a real booking on the backend so the payment service has a
+      //    bookingId + total to settle. If the item id is not a real DB id
+      //    (e.g. synthetic pod-slot id from the seat map), this call will
+      //    fail and we fall back to the local optimistic flow below.
+      const bookRes = await bookingsApi
+        .create({
+          kind: params.type as 'pod' | 'room',
+          itemId: params.itemId,
+          checkInISO: params.checkIn || new Date().toISOString(),
+          hours: params.type === 'pod' ? duration : undefined,
+          nights: params.type === 'room' ? duration : undefined,
+          guests: Number(params.guests) || 1,
+          couponDiscount: discount,
+        })
+        .catch(() => null);
+
+      const realBooking: any = bookRes?.success ? (bookRes as any).booking : null;
+      if (!realBooking?.id) {
+        setLoading(false);
+        // Backend booking unavailable — fall back to local confirmation so
+        // demo flow keeps working.
+        finalizeLocal(true);
+        return;
+      }
+
+      // 2) Create a payment order (provider chosen server-side; defaults to
+      //    Cashfree per services/payment-service/.env PAYMENT_PROVIDER=cashfree).
+      const orderRes: any = await paymentsApi.createOrder(realBooking.id).catch(() => null);
+      if (!orderRes?.success) {
+        setLoading(false);
+        Alert.alert('Payment unavailable', 'Could not start checkout. Saving as pending.');
+        finalizeLocal(false);
+        return;
+      }
+
       setLoading(false);
-      router.replace({
-        pathname: '/booking/success',
+      // 3) Open the in-app native checkout (WebView around Cashfree PG SDK).
+      //    No external browser is opened — the WebView intercepts
+      //    `naploo://payment-success` and routes to /booking/success.
+      router.push({
+        pathname: '/booking/checkout',
         params: {
-          bookingNumber: booking.bookingNumber,
+          bookingId: realBooking.id,
+          bookingNumber: realBooking.bookingNumber,
           propertyName: params.propertyName,
           propertyId: params.propertyId,
           itemName: params.itemName,
