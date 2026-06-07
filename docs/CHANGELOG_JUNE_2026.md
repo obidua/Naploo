@@ -787,3 +787,87 @@ Both Expo dev servers are live; **open in Expo Go**:
 3. **Investor mobile app** (third app, `apps/investor` is currently empty). Not built yet.
 4. **Real keys**: Razorpay live keys, MSG91 + template IDs, Resend.
 5. Push the branch to GitHub when ready.
+
+---
+
+# Naploo — June 7, 2026 (afternoon — payment polish & demo seed)
+
+## ✅ DELIVERED
+
+### 1. ₹10 demo pod hotel for end-to-end real-payment testing
+Commit: `7f4f23b`
+
+- New idempotent seed `scripts/seed-demo-10rs-hotel.ts` creates **Naploo Demo Pod (₹10 Test)** in Bangalore under the existing demo partner (`39425675-2d9b-46df-ace3-04822a7df82d`).
+- 1 podSet @ `hourlyRate = ₹10` with 2 inner pods (upper + lower, both `podType=single`, status `available`).
+- Booking success screen (`apps/mobile/app/booking/success.tsx`) made fully responsive: wrapped in `ScrollView`, compact mode when screen height < 720 px, reduced booking-number font so the success card never clips on small devices.
+
+### 2. API-gateway: forward upstream Content-Type for non-JSON
+Commit: `443d66b`
+
+- `services/api-gateway/src/index.ts` was always setting `Content-Type: application/json`. The Cashfree hosted-checkout HTML page returned by `/api/v1/payments/checkout/:bookingId` was therefore rendered as raw HTML text inside the mobile WebView.
+- Gateway now forwards the upstream `Content-Type` when it is not JSON, so `text/html` checkout pages render correctly.
+
+### 3. Pod pricing mismatch — single source of truth from backend
+Commit: `8c6249c`
+
+**Bug:** ₹10 demo hotel showed "from ₹10" on the listing card but ₹60/hr inside the seat-map. Every hotel with "double" pods was affected — the seat-map was synthesizing a `baseRate + 50` markup client-side.
+
+**Fix (mobile):**
+- `apps/mobile/src/services/api.ts` — `adaptPodSet()` now exposes inner pods (`position`, `podType`, `status`); `propertiesApi.getById()` returns the raw `podSets` array alongside the adapted ones.
+- `apps/mobile/src/data/properties.ts` — new `getPodLayoutFromSets(propertyId, livePodSets)` builds the seat-map grid from real backend data. Each slot's `hourlyRate`, `type`, and `status` come from the partner-configured podSet. The slot `id` IS the real podSet UUID, so the booking call no longer needs the fragile `slotIndex → livePods[index]` lookup.
+- The legacy synthesizing `getPodLayout()` is kept as a fallback for when detail data hasn't loaded yet, but the `+ 50` "double pod" markup has been removed so the fallback never inflates prices either.
+- `apps/mobile/app/property/[id].tsx` — passes `livePodSets` into the layout selector and uses the real podSet UUID directly when present.
+
+**Effect:** list, seat-map, booking confirm, and Cashfree checkout all show the same partner-configured price end-to-end.
+
+### 4. Cancel Payment UX
+Commit: `8c6249c`
+
+**Problem:** When a user closed the WebView (X button, hardware back, or Cashfree's own "back" action), the booking stayed `pending` server-side and the pod was held — partner inventory was effectively locked until the row was cleaned up manually.
+
+**Fix:** `apps/mobile/app/booking/checkout.tsx`
+- Always-visible **Cancel Payment** button below the WebView (red outline, danger color). Same control reached via the header X and the hardware-back button.
+- Single confirmation prompt; while the cancel is in flight the button shows a spinner and is disabled to avoid double-fires.
+- Every dismiss path (X, back, Cashfree `naploo://payment-cancelled` redirect) now calls `bookingsApi.cancel(bookingId, "User cancelled at payment screen")` server-side via `POST /api/v1/bookings/:id/cancel`, which sets the booking to `cancelled`, releases the pod, and triggers the existing cancellation-refund flow.
+- If the cancel call itself fails (offline, etc.) the screen still closes so the user is never stuck — the booking can be reconciled later.
+
+### 5. Cashfree mode-switch helper (sandbox ↔ production)
+Commit: `8c6249c` (env + helper)
+
+**Why:** Real ₹11 LIVE Cashfree payment was rejected by their risk engine on the freshly-onboarded production merchant (this is a Cashfree-side rule, not a code bug — the booking and order were created correctly). Publishing the APK to Play Store does not change this behaviour because the app hits the same `api.cashfree.com` endpoint.
+
+**Delivered:**
+- `.env` now stores both key sets side-by-side (`CASHFREE_PROD_*` and `CASHFREE_TEST_*`) and a single `CASHFREE_APP_ID`/`CASHFREE_SECRET_KEY` pair that the payment-service reads.
+- New `scripts/set-cashfree-mode.sh` with three subcommands:
+  - `bash scripts/set-cashfree-mode.sh test` — flip to sandbox using stored test keys
+  - `bash scripts/set-cashfree-mode.sh prod` — flip back to production
+  - `bash scripts/set-cashfree-mode.sh set-test` — paste new sandbox keys (hidden input, never echoed or logged) and switch
+- Each command rewrites only the four affected lines in `.env`, restarts the `naploo-payment` pm2 process with `--update-env`, and tails the last lines so the new mode banner (`CASHFREE PRODUCTION mode` vs `CASHFREE SANDBOX mode`) is visible.
+
+**Sandbox test instruments:**
+
+| Channel | Always-success value | Always-fail value |
+|---|---|---|
+| UPI | `success@upi` | `failure@upi` |
+| Card | `4111 1111 1111 1111`, any future expiry, any CVV, OTP `1221` | (Cashfree's `4242 4242 4242 4242` failure card) |
+
+## 📦 RELEASE ARTIFACTS
+
+- **APK rebuilt 3× this session**, final size 37.9 MB, signed release variant (`arm64-v8a` only).
+- Published to `apps/web/public/downloads/naploo-customer.apk` → available at `https://naploo.com/downloads/naploo-customer.apk`.
+- Installed on test device `192.168.1.16:35613` via `adb -H 127.0.0.1 -P 5038`.
+- All three commits pushed to `origin/feature/backend-and-web-wiring`. Branch HEAD: `8c6249c`.
+
+## ❌ STILL TO DO
+
+1. **Per-bed-size pricing for partners** — schema change to add `hourly_rate` column to the `pods` table (currently rate lives only on `pod_sets`) so partners can price single / double / king pods independently. Includes drizzle migration, hotel-service adapter update, partner-portal UI in `apps/partner/app/property/edit.tsx`, and a seed-script update that creates one pod of each type at differentiated prices.
+2. **Sandbox cred paste** — `scripts/set-cashfree-mode.sh set-test` must be run interactively from the host shell to save the actual test AppID + secret (the model is intentionally not allowed to receive secrets).
+3. **Payment timeout cron** — backend job to auto-cancel any payment row that stays `pending` longer than N minutes (defence in depth, in case the client never gets back to fire the cancel call).
+4. **Live merchant risk-engine work** — once sandbox flows are green, raise the test amount to ₹100+ on production and / or coordinate with Cashfree support to whitelist the test phone numbers; risk rejection at ₹11 on a brand-new merchant is expected.
+
+## 🧰 OPERATIONAL NOTES (kept for future sessions)
+
+- `pm2 logs naploo-payment --lines 80 --nostream | tail` is the fastest way to confirm which mode the payment-service booted in.
+- `.env` is symlinked into every `services/*/.env` — edits in `/home/awsclint/Naploo/.env` cover the whole platform.
+- Cloudflare actively blocks Python urllib user-agents on `api.naploo.com`; always test public endpoints with `curl` from the host.
+- `grep_search` cannot escape literal brackets in glob patterns; for files like `app/property/[id].tsx` use the pattern `**/[[]id[]].tsx`.
