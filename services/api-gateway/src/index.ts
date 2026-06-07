@@ -179,6 +179,11 @@ const app = new Elysia()
       try {
         return JSON.parse(text);
       } catch {
+        // Non-JSON upstream response (e.g. the hosted checkout HTML page).
+        // Forward the upstream Content-Type so browsers/WebViews render it
+        // correctly instead of showing the source as text/plain.
+        const upstreamCt = res.headers.get('content-type');
+        if (upstreamCt) set.headers['Content-Type'] = upstreamCt;
         return text;
       }
     } catch (e: any) {
