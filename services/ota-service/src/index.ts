@@ -46,13 +46,14 @@ function parseJsonArr(v: unknown): string[] {
   return [];
 }
 
-const app = new Elysia({ prefix: '/ota/v1' })
+const app = new Elysia()
   .use(cors({ origin: true }))
 
   .get('/health', () => ({ status: 'healthy', service: 'ota-service', timestamp: new Date().toISOString() }))
+  .get('/ota/v1/health', () => ({ status: 'healthy', service: 'ota-service', timestamp: new Date().toISOString() }))
 
   // ═══ Property info ═══════════════════════════════════════════
-  .get('/property', async ({ headers, set }) => {
+  .get('/ota/v1/property', async ({ headers, set }) => {
     const auth = await authPartner(headers);
     if (!auth) { set.status = 401; return { error: 'Invalid or missing API key' }; }
     const [p] = await db.select().from(partners).where(eq(partners.id, auth.partnerId));
@@ -85,7 +86,7 @@ const app = new Elysia({ prefix: '/ota/v1' })
   })
 
   // ═══ Inventory: rooms + pod sets ═════════════════════════════
-  .get('/inventory', async ({ headers, set }) => {
+  .get('/ota/v1/inventory', async ({ headers, set }) => {
     const auth = await authPartner(headers);
     if (!auth) { set.status = 401; return { error: 'Invalid or missing API key' }; }
     const partnerRooms = await db.select().from(rooms).where(eq(rooms.partnerId, auth.partnerId));
@@ -119,7 +120,7 @@ const app = new Elysia({ prefix: '/ota/v1' })
 
   // ═══ Availability for a date range ═══════════════════════════
   // GET /ota/v1/availability?from=2026-06-08&to=2026-06-15
-  .get('/availability', async ({ headers, query, set }) => {
+  .get('/ota/v1/availability', async ({ headers, query, set }) => {
     const auth = await authPartner(headers);
     if (!auth) { set.status = 401; return { error: 'Invalid or missing API key' }; }
     if (!query.from || !query.to) { set.status = 400; return { error: 'from and to dates required (YYYY-MM-DD)' }; }
@@ -154,7 +155,7 @@ const app = new Elysia({ prefix: '/ota/v1' })
 
   // ═══ Rates ═══════════════════════════════════════════════════
   // GET /ota/v1/rates?room_id=...
-  .get('/rates', async ({ headers, query, set }) => {
+  .get('/ota/v1/rates', async ({ headers, query, set }) => {
     const auth = await authPartner(headers);
     if (!auth) { set.status = 401; return { error: 'Invalid or missing API key' }; }
     const conditions = [eq(rooms.partnerId, auth.partnerId)];
@@ -173,7 +174,7 @@ const app = new Elysia({ prefix: '/ota/v1' })
   }, { query: t.Object({ room_id: t.Optional(t.String()) }) })
 
   // ═══ Create a booking from OTA ════════════════════════════════
-  .post('/bookings', async ({ headers, body, set }) => {
+  .post('/ota/v1/bookings', async ({ headers, body, set }) => {
     const auth = await authPartner(headers);
     if (!auth) { set.status = 401; return { error: 'Invalid or missing API key' }; }
     if (!auth.scopes.includes('write')) { set.status = 403; return { error: 'API key lacks write scope' }; }
