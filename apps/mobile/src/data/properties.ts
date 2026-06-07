@@ -146,28 +146,58 @@ export async function loadPropertyDetail(propertyId: string): Promise<{
 }
 
 // Pod layout for the visual seat-map. Synthesizes a grid from the property's pod count.
+// Shape must match PodLayout / PodRow / PodSlot in @/types so PodSeatMap and the booking
+// handlers in app/property/[id].tsx can consume it safely.
 export function getPodLayout(propertyId: string): any {
   const p = getPropertyById(propertyId);
-  const total = p?.podsCount || 8;
-  const cols = Math.min(6, Math.ceil(Math.sqrt(total * 1.5)));
-  const rows = Math.ceil(total / cols);
-  const layout = Array.from({ length: rows }, (_, r) => ({
-    rowNumber: r + 1,
-    slots: Array.from({ length: cols }, (_, c) => {
-      const idx = r * cols + c;
-      const status = idx >= total ? 'maintenance' : Math.random() < 0.7 ? 'available' : 'occupied';
-      const type = Math.random() < 0.5 ? 'single' : 'double';
-      return {
-        id: `${propertyId}-${r}-${c}`,
-        row: r + 1,
-        col: c + 1,
-        status,
-        type,
-        price: 150 + (type === 'double' ? 100 : 0),
-        features: { ac: true, charger: true, tv: false, light: true, ventilation: true },
-      };
-    }),
-  }));
+  const total = Math.max(1, p?.podsCount || 8);
+  const baseRate = p?.podStartPrice || 150;
+  const cols = Math.min(6, Math.max(2, Math.ceil(Math.sqrt(Math.max(1, total) / 2))));
+  // Each column holds an upper + lower slot, so each row contributes cols*2 slots.
+  const rows = Math.max(1, Math.ceil(total / (cols * 2)));
+  const ROW_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const FEATURES = { ac: true, charger: true, tv: false, light: true, ventilation: true } as const;
+  const AMENITIES = ['AC', 'Charger', 'Reading Light', 'Ventilation'] as const;
+  let podsPlaced = 0;
+  const layout = Array.from({ length: rows }, (_, r) => {
+    const rowLetter = ROW_LETTERS[r] || `R${r + 1}`;
+    const positions: Array<'lower' | 'upper'> = ['lower', 'upper'];
+    const slots: any[] = [];
+    for (let c = 0; c < cols; c++) {
+      for (const position of positions) {
+        const existsAsPod = podsPlaced < total;
+        podsPlaced += existsAsPod ? 1 : 0;
+        // Deterministic-ish availability so the same property looks consistent
+        const seed = (r * 13 + c * 7 + (position === 'upper' ? 3 : 1)) % 10;
+        const status: 'available' | 'occupied' | 'maintenance' = !existsAsPod
+          ? 'maintenance'
+          : seed < 7
+            ? 'available'
+            : 'occupied';
+        const type: 'single' | 'double' = seed % 2 === 0 ? 'single' : 'double';
+        const hourlyRate = baseRate + (type === 'double' ? 50 : 0);
+        const label = `${rowLetter}${c + 1}-${position === 'upper' ? 'U' : 'L'}`;
+        slots.push({
+          id: `${propertyId}-${rowLetter}${c + 1}-${position}`,
+          label,
+          row: r,
+          col: c,
+          position,
+          type,
+          series: 'Naploo',
+          hourlyRate,
+          status,
+          amenities: [...AMENITIES],
+          features: FEATURES,
+        });
+      }
+    }
+    return {
+      rowIndex: r,
+      label: `Row ${rowLetter}`,
+      slots,
+    };
+  });
   const availablePods = layout.reduce(
     (s, row) => s + row.slots.filter((sl: any) => sl.status === 'available').length,
     0

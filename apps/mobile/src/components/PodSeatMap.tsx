@@ -79,12 +79,12 @@ export function PodSeatMap({ layout, onSelectPod, selectedPodId }: PodSeatMapPro
           </View>
 
           {/* Aisle + Rows */}
-          {layout.layout.map((row) => (
-            <View key={row.rowIndex} style={styles.rowContainer}>
+          {layout.layout.map((row, rIdx) => (
+            <View key={row.rowIndex ?? rIdx} style={styles.rowContainer}>
               {/* Row label */}
               <View style={styles.rowLabel}>
                 <Text style={[styles.rowLabelText, { color: colors.textTertiary }]}>
-                  {row.label.replace('Row ', '')}
+                  {String(row.label ?? `R${(row.rowIndex ?? rIdx) + 1}`).replace('Row ', '')}
                 </Text>
               </View>
 
