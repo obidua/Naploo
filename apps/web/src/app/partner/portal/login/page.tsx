@@ -1,18 +1,83 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Building2, Lock, Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Building2, Lock, Mail, ArrowRight, AlertCircle, Loader2, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { authApi } from '@/lib/api';
 
 export default function PartnerLoginPage() {
   const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  // If already logged in with partner-level access, jump straight to the dashboard.
+  // If logged in but as a different role (customer/investor), show a "use different account" UI.
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const role = user.role || 'customer';
+      if (['partner', 'admin', 'super_admin'].includes(role)) {
+        router.replace('/partner/portal');
+        return;
+      }
+    }
+    setChecked(true);
+  }, [isAuthenticated, user, router]);
+
+  if (!checked) {
+    return (
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center pt-24">
+        <Loader2 className="w-7 h-7 animate-spin text-primary-600" />
+      </main>
+    );
+  }
+
+  // Logged-in as customer/investor/other — offer to switch account
+  if (isAuthenticated && user && !['partner', 'admin', 'super_admin'].includes(user.role || 'customer')) {
+    return (
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4 pt-24">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Building2 className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900">Partner Portal</h1>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center shadow-sm">
+            <div className="flex items-center justify-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              <span>This account ({user.role}) does not have partner access.</span>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              Sign out and use your partner email/password, or apply to list your property.
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => logout()}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white border border-gray-200 text-slate-700 font-medium"
+              >
+                <LogOut className="w-4 h-4" /> Sign out + use partner account
+              </button>
+              <Link
+                href="/partner"
+                className="block w-full px-4 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white font-semibold"
+              >
+                Apply to list your property
+              </Link>
+              <Link href="/" className="block text-center text-sm text-primary-600 hover:underline mt-2">
+                Back to home
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

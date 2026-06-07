@@ -267,7 +267,8 @@ export default function AdminDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
 
-  // Check admin session
+  // Check admin session — also auto-login if the user is already authenticated
+  // via the shared auth store with admin/super_admin role.
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const session = sessionStorage.getItem('naploo-admin-session');
@@ -276,8 +277,19 @@ export default function AdminDashboard() {
           const parsed = JSON.parse(session);
           if (parsed.authenticated && parsed.expires > Date.now()) {
             setAdminAuth(true);
+            return;
           }
         } catch { /* invalid session */ }
+      }
+      // Fallback: if user already logged in as admin in main auth store,
+      // unlock the dashboard without asking for password again.
+      const authState = useAuthStore.getState();
+      if (authState.isAuthenticated && authState.user && ['admin', 'super_admin'].includes(authState.user.role || '')) {
+        sessionStorage.setItem('naploo-admin-session', JSON.stringify({
+          authenticated: true,
+          expires: Date.now() + 8 * 60 * 60 * 1000,
+        }));
+        setAdminAuth(true);
       }
     }
   }, []);

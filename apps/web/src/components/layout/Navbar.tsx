@@ -146,6 +146,43 @@ export function Navbar() {
                         </div>
                       </div>
                       <div className="p-2">
+                        {/* Role-aware dashboard link (shown only for non-customer roles) */}
+                        {(() => {
+                          const role = user.role || 'customer';
+                          if (role === 'admin' || role === 'super_admin') {
+                            return (
+                              <Link href="/admin" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary-700 hover:bg-primary-50 transition-colors font-semibold">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 014-4h4M3 7v6a4 4 0 004 4h2M21 7l-9 6-9-6"/></svg>
+                                Admin Dashboard
+                              </Link>
+                            );
+                          }
+                          if (role === 'partner') {
+                            return (
+                              <Link href="/partner/portal" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary-700 hover:bg-primary-50 transition-colors font-semibold">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                Partner Portal
+                              </Link>
+                            );
+                          }
+                          if (role === 'investor') {
+                            return (
+                              <Link href="/investor" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary-700 hover:bg-primary-50 transition-colors font-semibold">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                Investor Dashboard
+                              </Link>
+                            );
+                          }
+                          if (role === 'associate') {
+                            return (
+                              <Link href="/associate" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary-700 hover:bg-primary-50 transition-colors font-semibold">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                Associate Portal
+                              </Link>
+                            );
+                          }
+                          return null;
+                        })()}
                         <Link href="/profile" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-gray-50 transition-colors">
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                           My Profile
@@ -238,7 +275,20 @@ export function Navbar() {
           <div className="flex flex-col gap-4 mt-8 w-full max-w-xs">
             {isAuthenticated && user ? (
               <>
-                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-white bg-gradient-to-r from-primary-500 to-violet-600 rounded-xl font-semibold">
+                {(() => {
+                  const role = user.role || 'customer';
+                  if (role === 'admin' || role === 'super_admin') {
+                    return <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-white bg-gradient-to-r from-primary-500 to-violet-600 rounded-xl font-semibold">Admin Dashboard</Link>;
+                  }
+                  if (role === 'partner') {
+                    return <Link href="/partner/portal" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-white bg-gradient-to-r from-primary-500 to-violet-600 rounded-xl font-semibold">Partner Portal</Link>;
+                  }
+                  if (role === 'investor') {
+                    return <Link href="/investor" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-white bg-gradient-to-r from-primary-500 to-violet-600 rounded-xl font-semibold">Investor Dashboard</Link>;
+                  }
+                  return null;
+                })()}
+                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-slate-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium">
                   My Profile
                 </Link>
                 <Link href="/profile/bookings" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-slate-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium">
