@@ -82,8 +82,12 @@ const FALLBACK_IMAGE = 'https://naploo.com/Pods_Images/For%20Website%20main%20im
 
 function imageUrl(value?: string): string {
   if (!value) return FALLBACK_IMAGE;
-  if (value.startsWith('http')) return encodeURI(value);
-  return encodeURI(`https://naploo.com${value}`);
+  const url = value.startsWith('http') ? value : `https://naploo.com${value}`;
+  try {
+    return encodeURI(decodeURI(url));
+  } catch {
+    return encodeURI(url);
+  }
 }
 
 function parseJsonArr(v: unknown): string[] {

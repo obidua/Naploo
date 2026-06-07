@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 
 import React from 'react';
 import { FileText, Calendar } from 'lucide-react';
+import { COMPANY, EMAILS, ADDRESS } from '@/data/company';
 
 export default function TermsPage() {
   return (
@@ -133,7 +134,7 @@ export default function TermsPage() {
             <div className="bg-violet-50/50 border border-gray-200 rounded-2xl p-8 shadow-sm mb-8">
               <h2 className="text-2xl font-bold text-slate-800 mb-4">8. Governing Law</h2>
               <p className="text-slate-600">
-                These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in Delhi, India.
+                These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of competent courts in Noida, Uttar Pradesh, India. All prices and transactions on this platform are denominated in Indian Rupees (INR / ₹).
               </p>
             </div>
 
@@ -141,8 +142,9 @@ export default function TermsPage() {
               <h2 className="text-2xl font-bold text-slate-800 mb-4">9. Contact Us</h2>
               <p className="text-slate-600">
                 For questions about these Terms of Service, please contact us at:<br />
-                Email: legal@naploo.com<br />
-                Address: BIDUA Industries Pvt Ltd, Delhi NCR, India
+                Email: <a className="text-primary-600 hover:underline" href={`mailto:${EMAILS.support}`}>{EMAILS.support}</a><br />
+                Address: {COMPANY.legalName}, {ADDRESS.full}<br />
+                GSTIN: {COMPANY.gstin}
               </p>
             </div>
           </div>

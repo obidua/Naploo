@@ -7,6 +7,7 @@ import { useTheme } from '@/theme/useTheme';
 import { BorderRadius, FontSize, FontWeight, Shadow, Spacing } from '@/theme';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/utils';
+import { IMAGE_CACHE_POLICY, IMAGE_PLACEHOLDER_BLURHASH, fastImageSource } from '@/utils/images';
 import type { Pod } from '@/types';
 
 interface PodCardProps {
@@ -27,10 +28,12 @@ export function PodCard({ pod }: PodCardProps) {
       style={[styles.card, Shadow.md, { backgroundColor: colors.card }]}
     >
       <Image
-        source={{ uri: pod.image }}
+        source={fastImageSource(pod.image)}
         style={styles.image}
         contentFit="cover"
-        transition={300}
+        placeholder={{ blurhash: IMAGE_PLACEHOLDER_BLURHASH }}
+        cachePolicy={IMAGE_CACHE_POLICY}
+        transition={120}
       />
       <View style={styles.badges}>
         <Badge text={pod.series} variant="primary" />

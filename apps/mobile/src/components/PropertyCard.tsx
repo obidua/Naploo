@@ -15,6 +15,7 @@ import { Rating } from '@/components/ui/Rating';
 import { Badge } from '@/components/ui/Badge';
 import { useFavoritesStore } from '@/store/app';
 import { formatCurrency } from '@/utils';
+import { IMAGE_CACHE_POLICY, IMAGE_PLACEHOLDER_BLURHASH, fastImageSource } from '@/utils/images';
 import type { Property } from '@/types';
 
 const CARD_WIDTH = Dimensions.get('window').width - Spacing.lg * 2;
@@ -41,10 +42,12 @@ export function PropertyCard({ property, variant = 'vertical' }: PropertyCardPro
         style={[styles.hCard, Shadow.md, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
       >
         <Image
-          source={{ uri: property.images[0] }}
+          source={fastImageSource(property.images[0])}
           style={styles.hImage}
           contentFit="cover"
-          transition={300}
+          placeholder={{ blurhash: IMAGE_PLACEHOLDER_BLURHASH }}
+          cachePolicy={IMAGE_CACHE_POLICY}
+          transition={120}
         />
         <View style={styles.hContent}>
           <View style={styles.hHeader}>
@@ -82,10 +85,12 @@ export function PropertyCard({ property, variant = 'vertical' }: PropertyCardPro
     >
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: property.images[0] }}
+          source={fastImageSource(property.images[0])}
           style={styles.image}
           contentFit="cover"
-          transition={300}
+          placeholder={{ blurhash: IMAGE_PLACEHOLDER_BLURHASH }}
+          cachePolicy={IMAGE_CACHE_POLICY}
+          transition={120}
         />
         <View style={styles.imageOverlay}>
           <Badge

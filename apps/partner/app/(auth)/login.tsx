@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,10 @@ import {
   Alert,
   StyleSheet,
   ScrollView,
+  Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontSize, FontWeight, Spacing } from '@/theme';
 import { useTheme } from '@/theme/useTheme';
 import { Button } from '@/components/ui/Button';
@@ -19,12 +21,23 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors: c } = useTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const setUser = useAuthStore((s) => s.setUser);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   async function handleLogin() {
     const cleanEmail = email.trim().toLowerCase();
@@ -48,17 +61,28 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: c.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
     >
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            justifyContent: keyboardVisible ? 'flex-start' : 'center',
+            paddingTop: insets.top + (keyboardVisible ? Spacing.md : Spacing['4xl']),
+            paddingBottom: insets.bottom + (keyboardVisible ? 170 : 320),
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
-        <View style={styles.header}>
-          <View style={[styles.iconCircle, { backgroundColor: c.primary + '15' }]}>
-            <Ionicons name="business" size={48} color={c.primary} />
-          </View>
-          <Text style={[styles.title, { color: c.text }]}>Naploo Partner</Text>
+        <View style={[styles.header, keyboardVisible && styles.headerCompact]}> 
+          {!keyboardVisible && (
+            <View style={[styles.iconCircle, { backgroundColor: c.primary + '15' }]}> 
+              <Ionicons name="business" size={48} color={c.primary} />
+            </View>
+          )}
+          <Text style={[styles.title, keyboardVisible && styles.titleCompact, { color: c.text }]}>Naploo Partner</Text>
           <Text style={[styles.subtitle, { color: c.textSecondary }]}>Manage your property, bookings & earnings</Text>
         </View>
 
@@ -93,12 +117,14 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: Spacing['3xl'],
   },
   header: {
     alignItems: 'center',
     marginBottom: Spacing['4xl'],
+  },
+  headerCompact: {
+    marginBottom: Spacing.md,
   },
   iconCircle: {
     width: 96,
@@ -111,6 +137,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize['3xl'],
     fontWeight: FontWeight.bold,
+  },
+  titleCompact: {
+    fontSize: FontSize.xl,
   },
   subtitle: {
     fontSize: FontSize.md,

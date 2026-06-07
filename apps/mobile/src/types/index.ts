@@ -212,6 +212,7 @@ export interface BookingRequest {
 
 // ─── Search & Filter Types ───
 export interface SearchParams {
+  query?: string;
   city?: string;
   checkIn?: string;
   checkOut?: string;

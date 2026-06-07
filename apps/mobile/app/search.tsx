@@ -30,14 +30,16 @@ type SortBy = 'relevance' | 'price_low' | 'price_high' | 'rating';
 export default function SearchScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const urlParams = useLocalSearchParams<{ city?: string; type?: string }>();
+  const urlParams = useLocalSearchParams<{ city?: string; type?: string; q?: string }>();
   const searchStore = useSearchStore();
 
   // Initialize from search store (home page filters) or URL params
   const storeCity = searchStore.params.city;
+  const storeQuery = searchStore.params.query;
   const initialCity = urlParams.city || storeCity || '';
+  const initialQuery = urlParams.q || storeQuery || initialCity;
 
-  const [query, setQuery] = useState(initialCity);
+  const [query, setQuery] = useState(initialQuery);
   const [viewMode, setViewMode] = useState<ViewMode>('properties');
   const [selectedCity, setSelectedCity] = useState<string | null>(initialCity || null);
   const [selectedType, setSelectedType] = useState<string>(urlParams.type || 'all');
@@ -46,6 +48,7 @@ export default function SearchScreen() {
   const [minRating, setMinRating] = useState(0);
   const [sortBy, setSortBy] = useState<SortBy>('relevance');
   const [showFilters, setShowFilters] = useState(false);
+  const [controlsCollapsed, setControlsCollapsed] = useState(false);
   const allCities = getCities();
   const allProperties = getProperties();
   const allPods = getPods();
@@ -81,14 +84,17 @@ export default function SearchScreen() {
 
   const suggestions = useMemo(() => {
     if (!query || query.length < 2) return [];
-    const q = query.toLowerCase();
-    const cityMatches = allCities.filter((c) => c.name.toLowerCase().includes(q));
-    const propMatches = allProperties.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 3);
+    const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const matches = (value: string) => tokens.every((token) => value.toLowerCase().includes(token));
+    const cityMatches = allCities.filter((c) => matches(`${c.name} ${c.state || ''}`));
+    const propMatches = allProperties
+      .filter((p) => matches(`${p.name} ${p.city} ${p.state} ${p.address} ${p.description}`))
+      .slice(0, 5);
     return [
       ...cityMatches.map((c) => ({ type: 'city' as const, id: c.id, name: c.name, subtitle: `${c.propertyCount} properties` })),
       ...propMatches.map((p) => ({ type: 'property' as const, id: p.id, name: p.name, subtitle: p.city })),
     ];
-  }, [query]);
+  }, [query, allCities, allProperties]);
 
   const activeData = viewMode === 'properties' ? results : podResults;
 
@@ -118,10 +124,17 @@ export default function SearchScreen() {
             </TouchableOpacity>
           )}
         </View>
+        <TouchableOpacity
+          onPress={() => setControlsCollapsed((value) => !value)}
+          style={[styles.collapseBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+          activeOpacity={0.8}
+        >
+          <Ionicons name={controlsCollapsed ? 'chevron-down' : 'chevron-up'} size={18} color={colors.primary} />
+        </TouchableOpacity>
       </View>
 
       {/* Suggestions */}
-      {suggestions.length > 0 && query.length >= 2 && (
+      {!controlsCollapsed && suggestions.length > 0 && query.length >= 2 && (
         <View style={[styles.suggestions, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {suggestions.map((s) => (
             <TouchableOpacity
@@ -152,7 +165,7 @@ export default function SearchScreen() {
       )}
 
       {/* Search Info Bar — shows filters from home page */}
-      {(storeCheckIn || storeGuests > 1 || storePods > 1) && (
+      {!controlsCollapsed && (storeCheckIn || storeGuests > 1 || storePods > 1) && (
         <View style={[styles.searchInfoBar, { backgroundColor: colors.primary + '10', borderBottomColor: colors.divider }]}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.lg, gap: Spacing.sm }}>
             {storeCheckIn && (
@@ -180,6 +193,7 @@ export default function SearchScreen() {
       )}
 
       {/* Filter Bar */}
+      {!controlsCollapsed ? (
       <View style={styles.filterBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.lg, gap: Spacing.sm }}>
           {/* View toggle */}
@@ -270,9 +284,22 @@ export default function SearchScreen() {
           )}
         </ScrollView>
       </View>
+      ) : (
+        <TouchableOpacity
+          onPress={() => setControlsCollapsed(false)}
+          style={[styles.collapsedSummary, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="search" size={16} color={colors.primary} />
+          <Text style={[styles.collapsedSummaryText, { color: colors.text }]} numberOfLines={1}>
+            {query || selectedCity || 'Search'} · {viewMode === 'properties' ? results.length : podResults.length} {viewMode === 'properties' ? 'properties' : 'pods'}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color={colors.primary} />
+        </TouchableOpacity>
+      )}
 
       {/* Sort Options */}
-      <View style={styles.sortRow}>
+      {!controlsCollapsed && <View style={styles.sortRow}>
         <Text style={[styles.resultCount, { color: colors.textTertiary }]}>
           {viewMode === 'properties' ? results.length : podResults.length} {viewMode === 'properties' ? 'properties' : 'pods'}
         </Text>
@@ -297,7 +324,7 @@ export default function SearchScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </View>}
 
       {/* Results */}
       {viewMode === 'properties' ? (
@@ -352,6 +379,14 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   backBtn: { padding: Spacing.xs },
+  collapseBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   searchInput: {
     flex: 1,
     flexDirection: 'row',
@@ -399,6 +434,22 @@ const styles = StyleSheet.create({
   infoPillText: { fontSize: FontSize.xs, fontWeight: FontWeight.medium },
   filterBar: {
     paddingVertical: Spacing.sm,
+  },
+  collapsedSummary: {
+    marginHorizontal: Spacing.lg,
+    marginVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  collapsedSummaryText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
   },
   filterChip: {
     flexDirection: 'row',

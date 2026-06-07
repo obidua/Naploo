@@ -27,6 +27,7 @@ import { useDataStore } from '@/store/app';
 import { useFavoritesStore } from '@/store/app';
 import { useSearchStore } from '@/store/search';
 import { formatCurrency } from '@/utils';
+import { IMAGE_CACHE_POLICY, IMAGE_PLACEHOLDER_BLURHASH, fastImageSource, prefetchImages } from '@/utils/images';
 import type { Pod, Room, PodSlot, PodRow, Review } from '@/types';
 import { format, addHours, addDays, differenceInCalendarDays, parseISO, startOfDay } from 'date-fns';
 
@@ -178,6 +179,10 @@ export default function PropertyDetailScreen() {
     return '14:00';
   });
 
+  useEffect(() => {
+    if (property) prefetchImages(property.images, 8);
+  }, [property]);
+
   if (!property) {
     return (
       <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
@@ -295,7 +300,14 @@ export default function PropertyDetailScreen() {
               setImageIndex(Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH));
             }}
             renderItem={({ item }) => (
-              <Image source={{ uri: item }} style={styles.galleryImage} contentFit="cover" />
+              <Image
+                source={fastImageSource(item)}
+                style={styles.galleryImage}
+                contentFit="cover"
+                placeholder={{ blurhash: IMAGE_PLACEHOLDER_BLURHASH }}
+                cachePolicy={IMAGE_CACHE_POLICY}
+                transition={120}
+              />
             )}
             keyExtractor={(_, i) => String(i)}
           />

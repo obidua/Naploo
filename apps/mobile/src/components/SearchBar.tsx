@@ -16,16 +16,18 @@ import { useTheme } from '@/theme/useTheme';
 import { BorderRadius, FontSize, FontWeight, Shadow, Spacing } from '@/theme';
 import { useSearchStore } from '@/store/search';
 import { cities } from '@/data/properties';
+import { getProperties } from '@/store/app';
 import { format, addDays, isBefore, startOfDay } from 'date-fns';
 
 interface SearchBarProps {
   onSearch?: () => void;
   compact?: boolean;
+  collapsible?: boolean;
 }
 
 type ActiveModal = null | 'city' | 'dates' | 'guests';
 
-export function SearchBar({ onSearch, compact = false }: SearchBarProps) {
+export function SearchBar({ onSearch, compact = false, collapsible = false }: SearchBarProps) {
   const { colors, isDark } = useTheme();
   const { params, setParams, addRecentSearch } = useSearchStore();
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
@@ -34,26 +36,56 @@ export function SearchBar({ onSearch, compact = false }: SearchBarProps) {
   const [tempGuests, setTempGuests] = useState(params.guests || 1);
   const [tempRooms, setTempRooms] = useState(params.rooms || 1);
   const [tempPods, setTempPods] = useState(params.pods || 1);
+  const [collapsed, setCollapsed] = useState(false);
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const checkInStr = params.checkIn || format(new Date(), 'yyyy-MM-dd');
   const checkOutStr = params.checkOut || format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  const properties = getProperties();
 
-  const filteredCities = cityQuery.trim()
-    ? cities.filter((c) => c.name.toLowerCase().includes(cityQuery.toLowerCase()) || c.state.toLowerCase().includes(cityQuery.toLowerCase()))
+  const searchTokens = cityQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const matchesQuery = (value: string) => searchTokens.every((token) => value.toLowerCase().includes(token));
+  const filteredCities = searchTokens.length
+    ? cities.filter((c) => matchesQuery(`${c.name} ${c.state}`))
     : cities;
+  const filteredProperties = searchTokens.length
+    ? properties
+        .filter((p) => matchesQuery(`${p.name} ${p.city} ${p.state} ${p.address} ${p.description} ${(p.amenities || []).join(' ')}`))
+        .slice(0, 8)
+    : [];
 
   const handleSearch = () => {
     addRecentSearch(params);
     if (onSearch) {
       onSearch();
     } else {
-      router.push('/search');
+      router.push({
+        pathname: '/search',
+        params: {
+          q: params.query || params.city || undefined,
+          city: params.city || undefined,
+          type: params.type && params.type !== 'all' ? params.type : undefined,
+        },
+      });
     }
   };
 
   const handleCitySelect = (cityName: string) => {
-    setParams({ city: cityName });
+    setParams({ city: cityName, query: undefined });
+    setActiveModal(null);
+    setCityQuery('');
+  };
+
+  const handlePropertySelect = (property: any) => {
+    setParams({ city: property.city, query: property.name });
+    setActiveModal(null);
+    setCityQuery('');
+  };
+
+  const handleQuerySelect = () => {
+    const query = cityQuery.trim();
+    if (!query) return;
+    setParams({ city: undefined, query });
     setActiveModal(null);
     setCityQuery('');
   };
@@ -115,11 +147,14 @@ export function SearchBar({ onSearch, compact = false }: SearchBarProps) {
     textMonthFontWeight: 'bold' as const,
   };
 
+  const destinationText = params.query || params.city || 'Anywhere';
+  const summaryText = `${destinationText} · ${params.checkIn ? format(new Date(params.checkIn), 'dd MMM') : 'Any dates'} · ${params.guests || 1} guest${(params.guests || 1) > 1 ? 's' : ''}${(params.pods || 0) > 0 ? ` · ${params.pods} pod${params.pods! > 1 ? 's' : ''}` : ''}${(params.rooms || 0) > 0 ? ` · ${params.rooms} room${params.rooms! > 1 ? 's' : ''}` : ''}`;
+
   // ── Compact variant (used on Explore/other screens) ──
-  if (compact) {
+  if (compact || collapsed) {
     return (
       <TouchableOpacity
-        onPress={() => router.push('/search')}
+        onPress={() => (collapsed ? setCollapsed(false) : router.push('/search'))}
         activeOpacity={0.9}
         style={[
           styles.compactBar,
@@ -133,11 +168,11 @@ export function SearchBar({ onSearch, compact = false }: SearchBarProps) {
             Where are you going?
           </Text>
           <Text style={[styles.compactSub, { color: colors.textTertiary }]}>
-            {params.city || 'Anywhere'} · {params.checkIn ? format(new Date(params.checkIn), 'dd MMM') : 'Any dates'} · {params.guests || 1} guest{(params.guests || 1) > 1 ? 's' : ''}{(params.pods || 0) > 0 ? ` · ${params.pods} pod${params.pods! > 1 ? 's' : ''}` : ''}{(params.rooms || 0) > 0 ? ` · ${params.rooms} room${params.rooms! > 1 ? 's' : ''}` : ''}
+            {summaryText}
           </Text>
         </View>
-        <View style={[styles.filterBtn, { borderColor: colors.border }]}>
-          <Ionicons name="options-outline" size={18} color={colors.text} />
+        <View style={[styles.filterBtn, { borderColor: colors.border }]}> 
+          <Ionicons name={collapsed ? 'chevron-down' : 'options-outline'} size={18} color={colors.text} />
         </View>
       </TouchableOpacity>
     );
@@ -153,6 +188,16 @@ export function SearchBar({ onSearch, compact = false }: SearchBarProps) {
           { backgroundColor: colors.card },
         ]}
       >
+        {collapsible && (
+          <TouchableOpacity
+            onPress={() => setCollapsed(true)}
+            style={[styles.collapseBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="chevron-up" size={16} color={colors.primary} />
+            <Text style={[styles.collapseText, { color: colors.primary }]}>Minimize search</Text>
+          </TouchableOpacity>
+        )}
         <View style={styles.searchHeader}>
           <Ionicons name="search" size={22} color={colors.primary} />
           <Text style={[styles.searchTitle, { color: colors.text }]}>
@@ -169,8 +214,8 @@ export function SearchBar({ onSearch, compact = false }: SearchBarProps) {
           <Ionicons name="location-outline" size={20} color={colors.textSecondary} />
           <View style={styles.searchField}>
             <Text style={[styles.searchLabel, { color: colors.textTertiary }]}>City / Destination</Text>
-            <Text style={[styles.searchValue, { color: params.city ? colors.text : colors.textTertiary }]}>
-              {params.city || 'Search hotels & pods'}
+            <Text style={[styles.searchValue, { color: params.query || params.city ? colors.text : colors.textTertiary }]}> 
+              {params.query || params.city || 'Search hotels, places & pods'}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
@@ -237,7 +282,7 @@ export function SearchBar({ onSearch, compact = false }: SearchBarProps) {
         <View style={[styles.modalOverlay]}>
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Select City</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Search Destination</Text>
               <TouchableOpacity onPress={() => { setActiveModal(null); setCityQuery(''); }}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
@@ -246,7 +291,7 @@ export function SearchBar({ onSearch, compact = false }: SearchBarProps) {
               <Ionicons name="search" size={18} color={colors.textTertiary} />
               <TextInput
                 style={[styles.citySearchInput, { color: colors.text }]}
-                placeholder="Search city..."
+                placeholder="Hotel, city, airport, area..."
                 placeholderTextColor={colors.textTertiary}
                 value={cityQuery}
                 onChangeText={setCityQuery}
@@ -254,28 +299,42 @@ export function SearchBar({ onSearch, compact = false }: SearchBarProps) {
               />
             </View>
             <FlatList
-              data={filteredCities}
-              keyExtractor={(item) => item.id}
+              data={[...filteredProperties.map((property) => ({ kind: 'property' as const, property })), ...filteredCities.map((city) => ({ kind: 'city' as const, city }))]}
+              keyExtractor={(item) => item.kind === 'property' ? `property-${item.property.id}` : `city-${item.city.id}`}
               keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  onPress={() => handleCitySelect(item.name)}
+                  onPress={() => item.kind === 'property' ? handlePropertySelect(item.property) : handleCitySelect(item.city.name)}
                   style={[styles.cityItem, { borderBottomColor: colors.divider }]}
                 >
-                  <Ionicons name="location" size={20} color={colors.primary} />
+                  <Ionicons name={item.kind === 'property' ? 'business' : 'location'} size={20} color={colors.primary} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.cityName, { color: colors.text }]}>{item.name}</Text>
+                    <Text style={[styles.cityName, { color: colors.text }]}>
+                      {item.kind === 'property' ? item.property.name : item.city.name}
+                    </Text>
                     <Text style={[styles.cityState, { color: colors.textSecondary }]}>
-                      {item.state} · {item.propertyCount} properties · {item.podCount} pods
+                      {item.kind === 'property'
+                        ? `${item.property.address}, ${item.property.city}`
+                        : `${item.city.state} · ${item.city.propertyCount} properties · ${item.city.podCount} pods`}
                     </Text>
                   </View>
-                  {params.city === item.name && (
+                  {((item.kind === 'property' && params.query === item.property.name) || (item.kind === 'city' && params.city === item.city.name)) && (
                     <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                   )}
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                <Text style={[styles.emptyText, { color: colors.textTertiary }]}>No cities found</Text>
+                cityQuery.trim() ? (
+                  <TouchableOpacity onPress={handleQuerySelect} style={[styles.cityItem, { borderBottomColor: colors.divider }]}> 
+                    <Ionicons name="search" size={20} color={colors.primary} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.cityName, { color: colors.text }]}>Search for “{cityQuery.trim()}”</Text>
+                      <Text style={[styles.cityState, { color: colors.textSecondary }]}>Hotel name, address, destination, or area</Text>
+                    </View>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={[styles.emptyText, { color: colors.textTertiary }]}>No destinations found</Text>
+                )
               }
             />
           </View>
@@ -464,6 +523,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  collapseBtn: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    marginBottom: Spacing.sm,
+  },
+  collapseText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
   },
   // ── Full search card ──
   searchCard: {

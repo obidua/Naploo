@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 import React from 'react';
 import Link from 'next/link';
 import { RefreshCcw, Calendar, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { EMAILS, PHONES } from '@/data/company';
 
 export default function RefundPage() {
   return (
@@ -170,8 +171,8 @@ export default function RefundPage() {
               <h2 className="text-2xl font-bold text-slate-800 mb-4">Contact Us</h2>
               <p className="text-slate-600">
                 For refund-related queries, contact us at:<br />
-                Email: refunds@naploo.com<br />
-                Phone: +91 98765 43210 (Mon-Sat, 9AM-6PM IST)<br />
+                Email: <a className="text-primary-600 hover:underline" href={`mailto:${EMAILS.support}`}>{EMAILS.support}</a><br />
+                Phone: <a className="text-primary-600 hover:underline" href={`tel:${PHONES.primaryRaw}`}>{PHONES.primary}</a> (Mon-Sat, 9AM-6PM IST)<br />
                 Live Chat: Available 24/7 in the app
               </p>
             </div>

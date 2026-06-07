@@ -103,6 +103,9 @@ export default function PricingPage() {
           <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto">
             No hidden fees. No minimum night stays. Just comfortable rest at prices that make sense.
           </p>
+          <p className="mt-4 inline-block px-3 py-1 rounded-full bg-white/15 border border-white/20 text-white/90 text-xs">
+            All prices are in Indian Rupees (INR / ₹) and inclusive of applicable GST.
+          </p>
         </div>
       </section>
 

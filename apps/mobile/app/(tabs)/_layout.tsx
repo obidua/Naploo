@@ -3,28 +3,38 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/useTheme';
 import { FontSize } from '@/theme';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 12);
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.tabActive,
-        tabBarInactiveTintColor: colors.tabInactive,
+        tabBarInactiveTintColor: '#7d739a',
         tabBarStyle: {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          height: (Platform.OS === 'ios' ? 58 : 60) + bottomInset,
+          paddingBottom: bottomInset,
           paddingTop: 8,
+          elevation: 12,
+          shadowColor: '#1e1b4b',
+          shadowOpacity: 0.12,
+          shadowRadius: 10,
+          shadowOffset: { width: 0, height: -2 },
         },
         tabBarLabelStyle: {
           fontSize: FontSize.xs,
-          fontWeight: '600',
+          fontWeight: '700',
+          marginTop: 2,
         },
+        tabBarIconStyle: { marginTop: 2 },
       }}
     >
       <Tabs.Screen
@@ -32,7 +42,7 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="home" size={Math.max(size, 24)} color={color} />
           ),
         }}
       />
@@ -41,7 +51,7 @@ export default function TabsLayout() {
         options={{
           title: 'Explore',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass" size={size} color={color} />
+            <Ionicons name="compass" size={Math.max(size, 24)} color={color} />
           ),
         }}
       />
@@ -50,7 +60,7 @@ export default function TabsLayout() {
         options={{
           title: 'Bookings',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt" size={size} color={color} />
+            <Ionicons name="receipt" size={Math.max(size, 24)} color={color} />
           ),
         }}
       />
@@ -59,7 +69,7 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="person" size={Math.max(size, 24)} color={color} />
           ),
         }}
       />

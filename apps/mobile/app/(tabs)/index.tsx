@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,8 @@ import { NearbyPodsBar } from '@/components/NearbyPodsBar';
 import { getPopularCities } from '@/data/properties';
 import { getHeroStats, getProperties, getPods, getDeals, useFavoritesStore, useDataStore } from '@/store/app';
 import { formatCurrency } from '@/utils';
+import { ensureUserLocation, useSmartAlertsStore } from '@/services/smartAlerts';
+import { IMAGE_CACHE_POLICY, IMAGE_PLACEHOLDER_BLURHASH, fastImageSource, prefetchImages } from '@/utils/images';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -33,10 +35,16 @@ export default function HomeScreen() {
   const storePods = useDataStore((s) => s.pods);
   const storeCities = useDataStore((s) => s.cities);
   const loadAll = useDataStore((s) => s.loadAll);
+  const locationLabel = useSmartAlertsStore((s) => s.locationLabel);
+  const locationPermission = useSmartAlertsStore((s) => s.locationPermission);
 
   useEffect(() => {
     loadAll().catch(() => {});
   }, [loadAll]);
+
+  useEffect(() => {
+    ensureUserLocation({ prompt: true }).catch(() => {});
+  }, []);
 
   // storeProperties is used as a dependency so heroStats refresh after fetch
   const popularCities = storeCities.length ? storeCities.slice(0, 8) : getPopularCities();
@@ -44,6 +52,19 @@ export default function HomeScreen() {
   const properties = storeProperties.length ? storeProperties : getProperties();
   const pods = storePods.length ? storePods : getPods();
   const deals = getDeals();
+
+  useEffect(() => {
+    prefetchImages([
+      ...deals.slice(0, 4).map((deal) => deal.image),
+      ...popularCities.slice(0, 6).map((city) => city.image),
+      ...pods.slice(0, 6).map((pod) => pod.image),
+      ...properties.slice(0, 4).map((property) => property.images[0]),
+    ], 20);
+  }, [deals, popularCities, pods, properties]);
+
+  const handleLocationPress = () => {
+    ensureUserLocation({ prompt: true }).catch(() => {});
+  };
 
   return (
     <ScrollView
@@ -60,6 +81,16 @@ export default function HomeScreen() {
           <View>
             <Text style={styles.heroLogo}>naploo</Text>
             <Text style={styles.heroTagline}>India's First Pod Hotel</Text>
+            <TouchableOpacity
+              onPress={handleLocationPress}
+              activeOpacity={0.8}
+              style={styles.locationChip}
+            >
+              <Ionicons name="location" size={13} color="#fff" />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {locationLabel || (locationPermission === 'denied' ? 'Tap to enable location' : 'Detecting your location')}
+              </Text>
+            </TouchableOpacity>
           </View>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/bookings')}
@@ -82,7 +113,7 @@ export default function HomeScreen() {
 
       {/* ── Search Bar (overlapping hero) ── */}
       <View style={styles.searchWrapper}>
-        <SearchBar />
+        <SearchBar collapsible />
       </View>
 
       {/* ── Nearby Pods — Location Aware ── */}
@@ -143,7 +174,14 @@ export default function HomeScreen() {
                   <Text style={styles.dealCodeText}>Use: {item.code}</Text>
                 </View>
               </View>
-              <Image source={{ uri: item.image }} style={styles.dealImage} contentFit="cover" />
+              <Image
+                source={fastImageSource(item.image)}
+                style={styles.dealImage}
+                contentFit="cover"
+                placeholder={{ blurhash: IMAGE_PLACEHOLDER_BLURHASH }}
+                cachePolicy={IMAGE_CACHE_POLICY}
+                transition={120}
+              />
             </TouchableOpacity>
           )}
         />
@@ -170,7 +208,14 @@ export default function HomeScreen() {
               activeOpacity={0.9}
               style={styles.cityCard}
             >
-              <Image source={{ uri: item.image }} style={styles.cityImage} contentFit="cover" />
+              <Image
+                source={fastImageSource(item.image)}
+                style={styles.cityImage}
+                contentFit="cover"
+                placeholder={{ blurhash: IMAGE_PLACEHOLDER_BLURHASH }}
+                cachePolicy={IMAGE_CACHE_POLICY}
+                transition={120}
+              />
               <LinearGradient
                 colors={['transparent', 'rgba(0,0,0,0.7)']}
                 style={styles.cityGradient}
@@ -336,6 +381,26 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
+  },
+  locationChip: {
+    marginTop: Spacing.sm,
+    alignSelf: 'flex-start',
+    maxWidth: SCREEN_WIDTH * 0.58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.full,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  locationText: {
+    flexShrink: 1,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    color: '#fff',
   },
   notifBtn: {
     position: 'relative',

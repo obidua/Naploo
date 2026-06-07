@@ -6,8 +6,12 @@ const IMAGE_BASE = process.env.EXPO_PUBLIC_IMAGE_BASE_URL || 'https://naploo.com
 
 function absolutize(path?: string): string {
   if (!path) return `${IMAGE_BASE}/Pods_Images/For%20Website%20main%20images/Main%20Pods%20Image.png`;
-  if (path.startsWith('http')) return encodeURI(path);
-  return encodeURI(`${IMAGE_BASE}${path}`);
+  const url = path.startsWith('http') ? path : `${IMAGE_BASE}${path}`;
+  try {
+    return encodeURI(decodeURI(url));
+  } catch {
+    return encodeURI(url);
+  }
 }
 
 // ─── Hotel → Property/Pod adapters ────────────────────────────
@@ -130,7 +134,7 @@ export const useDataStore = create<DataState>((set, get) => ({
         propertyCount: c.count,
         podCount: 0,
         isPopular: true,
-        image: absolutize('/Pods_Images/Home Page Images/Cozy Forest Hostel.png'),
+        image: absolutize('/Pods_Images/Home Page Images/IMG_1642.JPG'),
       })) as unknown as City[];
       set({ properties, pods, cities, loadedAt: Date.now(), loading: false });
     } catch (e: any) {
@@ -305,13 +309,22 @@ export function filterProperties(opts: {
 }): Property[] {
   let result = [...useDataStore.getState().properties];
   if (opts.query) {
-    const q = opts.query.toLowerCase();
-    result = result.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.city.toLowerCase().includes(q) ||
-        p.address.toLowerCase().includes(q)
-    );
+    const tokens = opts.query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    result = result.filter((p) => {
+      const haystack = [
+        p.name,
+        p.type,
+        p.city,
+        p.state,
+        p.address,
+        p.description,
+        ...(p.amenities || []),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return tokens.every((token) => haystack.includes(token));
+    });
   }
   if (opts.city) result = result.filter((p) => p.city.toLowerCase() === opts.city!.toLowerCase());
   if (opts.type && opts.type !== 'all') result = result.filter((p) => p.type === opts.type);
@@ -348,13 +361,22 @@ export function filterPods(opts: {
 }): Pod[] {
   let result = [...useDataStore.getState().pods];
   if (opts.query) {
-    const q = opts.query.toLowerCase();
-    result = result.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.propertyName.toLowerCase().includes(q) ||
-        p.city.toLowerCase().includes(q)
-    );
+    const tokens = opts.query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    result = result.filter((p) => {
+      const haystack = [
+        p.name,
+        p.propertyName,
+        p.city,
+        p.series,
+        p.type,
+        p.position,
+        ...(p.amenities || []),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return tokens.every((token) => haystack.includes(token));
+    });
   }
   if (opts.city) result = result.filter((p) => p.city.toLowerCase() === opts.city!.toLowerCase());
   if (opts.minRating && opts.minRating > 0) result = result.filter((p) => p.rating >= opts.minRating!);

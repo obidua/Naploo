@@ -29,10 +29,13 @@ interface TravelContext {
 interface SmartAlertsState {
   isEnabled: boolean;
   isTracking: boolean;
+  locationLabel: string | null;
+  locationPermission: 'unknown' | 'granted' | 'denied';
   travelContext: TravelContext;
   nearbyPods: NearbyPodLocation[];
   lastNotificationTime: number;
   setEnabled: (v: boolean) => void;
+  setUserLocation: (location: { lat: number; lng: number } | null, label: string | null, permission: 'unknown' | 'granted' | 'denied') => void;
   updateContext: (partial: Partial<TravelContext>) => void;
   setNearbyPods: (pods: NearbyPodLocation[]) => void;
 }
@@ -41,6 +44,8 @@ interface SmartAlertsState {
 export const useSmartAlertsStore = create<SmartAlertsState>((set) => ({
   isEnabled: true,
   isTracking: false,
+  locationLabel: null,
+  locationPermission: 'unknown',
   travelContext: {
     isMoving: false,
     currentSpeed: 0,
@@ -53,6 +58,12 @@ export const useSmartAlertsStore = create<SmartAlertsState>((set) => ({
   nearbyPods: [],
   lastNotificationTime: 0,
   setEnabled: (v) => set({ isEnabled: v }),
+  setUserLocation: (location, label, permission) =>
+    set((state) => ({
+      locationLabel: label,
+      locationPermission: permission,
+      travelContext: { ...state.travelContext, location },
+    })),
   updateContext: (partial) =>
     set((state) => ({
       travelContext: { ...state.travelContext, ...partial },
@@ -115,6 +126,40 @@ export async function requestLocationPermission(): Promise<boolean> {
     // Background is optional — foreground is enough for basic features
   }
   return true;
+}
+
+function formatAddress(address: Location.LocationGeocodedAddress): string {
+  return [address.district || address.city || address.subregion, address.region]
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(', ') || 'Current location';
+}
+
+export async function ensureUserLocation({ prompt = false }: { prompt?: boolean } = {}): Promise<{ lat: number; lng: number; label: string } | null> {
+  try {
+    let permission = await Location.getForegroundPermissionsAsync();
+    if (permission.status !== 'granted' && prompt && permission.canAskAgain) {
+      permission = await Location.requestForegroundPermissionsAsync();
+    }
+
+    if (permission.status !== 'granted') {
+      useSmartAlertsStore.getState().setUserLocation(null, null, permission.status === 'denied' ? 'denied' : 'unknown');
+      return null;
+    }
+
+    const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    const coords = { lat: location.coords.latitude, lng: location.coords.longitude };
+    const reverse = await Location.reverseGeocodeAsync({ latitude: coords.lat, longitude: coords.lng }).catch(() => []);
+    const label = reverse[0] ? formatAddress(reverse[0]) : 'Current location';
+    const nearby = getNearbyPods(coords.lat, coords.lng, 50);
+
+    const store = useSmartAlertsStore.getState();
+    store.setUserLocation(coords, label, 'granted');
+    store.setNearbyPods(nearby);
+    return { ...coords, label };
+  } catch {
+    return null;
+  }
 }
 
 // ─── Simulated Nearby Pod Locations (India-wide coverage) ───
@@ -353,14 +398,6 @@ export function stopSmartTracking() {
 
 // ─── Get Current Location Once ───
 export async function getCurrentLocation(): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const { status } = await Location.getForegroundPermissionsAsync();
-    if (status !== 'granted') return null;
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-    return { lat: location.coords.latitude, lng: location.coords.longitude };
-  } catch {
-    return null;
-  }
+  const location = await ensureUserLocation({ prompt: false });
+  return location ? { lat: location.lat, lng: location.lng } : null;
 }

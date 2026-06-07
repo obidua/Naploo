@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -141,7 +142,12 @@ export default function LoginScreen() {
         </View>
       </LinearGradient>
 
-      <View style={[styles.form, { backgroundColor: colors.background }]}>
+      <ScrollView
+        style={[styles.form, { backgroundColor: colors.background }]}
+        contentContainerStyle={{ padding: Spacing['2xl'], gap: Spacing.lg, paddingBottom: insets.bottom + 280 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         {step === 'phone' ? (
           <>
             <View style={[styles.phoneInput, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder }]}>
@@ -257,7 +263,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </>
         )}
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -297,8 +303,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     marginTop: -20,
-    padding: Spacing['2xl'],
-    gap: Spacing.lg,
   },
   phoneInput: {
     flexDirection: 'row',
