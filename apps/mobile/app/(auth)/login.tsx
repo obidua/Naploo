@@ -77,7 +77,7 @@ export default function LoginScreen() {
     try {
       const res = await authApi.verifyOtp(`+91${phone}`, otpCode);
       await setTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
-      setUser(res.user);
+      await setUser(res.user);
       router.replace('/(tabs)');
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Invalid OTP');
