@@ -5,6 +5,8 @@ import {
   StyleSheet,
   Animated,
   Share,
+  ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -28,6 +30,10 @@ export default function BookingSuccessScreen() {
 
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { height: winH } = useWindowDimensions();
+  // Compact mode for small phones / landscape — shrinks the success icon
+  // and gaps so the action buttons stay above the home indicator.
+  const compact = winH < 720;
 
   // Animations
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -70,16 +76,28 @@ export default function BookingSuccessScreen() {
   const duration = Number(params.duration) || 1;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + Spacing.xl }]}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={[
+        styles.container,
+        {
+          paddingTop: insets.top + (compact ? Spacing.md : Spacing.xl),
+          paddingBottom: insets.bottom + Spacing.xl,
+          gap: compact ? Spacing.md : Spacing.lg,
+        },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Success Icon */}
       <Animated.View
         style={[
           styles.iconCircle,
+          compact && styles.iconCircleCompact,
           { backgroundColor: colors.successLight, transform: [{ scale: scaleAnim }] },
         ]}
       >
-        <View style={[styles.iconInner, { backgroundColor: colors.success }]}>
-          <Ionicons name="checkmark" size={48} color="#fff" />
+        <View style={[styles.iconInner, compact && styles.iconInnerCompact, { backgroundColor: colors.success }]}>
+          <Ionicons name="checkmark" size={compact ? 36 : 48} color="#fff" />
         </View>
       </Animated.View>
 
@@ -194,7 +212,7 @@ export default function BookingSuccessScreen() {
           size="md"
         />
       </Animated.View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -222,7 +240,7 @@ function DetailRow({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     paddingHorizontal: Spacing.xl,
     gap: Spacing.lg,
@@ -235,12 +253,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.xl,
   },
+  iconCircleCompact: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    marginTop: Spacing.sm,
+  },
   iconInner: {
     width: 80,
     height: 80,
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  iconInnerCompact: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   title: {
     fontSize: FontSize['2xl'],
@@ -269,9 +298,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   bookingNumber: {
-    fontSize: FontSize.xl,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    letterSpacing: 2,
+    letterSpacing: 1,
+    textAlign: 'center',
   },
   details: {
     padding: Spacing.lg,
