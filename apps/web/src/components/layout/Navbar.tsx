@@ -167,7 +167,7 @@ export function Navbar() {
                           }
                           if (role === 'investor') {
                             return (
-                              <Link href="/investor" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary-700 hover:bg-primary-50 transition-colors font-semibold">
+                              <Link href="/investor/portal" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary-700 hover:bg-primary-50 transition-colors font-semibold">
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
                                 Investor Dashboard
                               </Link>
@@ -284,7 +284,7 @@ export function Navbar() {
                     return <Link href="/partner/portal" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-white bg-gradient-to-r from-primary-500 to-violet-600 rounded-xl font-semibold">Partner Portal</Link>;
                   }
                   if (role === 'investor') {
-                    return <Link href="/investor" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-white bg-gradient-to-r from-primary-500 to-violet-600 rounded-xl font-semibold">Investor Dashboard</Link>;
+                    return <Link href="/investor/portal" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 text-center text-white bg-gradient-to-r from-primary-500 to-violet-600 rounded-xl font-semibold">Investor Dashboard</Link>;
                   }
                   return null;
                 })()}
