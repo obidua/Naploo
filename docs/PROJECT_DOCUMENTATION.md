@@ -1,7 +1,7 @@
 # Naploo Ecosystem - Complete Project Documentation
 
-> **Version:** 4.2.0  
-> **Last Updated:** June 6, 2026  
+> **Version:** 4.3.0  
+> **Last Updated:** June 7, 2026  
 > **Company:** BIDUA Industries Pvt Ltd  
 > **Project Lead:** Development Team  
 > **Domain:** naploo.com
@@ -14,12 +14,12 @@
 
 | Category | Implemented | Total Planned | Progress |
 |----------|-------------|---------------|----------|
-| Frontend Apps | 1 (web) | 7 | ~14% |
-| Backend Services | 3 (gateway + auth + db) | 11 | ~27% |
+| Frontend Apps | 4 (web, customer mobile, partner web, partner mobile) | 7 | ~57% |
+| Backend Services | 7 (gateway, auth, booking, hotel, payment, analytics/admin support, db) | 11 | ~64% |
 | Shared Packages | 1 (db) | 4 | 25% |
 | Database Tables | 19 | 19 | ✅ 100% |
 | Web Pages | 32 routes (App Router) | 32+ | ✅ Complete |
-| Customer Booking Flow | Search → Property → Checkout → Confirmation → My Bookings | — | ✅ Complete (mock booking store) |
+| Customer Booking Flow | Search → Property → Checkout → Cashfree WebView → Confirmation → My Bookings | — | ✅ Complete on mobile with live API + hosted checkout |
 | Auth System | Fully dynamic | — | ✅ Complete |
 
 ### What's Live in Production
@@ -29,6 +29,10 @@
 | **naploo.com** | ✅ Live | Next.js 14.2.35 + React 18.3.1 + Tailwind CSS, 32 App Router pages, systemd managed, bound to `127.0.0.1:3100` |
 | **api.naploo.com** | ✅ Live | Elysia/Bun API Gateway with Swagger docs, bound to `127.0.0.1:3000`, systemd managed |
 | **auth-service** | ✅ Live | Bun/Elysia OTP + JWT auth, bound to `127.0.0.1:3001` |
+| **booking-service** | ✅ Live | Quote/create/list/get/cancel booking endpoints, cancellation/refund path, pod inventory release |
+| **hotel-service** | ✅ Live | Search/detail, rooms, pod sets, partner hotel inventory endpoints |
+| **payment-service** | ✅ Live | Cashfree hosted checkout, sandbox/production mode support, Razorpay legacy paths |
+| **Customer mobile APK** | ✅ Live artifact | Release APK published to `https://naploo.com/downloads/naploo-customer.apk`; installed on test device |
 | **Database Schema** | ✅ Complete | 19 tables via Drizzle ORM (PostgreSQL 14) covering all business entities |
 | **Nginx + SSL** | ✅ Running | Reverse proxy with Let's Encrypt, Cloudflare CDN/WAF — only entry point exposed publicly |
 | **Port hardening** | ✅ Hardened | All Naploo app/service ports bind to loopback (`127.0.0.1`) only — no direct public exposure (verified via `ss -tlnp`) |
@@ -39,16 +43,18 @@
 |-----------|--------|---------|
 | **SMS Integration** | ⚠️ Pending | OTP generated and stored in DB but not sent via SMS (no MSG91/Twilio yet). In dev mode, OTP is returned in API response. |
 | **Profile Editing** | ⚠️ Basic | Profile page reads from API but edit/save flow not fully wired to UI form |
+| **Cashfree production payments** | ⚠️ Merchant/risk dependent | Sandbox is supported; production low-value ₹10/₹11 tests may be rejected by Cashfree/bank risk rules on a fresh merchant. Use `scripts/set-cashfree-mode.sh` to switch modes. |
+| **Per-pod-type pricing** | ⚠️ Planned | Current DB stores price on `pod_sets`; planned migration adds per-pod price for single/double/king-style partner pricing. |
 
 ### What's Not Started
 
 | Category | Items |
 |----------|-------|
-| Frontend Apps | admin, partner, investor, associate, rental, mobile |
-| Backend Services | booking, payment, investor, referral, rental, hotel, notification, analytics, search |
+| Frontend Apps | investor, associate, rental; broader QA still needed across admin/partner/customer surfaces |
+| Backend Services | investor, referral, rental, notification, deeper analytics/search hardening |
 | Shared Packages | ui, types, config |
 | Infrastructure | Docker, Kafka, Elasticsearch, CI/CD pipelines, monitoring |
-| Integrations | Razorpay, MSG91, FCM, Google Maps, Sentry |
+| Integrations | MSG91, FCM, Google Maps, Sentry; Cashfree production support requires merchant activation/risk review |
 
 ### Web App Pages (32 routes implemented)
 
@@ -439,17 +445,17 @@ Build a complete digital ecosystem enabling:
 
 | Platform | Technology | Priority | Deployment | Status |
 |----------|------------|----------|------------|--------|
-| Customer Website (PWA) | Next.js 14 | Phase 1 | Linux Server | ✅ Live (24 pages) |
-| API Gateway | Elysia (Bun) | Phase 1 | Linux Server | ✅ Live (proxies to auth-service) |
+| Customer Website (PWA) | Next.js 14 | Phase 1 | Linux Server | ✅ Live (32+ pages) |
+| API Gateway | Elysia (Bun) | Phase 1 | Linux Server | ✅ Live (proxies to auth, booking, hotel, payment, admin/analytics) |
 | Auth Service | Elysia (Bun) | Phase 1 | Linux Server | ✅ Live (real DB, JWT, OTP) |
 | Database Schema | PostgreSQL + Drizzle | Phase 1 | Linux Server | ✅ 19 tables defined |
-| Partner Portal (Hotels/Homestays) | Next.js 14 | Phase 1 | Linux Server | ❌ Not started |
-| Customer Mobile App | React Native + Expo | Phase 2 | App Stores | ❌ Not started |
+| Partner Portal (Hotels/Homestays) | Next.js 14 | Phase 1 | Linux Server | ✅ Functional portal + live inventory/bookings wiring |
+| Customer Mobile App | React Native + Expo | Phase 2 | App Stores | ✅ Release APK published; live API + Cashfree checkout wired |
 | Investor Pool Portal | Next.js 14 | Phase 1 | Linux Server | ❌ Not started |
 | Associate Portal | Next.js 14 | Phase 1 | Linux Server | ❌ Not started |
 | Rental Portal | Next.js 14 | Phase 2 | Linux Server | ❌ Not started |
-| Admin Dashboard | Next.js 14 | Phase 1 | Linux Server | ❌ Not started |
-| Backend Services (9 remaining) | Bun + Elysia | Parallel | Linux Server | ❌ Not started |
+| Admin Dashboard | Next.js 14 | Phase 1 | Linux Server | ⚠️ Data tabs wired; broader QA pending |
+| Backend Services | Bun + Elysia | Parallel | Linux Server | ⚠️ Core auth/booking/hotel/payment live; remaining services pending |
 
 ### 1.9 Key Business Metrics
 
@@ -621,12 +627,12 @@ Build a complete digital ecosystem enabling:
 |---------|------|----------------|--------|
 | **api-gateway** | 3000 | Request routing, proxies to auth-service, Swagger | ✅ Live |
 | **auth-service** | 3001 | OTP send/verify, JWT (access+refresh), profile | ✅ Live (PostgreSQL, Drizzle ORM) |
-| **booking-service** | 3002 | Pod & room bookings, availability | ❌ Empty directory |
-| **payment-service** | 3003 | Razorpay integration, refunds | ❌ Empty directory |
+| **booking-service** | 3002 | Pod & room bookings, quotes, cancellation/refund handoff | ✅ Live |
+| **payment-service** | 3003 | Cashfree hosted checkout, sandbox/production mode, Razorpay legacy paths | ✅ Live |
 | **investor-service** | 3004 | Pool management, pod sets, 3x tracking | ❌ Empty directory |
 | **referral-service** | 3005 | 5-level referral, commissions | ❌ Empty directory |
 | **rental-service** | 3006 | Home/office rentals, contracts | ❌ Empty directory |
-| **hotel-service** | 3007 | Hotel listings, rooms, pods | ❌ Empty directory |
+| **hotel-service** | 3007 | Hotel listings, rooms, pod sets, partner hotel inventory | ✅ Live |
 | **notification-service** | 3008 | Email, SMS, push notifications | ❌ Empty directory |
 | **analytics-service** | 3009 | Reports, dashboards, metrics | ❌ Empty directory |
 | **search-service** | 3010 | Elasticsearch indexing, search | ❌ Empty directory |
@@ -909,12 +915,12 @@ naploo-ecosystem/
 |   |   +-- dist/                   # ✅ Built
 |   |   +-- package.json            # Elysia + cors + jwt + @naploo/db + drizzle-orm
 |   |
-|   +-- booking-service/            # ❌ Empty directory
-|   +-- payment-service/            # ❌ Empty directory
+|   +-- booking-service/            # ✅ Live bookings + cancellation flow
+|   +-- payment-service/            # ✅ Live Cashfree hosted checkout
 |   +-- investor-service/           # ❌ Empty directory
 |   +-- referral-service/           # ❌ Empty directory
 |   +-- rental-service/             # ❌ Empty directory
-|   +-- hotel-service/              # ❌ Empty directory
+|   +-- hotel-service/              # ✅ Live hotels/rooms/pod sets
 |   +-- notification-service/       # ❌ Empty directory
 |   +-- analytics-service/          # ❌ Empty directory
 |   +-- search-service/             # ❌ Empty directory
@@ -2280,18 +2286,20 @@ See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for complete design guidelines.
 - [ ] ~~Configure Docker~~ (not used — using systemd)
 - [x] Set up PostgreSQL + Drizzle ORM (19 tables, 1 migration)
 - [ ] Set up Kafka for event streaming (❌ not installed)
-- [x] Customer website — 24 pages live at naploo.com
-- [x] API Gateway — live, proxies auth routes to auth-service
+- [x] Customer website — 32+ routes live at naploo.com
+- [x] API Gateway — live, proxies auth/booking/hotel/payment routes to services
 - [x] Auth service — fully dynamic (PostgreSQL, Drizzle ORM, JWT, OTP in DB)
-- [ ] Build partner portal (❌ not started)
-- [ ] Build admin dashboard (❌ not started)
+- [x] Build partner portal — functional inventory/bookings/earnings portal; QA pending
+- [ ] Build admin dashboard — data tabs wired; broader QA pending
 - [x] Domain + SSL + Cloudflare + Nginx configured
 - [x] systemd services for auto-restart
 
 ### Phase 2: Backend Services (Next Priority)
 - [x] Implement real auth service (OTP in DB, dual JWT access+refresh, profile CRUD) ✅
 - [ ] Integrate SMS provider (MSG91/Twilio) for OTP delivery
-- [ ] Implement booking service (availability, pricing, checkout)
+- [x] Implement booking service (quote, create, list, detail, cancel/refund handoff)
+- [x] Implement hotel service (search/detail, rooms, pod sets, partner hotel inventory)
+- [x] Implement payment service (Cashfree hosted checkout, sandbox/production helper)
 - [ ] Implement payment service (Razorpay integration)
 - [ ] Implement hotel/partner service (listings, management)
 - [x] API Gateway → proxies to auth-service ✅

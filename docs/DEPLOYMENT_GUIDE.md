@@ -1,6 +1,6 @@
 # Naploo Platform - Deployment & Operations Guide
 
-> **Last Updated:** June 6, 2026  
+> **Last Updated:** June 7, 2026  
 > **Server:** AWS EC2 (ip-172-31-14-247)  
 > **User:** awsclint
 
@@ -17,13 +17,13 @@
 │   ├── investor/               # ❌ Not Started
 │   ├── associate/              # ❌ Not Started
 │   ├── rental/                 # ❌ Not Started
-│   └── mobile/                 # ❌ Not Started
+│   └── mobile/                 # ✅ Expo customer app wired to live API + APK published
 ├── services/
 │   ├── api-gateway/            # ✅ API Gateway (Elysia/Bun) - LIVE
 │   ├── auth-service/           # ✅ Auth Service (Elysia/Bun) - LIVE (real DB, JWT, OTP)
-│   ├── booking-service/        # ❌ Empty directory
-│   ├── hotel-service/          # ❌ Empty directory
-│   ├── payment-service/        # ❌ Empty directory
+│   ├── booking-service/        # ✅ Live (quote/create/list/get/cancel bookings)
+│   ├── hotel-service/          # ✅ Live (search/detail/rooms/pod sets)
+│   ├── payment-service/        # ✅ Live (Cashfree hosted checkout)
 │   ├── investor-service/       # ❌ Empty directory
 │   ├── referral-service/       # ❌ Empty directory
 │   ├── notification-service/   # ❌ Empty directory
@@ -47,6 +47,9 @@
 | Customer Website | https://naploo.com | 3100 | ✅ Live |
 | API Gateway | https://api.naploo.com | 3000 | ✅ Live |
 | Auth Service | https://api.naploo.com/api/v1/auth/* | 3001 | ✅ Live |
+| Booking Service | https://api.naploo.com/api/v1/bookings/* | 3002 | ✅ Live |
+| Hotel Service | https://api.naploo.com/api/v1/hotels/* | 3007 | ✅ Live |
+| Payment Service | https://api.naploo.com/api/v1/payments/* | 3003 | ✅ Live |
 | Swagger Docs | https://api.naploo.com/swagger | 3000 | ✅ Available |
 
 ---
@@ -65,9 +68,9 @@
 | Web Server | Nginx | 1.18.0 |
 | SSL | Let's Encrypt (Certbot) | — |
 | CDN/DNS | Cloudflare | — |
-| Process Manager | systemd | — |
+| Process Manager | PM2 for current microservices; systemd for older web/auth units | — |
 
-> **Note:** Docker, Kafka, and Elasticsearch are NOT installed. The current deployment runs directly on the host using systemd services.
+> **Note:** Docker, Kafka, and Elasticsearch are NOT installed. The current deployment runs directly on the host. Current microservices are PM2-managed; older web/auth units may still be systemd-managed depending on rollout stage.
 >
 > **React 18.3.1 in `apps/web`:** Pinned via root `package.json` `overrides`/`resolutions` because Next.js 14 requires `react@^18.2.0` as a peer dependency. Mobile (`apps/mobile`) and partner (`apps/partner`) Expo apps continue to use React 19.
 
@@ -303,7 +306,95 @@ SEARCH_SERVICE_HOST=127.0.0.1
 
 > **⚠️ Production TODO:** Change `NODE_ENV` to `production` (note: this will stop returning devOtp in auth responses), use strong random JWT secrets, and set `APP_URL`/`API_URL` to actual domain URLs.
 
-> **Note:** `.env` is symlinked from the project root into `services/auth-service/.env` and `services/api-gateway/.env` so all services share the same environment variables.
+> **Note:** `.env` is symlinked from the project root into service folders (for example `services/payment-service/.env -> /home/awsclint/Naploo/.env`) so all services share the same environment variables.
+
+---
+
+## 💳 Cashfree Payment Mode & Mobile App Testing
+
+The customer APK does **not** hard-code Cashfree sandbox or production mode. The app only opens the hosted checkout URL returned by the backend:
+
+```text
+https://api.naploo.com/api/v1/payments/checkout/:bookingId
+```
+
+Switching between Cashfree sandbox and production is therefore **server-side only**. A new APK install is not required when changing payment mode.
+
+### Mode switch commands
+
+Run from the repo root:
+
+```bash
+cd /home/awsclint/Naploo
+
+# Paste sandbox AppID + Secret Key interactively, hidden input, then switch to sandbox
+bash scripts/set-cashfree-mode.sh set-test
+
+# Switch to already-saved sandbox keys
+bash scripts/set-cashfree-mode.sh test
+
+# Switch back to production keys
+bash scripts/set-cashfree-mode.sh prod
+```
+
+The script updates `/home/awsclint/Naploo/.env`, restarts `naploo-payment` with `pm2 restart naploo-payment --update-env`, and prints the latest payment-service logs.
+
+### Verify the active mode
+
+```bash
+# What does the env file say?
+grep -E '^CASHFREE_(MODE|APP_ID)=' /home/awsclint/Naploo/.env
+
+# What mode did the running payment-service boot in?
+pm2 logs naploo-payment --lines 30 --nostream | grep -E 'MOCK|SANDBOX|PRODUCTION' | tail -3
+```
+
+Expected banner examples:
+
+```text
+💳 Naploo Payment Service running at http://localhost:3003 (CASHFREE SANDBOX mode)
+💳 Naploo Payment Service running at http://localhost:3003 (CASHFREE PRODUCTION mode)
+```
+
+If `.env` says `sandbox` but the PM2 log still says `PRODUCTION`, restart explicitly:
+
+```bash
+pm2 restart naploo-payment --update-env
+```
+
+### Test from the installed Android app
+
+No APK rebuild or reinstall is needed after server mode changes.
+
+1. Confirm PM2 shows `CASHFREE SANDBOX mode`.
+2. Open the existing installed Naploo customer app.
+3. Book **Naploo Demo Pod (₹10 Test)**.
+4. Tap **Pay Now**.
+5. On the Cashfree screen, use one of these sandbox instruments:
+
+| Channel | Success test value | Failure test value |
+|---|---|---|
+| UPI | `success@upi` | `failure@upi` |
+| Card | `4111 1111 1111 1111`, any future expiry, any CVV, OTP `1221` | Cashfree failure card from dashboard |
+
+Expected behaviour:
+
+| Test | Expected app behaviour |
+|---|---|
+| `success@upi` | Redirects to Naploo booking success screen and booking is confirmed. |
+| `failure@upi` | Cashfree shows payment failed; user can retry or press **Cancel Payment**. |
+| **Cancel Payment** button / header X / Android back | App calls `POST /api/v1/bookings/:id/cancel`; booking becomes `cancelled` and pod inventory is released. |
+
+### Why a real ₹11 production payment can fail
+
+Fresh Cashfree production merchants often reject very low-value transactions (such as ₹10/₹11) via Cashfree or bank risk rules. This is not an APK issue, and Play Store distribution does not change it because the same backend endpoint and Cashfree merchant are used.
+
+For production validation:
+
+1. Use sandbox first to prove app + backend flow.
+2. Switch to production with `bash scripts/set-cashfree-mode.sh prod`.
+3. Try a real amount such as ₹100+ from a normal UPI app.
+4. If still rejected, contact Cashfree support to whitelist or activate the merchant and test phone/account.
 
 ---
 
