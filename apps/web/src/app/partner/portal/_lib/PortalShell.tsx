@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Hotel, Calendar, IndianRupee, Building2, LogOut, Loader2, AlertCircle,
+  LayoutDashboard, Tag, Star, Image as ImageIcon, UserCircle2, Hotel, Calendar, IndianRupee, Building2, LogOut, Loader2, AlertCircle,
   Sparkles, ClipboardList, Wrench, UtensilsCrossed, Settings, Users2,
   Receipt, BarChart3, Plus, FileText, Key, BookOpen,
 } from 'lucide-react';

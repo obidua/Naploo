@@ -33,7 +33,7 @@ export interface WalkInInput {
   notes?: string;
   checkInNow?: boolean;
   payment?: {
-    method: 'cash' | 'card' | 'upi' | 'razorpay' | 'wallet' | 'bank_transfer' | 'pay_later';
+    method: 'cash' | 'card' | 'upi' | 'razorpay' | 'cashfree' | 'wallet' | 'bank_transfer' | 'pay_later';
     amount?: number;
     reference?: string;
   };

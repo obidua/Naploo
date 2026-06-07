@@ -10,7 +10,8 @@ import {
 } from '@naploo/db/schema';
 import { eq, and, desc, sql, inArray, or, lt, gt } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { registerExtensions, registerApiKeys } from './extensions';
+import { registerExtensions, registerApiKeys } from "./extensions";
+import { registerQloParity } from "./qlo-parity";
 
 // ─── Helpers ──────────────────────────────────────────────────
 function round2(n: number): number {
@@ -416,7 +417,7 @@ const app = new Elysia()
       payment: t.Optional(t.Object({
         method: t.Union([
           t.Literal('cash'), t.Literal('card'), t.Literal('upi'),
-          t.Literal('razorpay'), t.Literal('wallet'), t.Literal('bank_transfer'),
+          t.Literal('razorpay'), t.Literal('cashfree'), t.Literal('wallet'), t.Literal('bank_transfer'),
           t.Literal('pay_later'),
         ]),
         amount: t.Optional(t.Number()),
@@ -506,7 +507,7 @@ const app = new Elysia()
     body: t.Object({
       method: t.Union([
         t.Literal('cash'), t.Literal('card'), t.Literal('upi'),
-        t.Literal('razorpay'), t.Literal('wallet'), t.Literal('bank_transfer'),
+        t.Literal('razorpay'), t.Literal('cashfree'), t.Literal('wallet'), t.Literal('bank_transfer'),
       ]),
       amount: t.Number(),
       reference: t.Optional(t.String()),
@@ -889,7 +890,7 @@ const app = new Elysia()
     }),
   });
 
-const extendedApp = registerApiKeys(registerExtensions(app));
+const extendedApp = registerQloParity(registerApiKeys(registerExtensions(app)));
 extendedApp.listen({
   hostname: process.env.PMS_SERVICE_HOST || '127.0.0.1',
   port: Number(process.env.PMS_SERVICE_PORT || 3012),

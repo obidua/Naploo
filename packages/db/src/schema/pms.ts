@@ -22,7 +22,7 @@ export const folioChargeKindEnum = pgEnum('folio_charge_kind', [
   'room', 'pod', 'service', 'fnb', 'extra_guest', 'tax', 'discount', 'adjustment',
 ]);
 export const folioPaymentMethodEnum = pgEnum('folio_payment_method', [
-  'cash', 'card', 'upi', 'razorpay', 'wallet', 'bank_transfer',
+  'cash', 'card', 'upi', 'razorpay', 'cashfree', 'wallet', 'bank_transfer',
 ]);
 
 export const serviceKindEnum = pgEnum('service_kind', [

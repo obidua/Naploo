@@ -22,6 +22,7 @@ const PAY_METHODS = [
   { value: 'cash', label: 'Cash', icon: Banknote },
   { value: 'upi', label: 'UPI', icon: Smartphone },
   { value: 'card', label: 'Card', icon: CreditCard },
+  { value: 'cashfree', label: 'Cashfree', icon: Smartphone },
   { value: 'razorpay', label: 'Razorpay', icon: Smartphone },
   { value: 'wallet', label: 'Wallet', icon: Wallet },
   { value: 'bank_transfer', label: 'Bank transfer', icon: IndianRupee },

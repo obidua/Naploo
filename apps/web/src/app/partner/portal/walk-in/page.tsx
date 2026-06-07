@@ -422,6 +422,7 @@ function Body() {
               <PayChip active={payMethod === 'cash'} onClick={() => setPayMethod('cash')} icon={<Banknote className="w-4 h-4" />} label="Cash" />
               <PayChip active={payMethod === 'upi'} onClick={() => setPayMethod('upi')} icon={<Smartphone className="w-4 h-4" />} label="UPI" />
               <PayChip active={payMethod === 'card'} onClick={() => setPayMethod('card')} icon={<CreditCard className="w-4 h-4" />} label="Card" />
+              <PayChip active={payMethod === 'cashfree'} onClick={() => setPayMethod('cashfree')} icon={<Smartphone className="w-4 h-4" />} label="Cashfree" />
               <PayChip active={payMethod === 'razorpay'} onClick={() => setPayMethod('razorpay')} icon={<Smartphone className="w-4 h-4" />} label="Razorpay" />
               <PayChip active={payMethod === 'wallet'} onClick={() => setPayMethod('wallet')} icon={<Wallet className="w-4 h-4" />} label="Wallet" />
               <PayChip active={payMethod === 'bank_transfer'} onClick={() => setPayMethod('bank_transfer')} icon={<IndianRupee className="w-4 h-4" />} label="Bank" />

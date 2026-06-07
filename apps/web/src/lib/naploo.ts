@@ -315,9 +315,16 @@ export async function createBooking(input: CreateBookingInput): Promise<{ id: st
 
 interface OrderInfo {
   success: boolean;
+  provider?: 'razorpay' | 'cashfree';
   mock: boolean;
   order: { id: string; amount: number; currency: string };
-  keyId: string;
+  keyId?: string;
+  cashfree?: {
+    mode: 'production' | 'sandbox' | string;
+    paymentSessionId: string;
+    cfOrderId?: string;
+    orderStatus?: string;
+  };
   paymentId: string;
 }
 
@@ -336,6 +343,13 @@ export async function verifyPayment(orderId: string, paymentId: string, signatur
   return !!res.data?.success;
 }
 
+export async function verifyCashfreePayment(orderId: string): Promise<boolean> {
+  const res = await api.post<{ success: boolean; paid?: boolean; orderStatus?: string }>('/api/v1/payments/cashfree/verify', {
+    order_id: orderId,
+  });
+  return !!res.data?.success || !!res.data?.paid;
+}
+
 // Load Razorpay checkout script once
 function loadRazorpay(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -343,6 +357,18 @@ function loadRazorpay(): Promise<boolean> {
     if ((window as any).Razorpay) return resolve(true);
     const s = document.createElement('script');
     s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+}
+
+function loadCashfree(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if ((window as any).Cashfree) return resolve(true);
+    const s = document.createElement('script');
+    s.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
     s.onload = () => resolve(true);
     s.onerror = () => resolve(false);
     document.body.appendChild(s);
@@ -358,9 +384,28 @@ export async function payForBooking(
   if ('error' in order) return { paid: false, error: order.error };
 
   // Mock mode → no real gateway; confirm immediately.
-  if (order.mock || order.keyId.includes('MOCK')) {
+  if (order.mock || order.keyId?.includes('MOCK')) {
     const ok = await verifyPayment(order.order.id, `pay_mock_${Date.now()}`, 'mock_signature');
     return { paid: ok, error: ok ? undefined : 'Payment verification failed' };
+  }
+
+  if (order.provider === 'cashfree') {
+    if (!order.cashfree?.paymentSessionId) return { paid: false, error: 'Cashfree payment session missing' };
+    const loaded = await loadCashfree();
+    if (!loaded) return { paid: false, error: 'Could not load Cashfree checkout' };
+
+    try {
+      const cashfree = (window as any).Cashfree({ mode: order.cashfree.mode === 'production' ? 'production' : 'sandbox' });
+      const result = await cashfree.checkout({
+        paymentSessionId: order.cashfree.paymentSessionId,
+        redirectTarget: '_modal',
+      });
+      if (result?.error) return { paid: false, error: result.error.message || 'Cashfree payment failed' };
+      const ok = await verifyCashfreePayment(order.order.id);
+      return { paid: ok, error: ok ? undefined : 'Cashfree payment verification failed' };
+    } catch (e: any) {
+      return { paid: false, error: e?.message || 'Cashfree checkout failed' };
+    }
   }
 
   const loaded = await loadRazorpay();

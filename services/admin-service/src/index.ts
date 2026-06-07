@@ -1,4 +1,5 @@
 import { Elysia, t } from 'elysia';
+import { registerAdminQlo } from "./qlo-parity";
 import { cors } from '@elysiajs/cors';
 import { db } from '@naploo/db';
 import { users, partners, bookings, payments, payouts, rooms, pods, podSets, investors } from '@naploo/db/schema';
@@ -6,7 +7,7 @@ import { eq, desc, inArray } from 'drizzle-orm';
 
 // Gateway mounts this at /api/v1/admin/* (admin role enforced there) and
 // strips the /admin prefix, so handlers see /users, /partners, etc.
-const app = new Elysia()
+const appBase = new Elysia()
   .use(cors({ origin: true, credentials: true }))
 
   .get('/health', () => ({ status: 'healthy', service: 'admin-service', timestamp: new Date().toISOString() }))
@@ -122,7 +123,8 @@ const app = new Elysia()
     return { success: true, investor: { id: updated.id, status: updated.status } };
   })
 
-  .listen({
+  ;
+const app = registerAdminQlo(appBase).listen({
     hostname: process.env.ADMIN_SERVICE_HOST || '127.0.0.1',
     port: Number(process.env.ADMIN_SERVICE_PORT || 3011),
   });

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."folio_payment_method" ADD VALUE IF NOT EXISTS 'cashfree';

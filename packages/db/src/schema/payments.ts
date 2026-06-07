@@ -15,6 +15,7 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 
 export const paymentMethodEnum = pgEnum('payment_method', [
   'razorpay',
+  'cashfree',
   'upi',
   'card',
   'netbanking',

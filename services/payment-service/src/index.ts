@@ -71,25 +71,39 @@ async function notifyInvestorIfPodOwner(bookingId: string) {
 
 import { createHmac } from 'crypto';
 
-// ─── Razorpay config ──────────────────────────────────────────
-const KEY_ID = process.env.RAZORPAY_KEY_ID || '';
-const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
-const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || '';
-const MOCK = !KEY_ID || !KEY_SECRET; // mock mode until real test keys are provided
+type PaymentProvider = 'razorpay' | 'cashfree';
 
-if (MOCK) {
-  console.warn('⚠️  payment-service running in MOCK mode (no RAZORPAY_KEY_ID/SECRET). Set them in .env for real test-mode payments.');
+// ─── Provider config ─────────────────────────────────────────
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || '';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
+const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+const RAZORPAY_MOCK = !RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET;
+
+const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || process.env.APP_ID || '';
+const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || process.env.APP_SECRET || '';
+const CASHFREE_API_VERSION = process.env.CASHFREE_API_VERSION || '2023-08-01';
+const CASHFREE_MODE = (process.env.CASHFREE_MODE || 'sandbox').toLowerCase();
+const CASHFREE_BASE_URL = CASHFREE_MODE === 'production' ? 'https://api.cashfree.com/pg' : 'https://sandbox.cashfree.com/pg';
+const CASHFREE_ENABLED = !!CASHFREE_APP_ID && !!CASHFREE_SECRET_KEY;
+
+const DEFAULT_PROVIDER: PaymentProvider = process.env.PAYMENT_PROVIDER === 'cashfree' && CASHFREE_ENABLED ? 'cashfree' : 'razorpay';
+
+if (RAZORPAY_MOCK) {
+  console.warn('⚠️  Razorpay running in MOCK mode (no RAZORPAY_KEY_ID/SECRET).');
+}
+if (!CASHFREE_ENABLED) {
+  console.warn('⚠️  Cashfree disabled (no CASHFREE_APP_ID/SECRET_KEY).');
 }
 
 // Create an order via Razorpay REST API (no SDK)
 async function createRazorpayOrder(amountPaise: number, receipt: string, notes: Record<string, string>) {
-  if (MOCK) {
+  if (RAZORPAY_MOCK) {
     return { id: `order_MOCK${Date.now().toString(36)}`, amount: amountPaise, currency: 'INR', receipt, status: 'created', mock: true };
   }
   const res = await fetch('https://api.razorpay.com/v1/orders', {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${Buffer.from(`${KEY_ID}:${KEY_SECRET}`).toString('base64')}`,
+      Authorization: `Basic ${Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64')}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ amount: amountPaise, currency: 'INR', receipt, notes }),
@@ -101,17 +115,84 @@ async function createRazorpayOrder(amountPaise: number, receipt: string, notes: 
   return res.json();
 }
 
+async function createCashfreeOrder(input: {
+  booking: typeof bookings.$inferSelect;
+  user: typeof users.$inferSelect | undefined;
+  amount: number;
+}) {
+  if (!CASHFREE_ENABLED) throw new Error('Cashfree credentials are not configured');
+
+  const customerName = [input.user?.firstName, input.user?.lastName].filter(Boolean).join(' ') || 'Naploo Customer';
+  const customerPhone = input.user?.phone?.replace(/\D/g, '').slice(-10) || '9999999999';
+  const orderId = `NP_${input.booking.bookingNumber}_${Date.now()}`.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 45);
+  const publicApi = process.env.PUBLIC_API_URL || 'https://api.naploo.com';
+  const publicWeb = process.env.PUBLIC_WEB_URL || 'https://naploo.com';
+
+  const res = await fetch(`${CASHFREE_BASE_URL}/orders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-client-id': CASHFREE_APP_ID,
+      'x-client-secret': CASHFREE_SECRET_KEY,
+      'x-api-version': CASHFREE_API_VERSION,
+    },
+    body: JSON.stringify({
+      order_id: orderId,
+      order_amount: input.amount,
+      order_currency: 'INR',
+      customer_details: {
+        customer_id: input.booking.userId,
+        customer_name: customerName,
+        customer_email: input.user?.email || 'support@naploo.com',
+        customer_phone: customerPhone,
+      },
+      order_meta: {
+        return_url: `${publicWeb}/booking/confirmation/${input.booking.id}?order_id={order_id}`,
+        notify_url: `${publicApi}/api/v1/payments/cashfree/webhook`,
+      },
+      order_note: `Naploo booking ${input.booking.bookingNumber}`,
+    }),
+  });
+
+  const data = await res.json().catch(async () => ({ message: await res.text() }));
+  if (!res.ok) throw new Error(`Cashfree order failed: ${res.status} ${JSON.stringify(data)}`);
+  return data;
+}
+
+async function getCashfreeOrder(orderId: string) {
+  if (!CASHFREE_ENABLED) throw new Error('Cashfree credentials are not configured');
+  const res = await fetch(`${CASHFREE_BASE_URL}/orders/${encodeURIComponent(orderId)}`, {
+    headers: {
+      'x-client-id': CASHFREE_APP_ID,
+      'x-client-secret': CASHFREE_SECRET_KEY,
+      'x-api-version': CASHFREE_API_VERSION,
+    },
+  });
+  const data = await res.json().catch(async () => ({ message: await res.text() }));
+  if (!res.ok) throw new Error(`Cashfree order lookup failed: ${res.status} ${JSON.stringify(data)}`);
+  return data;
+}
+
 // Verify checkout signature: HMAC_SHA256(order_id|payment_id, key_secret)
 function verifySignature(orderId: string, paymentId: string, signature: string): boolean {
-  if (MOCK) return true; // accept in mock mode
-  const expected = createHmac('sha256', KEY_SECRET).update(`${orderId}|${paymentId}`).digest('hex');
+  if (RAZORPAY_MOCK) return true; // accept in mock mode
+  const expected = createHmac('sha256', RAZORPAY_KEY_SECRET).update(`${orderId}|${paymentId}`).digest('hex');
   return expected === signature;
 }
 
 function verifyWebhookSignature(rawBody: string, signature: string): boolean {
-  if (!WEBHOOK_SECRET) return MOCK; // if no secret configured, only trust in mock
-  const expected = createHmac('sha256', WEBHOOK_SECRET).update(rawBody).digest('hex');
+  if (!RAZORPAY_WEBHOOK_SECRET) return RAZORPAY_MOCK; // if no secret configured, only trust in mock
+  const expected = createHmac('sha256', RAZORPAY_WEBHOOK_SECRET).update(rawBody).digest('hex');
   return expected === signature;
+}
+
+function paymentMetadata(payment: { metadata?: string | null }) {
+  if (!payment.metadata) return {};
+  try {
+    return JSON.parse(payment.metadata);
+  } catch {
+    return {};
+  }
 }
 
 const app = new Elysia()
@@ -119,11 +200,21 @@ const app = new Elysia()
   .use(
     swagger({
       path: '/swagger',
-      documentation: { info: { title: 'Naploo Payment Service', version: '1.0.0', description: 'Razorpay payments (test mode)' } },
+      documentation: { info: { title: 'Naploo Payment Service', version: '1.1.0', description: 'Razorpay + Cashfree payments' } },
     })
   )
 
-  .get('/health', () => ({ status: 'healthy', service: 'payment-service', mode: MOCK ? 'mock' : 'live', timestamp: new Date().toISOString() }))
+  .get('/health', () => ({
+    status: 'healthy',
+    service: 'payment-service',
+    provider: DEFAULT_PROVIDER,
+    mode: DEFAULT_PROVIDER === 'cashfree' ? (CASHFREE_ENABLED ? CASHFREE_MODE : 'mock') : (RAZORPAY_MOCK ? 'mock' : 'live'),
+    providers: {
+      razorpay: RAZORPAY_MOCK ? 'mock' : 'live',
+      cashfree: CASHFREE_ENABLED ? CASHFREE_MODE : 'disabled',
+    },
+    timestamp: new Date().toISOString(),
+  }))
 
   // ─── Create payment order for a booking ─────────────────────
   .post(
@@ -139,14 +230,33 @@ const app = new Elysia()
         return { success: false, message: `Booking is already ${booking.status}` };
       }
       const amountPaise = Math.round(Number(booking.total) * 100);
+      const amountRupees = Number(booking.total);
+      const provider = (body.provider || DEFAULT_PROVIDER) as PaymentProvider;
 
       let order;
+      let paymentMethod: 'razorpay' | 'cashfree' = provider;
+      let metadata: Record<string, any> = { provider };
       try {
-        order = await createRazorpayOrder(amountPaise, booking.bookingNumber, { bookingId: booking.id });
+        if (provider === 'cashfree') {
+          const [user] = await db.select().from(users).where(eq(users.id, booking.userId));
+          order = await createCashfreeOrder({ booking, user, amount: amountRupees });
+          metadata = {
+            provider: 'cashfree',
+            cfOrderId: order.cf_order_id,
+            paymentSessionId: order.payment_session_id,
+            orderStatus: order.order_status,
+            cashfreeMode: CASHFREE_MODE,
+          };
+        } else {
+          order = await createRazorpayOrder(amountPaise, booking.bookingNumber, { bookingId: booking.id });
+          metadata = { provider: 'razorpay' };
+        }
       } catch (e: any) {
         set.status = 502;
         return { success: false, message: e.message };
       }
+
+      const externalOrderId = provider === 'cashfree' ? order.order_id : order.id;
 
       // Upsert a payment record for this booking
       const [existing] = await db.select().from(payments).where(eq(payments.bookingId, booking.id));
@@ -154,7 +264,14 @@ const app = new Elysia()
       if (existing) {
         [payment] = await db
           .update(payments)
-          .set({ razorpayOrderId: order.id, amount: String(booking.total), status: 'pending', paymentMethod: 'razorpay', updatedAt: new Date() })
+          .set({
+            razorpayOrderId: externalOrderId,
+            amount: String(booking.total),
+            status: 'pending',
+            paymentMethod,
+            metadata: JSON.stringify(metadata),
+            updatedAt: new Date(),
+          })
           .where(eq(payments.id, existing.id))
           .returning();
       } else {
@@ -165,62 +282,113 @@ const app = new Elysia()
             bookingId: booking.id,
             amount: String(booking.total),
             currency: 'INR',
-            razorpayOrderId: order.id,
-            paymentMethod: 'razorpay',
+            razorpayOrderId: externalOrderId,
+            paymentMethod,
             status: 'pending',
+            metadata: JSON.stringify(metadata),
           })
           .returning();
       }
 
       return {
         success: true,
-        mock: MOCK,
-        order: { id: order.id, amount: amountPaise, currency: 'INR' },
-        keyId: KEY_ID || 'rzp_test_MOCK',
+        provider,
+        mock: provider === 'razorpay' ? RAZORPAY_MOCK : false,
+        order: { id: externalOrderId, amount: amountPaise, currency: 'INR' },
+        keyId: provider === 'razorpay' ? (RAZORPAY_KEY_ID || 'rzp_test_MOCK') : undefined,
+        cashfree: provider === 'cashfree' ? {
+          mode: CASHFREE_MODE,
+          paymentSessionId: order.payment_session_id,
+          cfOrderId: order.cf_order_id,
+          orderStatus: order.order_status,
+        } : undefined,
         paymentId: payment.id,
         booking: { id: booking.id, number: booking.bookingNumber, total: booking.total },
         // In mock mode, the client can call /payments/verify with these to simulate success.
-        ...(MOCK && { mockHint: 'POST /payments/verify with razorpay_order_id and any payment_id/signature to confirm.' }),
+        ...(provider === 'razorpay' && RAZORPAY_MOCK && { mockHint: 'POST /payments/verify with razorpay_order_id and any payment_id/signature to confirm.' }),
       };
     },
-    { body: t.Object({ bookingId: t.String() }) }
+    { body: t.Object({ bookingId: t.String(), provider: t.Optional(t.Union([t.Literal('razorpay'), t.Literal('cashfree')])) }) }
   )
 
-  // ─── Hosted checkout page (for mobile WebView) ──────────────
-  // Mobile opens this URL in a WebView. The page loads Razorpay checkout.js,
-  // handles success/failure, then sends `naploo://payment-success` or
-  // `naploo://payment-failed` so React Native can detect it via deep link / nav state.
-  .get('/payments/checkout/:bookingId', async ({ params, set }) => {
+  // ─── Hosted checkout page (for mobile WebView / SMS links) ──
+  // Default provider follows PAYMENT_PROVIDER. Append ?provider=razorpay to force Razorpay.
+  .get('/payments/checkout/:bookingId', async ({ params, query, set }) => {
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, params.bookingId));
     if (!booking) {
       set.status = 404;
       return 'Booking not found';
     }
     const amountPaise = Math.round(Number(booking.total) * 100);
+    const provider = (query?.provider === 'razorpay' ? 'razorpay' : DEFAULT_PROVIDER) as PaymentProvider;
     let order;
+    let paymentSessionId = '';
     try {
-      order = await createRazorpayOrder(amountPaise, booking.bookingNumber, { bookingId: booking.id });
+      if (provider === 'cashfree') {
+        const [user] = await db.select().from(users).where(eq(users.id, booking.userId));
+        order = await createCashfreeOrder({ booking, user, amount: Number(booking.total) });
+        paymentSessionId = order.payment_session_id;
+      } else {
+        order = await createRazorpayOrder(amountPaise, booking.bookingNumber, { bookingId: booking.id });
+      }
     } catch (e: any) {
       set.status = 502;
       return `Could not create order: ${e.message}`;
     }
+    const externalOrderId = provider === 'cashfree' ? order.order_id : order.id;
+    const metadata = provider === 'cashfree'
+      ? { provider, cfOrderId: order.cf_order_id, paymentSessionId, orderStatus: order.order_status, cashfreeMode: CASHFREE_MODE }
+      : { provider };
     // Upsert payment row
     const [existing] = await db.select().from(payments).where(eq(payments.bookingId, booking.id));
     if (existing) {
-      await db.update(payments).set({ razorpayOrderId: order.id, status: 'pending', updatedAt: new Date() }).where(eq(payments.id, existing.id));
+      await db.update(payments).set({
+        razorpayOrderId: externalOrderId,
+        status: 'pending',
+        paymentMethod: provider,
+        metadata: JSON.stringify(metadata),
+        updatedAt: new Date(),
+      }).where(eq(payments.id, existing.id));
     } else {
       await db.insert(payments).values({
         userId: booking.userId,
         bookingId: booking.id,
         amount: String(booking.total),
         currency: 'INR',
-        razorpayOrderId: order.id,
-        paymentMethod: 'razorpay',
+        razorpayOrderId: externalOrderId,
+        paymentMethod: provider,
         status: 'pending',
+        metadata: JSON.stringify(metadata),
       });
     }
 
     set.headers['Content-Type'] = 'text/html; charset=utf-8';
+    if (provider === 'cashfree') {
+      return `<!doctype html>
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pay ${booking.bookingNumber}</title>
+<style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#0f0a1e;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:20px}.card{max-width:340px;background:#1e1b4b;border:1px solid #312e81;border-radius:24px;padding:32px}h1{margin:0 0 8px;font-size:20px}.amount{font-size:32px;font-weight:bold;color:#a78bfa;margin:8px 0 24px}button{width:100%;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;border:0;padding:16px;border-radius:12px;font-size:16px;font-weight:600}.status{margin-top:16px;font-size:13px;color:#a8a0c8}</style></head><body>
+<div class="card"><h1>Booking ${booking.bookingNumber}</h1><div class="amount">₹${booking.total}</div><button id="pay">Pay with Cashfree</button><div class="status" id="status">Tap to open secure checkout</div></div>
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+<script>
+const cashfree = Cashfree({ mode: ${JSON.stringify(CASHFREE_MODE === 'production' ? 'production' : 'sandbox')} });
+async function verify(){
+  document.getElementById('status').textContent='Verifying payment...';
+  try{
+    const r=await fetch('/payments/cashfree/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:${JSON.stringify(externalOrderId)}})});
+    const j=await r.json();
+    if(j.success||j.paid){ window.location.href='naploo://payment-success?bookingId=' + ${JSON.stringify(booking.id)}; }
+    else { document.getElementById('status').textContent='Payment not completed: '+(j.orderStatus||j.message||'pending'); }
+  }catch(e){ document.getElementById('status').textContent='Network error while verifying'; }
+}
+document.getElementById('pay').onclick=async function(){
+  const result=await cashfree.checkout({ paymentSessionId:${JSON.stringify(paymentSessionId)}, redirectTarget:'_modal' });
+  if(result && result.error){ document.getElementById('status').textContent=result.error.message || 'Payment cancelled'; window.location.href='naploo://payment-cancelled?bookingId=' + ${JSON.stringify(booking.id)}; return; }
+  verify();
+};
+setTimeout(()=>document.getElementById('pay').click(),300);
+</script></body></html>`;
+    }
+
     return `<!doctype html>
 <html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pay ${booking.bookingNumber}</title>
 <style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#0f0a1e;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:20px}
@@ -238,10 +406,10 @@ button{width:100%;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 const opts = {
-  key: ${JSON.stringify(KEY_ID || 'rzp_test_MOCK')},
+  key: ${JSON.stringify(RAZORPAY_KEY_ID || 'rzp_test_MOCK')},
   amount: ${amountPaise},
   currency: 'INR',
-  order_id: ${JSON.stringify(order.id)},
+  order_id: ${JSON.stringify(externalOrderId)},
   name: 'Naploo',
   description: 'Stay booking ${booking.bookingNumber}',
   theme: { color: '#7c3aed' },
@@ -269,6 +437,80 @@ document.getElementById('pay').onclick = function(){ new Razorpay(opts).open(); 
 setTimeout(()=>document.getElementById('pay').click(), 300);
 </script>
 </body></html>`;
+  })
+
+  // ─── Cashfree verify (client callback / polling after checkout) ───
+  .post(
+    '/payments/cashfree/verify',
+    async ({ body, set }) => {
+      let order;
+      try {
+        order = await getCashfreeOrder(body.order_id);
+      } catch (e: any) {
+        set.status = 502;
+        return { success: false, message: e.message };
+      }
+
+      const [payment] = await db.select().from(payments).where(eq(payments.razorpayOrderId, body.order_id));
+      if (!payment) {
+        set.status = 404;
+        return { success: false, message: 'Payment record not found for Cashfree order' };
+      }
+
+      const paid = order.order_status === 'PAID';
+      if (!paid) {
+        await db
+          .update(payments)
+          .set({
+            status: order.order_status === 'EXPIRED' ? 'failed' : 'pending',
+            failureReason: order.order_status === 'EXPIRED' ? 'Cashfree order expired' : null,
+            metadata: JSON.stringify({ ...paymentMetadata(payment), orderStatus: order.order_status, lastVerifiedAt: new Date().toISOString() }),
+            updatedAt: new Date(),
+          })
+          .where(eq(payments.id, payment.id));
+        return { success: false, paid: false, orderStatus: order.order_status };
+      }
+
+      const [updated] = await db
+        .update(payments)
+        .set({
+          status: 'completed',
+          metadata: JSON.stringify({ ...paymentMetadata(payment), orderStatus: order.order_status, cfOrderId: order.cf_order_id, paidAt: new Date().toISOString() }),
+          updatedAt: new Date(),
+        })
+        .where(eq(payments.id, payment.id))
+        .returning();
+
+      if (payment.bookingId) {
+        await db.update(bookings).set({ status: 'confirmed', updatedAt: new Date() }).where(eq(bookings.id, payment.bookingId));
+        notifyInvestorIfPodOwner(payment.bookingId).catch(() => {});
+      }
+
+      return { success: true, paid: true, orderStatus: order.order_status, payment: updated, bookingConfirmed: !!payment.bookingId };
+    },
+    { body: t.Object({ order_id: t.String() }) }
+  )
+
+  // ─── Cashfree webhook ──────────────────────────────────────
+  .post('/payments/cashfree/webhook', async ({ body }) => {
+    const data = body as any;
+    const orderId = data?.data?.order?.order_id || data?.order_id;
+    const orderStatus = data?.data?.order?.order_status || data?.order_status;
+    if (!orderId) return { success: true, ignored: true };
+
+    const [payment] = await db.select().from(payments).where(eq(payments.razorpayOrderId, orderId));
+    if (payment && orderStatus === 'PAID' && payment.status !== 'completed') {
+      await db.update(payments).set({
+        status: 'completed',
+        metadata: JSON.stringify({ ...paymentMetadata(payment), orderStatus, webhookReceivedAt: new Date().toISOString() }),
+        updatedAt: new Date(),
+      }).where(eq(payments.id, payment.id));
+      if (payment.bookingId) {
+        await db.update(bookings).set({ status: 'confirmed', updatedAt: new Date() }).where(eq(bookings.id, payment.bookingId));
+        notifyInvestorIfPodOwner(payment.bookingId).catch(() => {});
+      }
+    }
+    return { success: true, received: true };
   })
 
   // ─── Verify payment (checkout callback) ─────────────────────
@@ -389,6 +631,6 @@ setTimeout(()=>document.getElementById('pay').click(), 300);
     port: Number(process.env.PAYMENT_SERVICE_PORT || 3003),
   });
 
-console.log(`💳 Naploo Payment Service running at http://localhost:${app.server?.port} (${MOCK ? 'MOCK' : 'LIVE'} mode)`);
+console.log(`💳 Naploo Payment Service running at http://localhost:${app.server?.port} (${DEFAULT_PROVIDER.toUpperCase()} ${DEFAULT_PROVIDER === 'cashfree' ? CASHFREE_MODE.toUpperCase() : (RAZORPAY_MOCK ? 'MOCK' : 'LIVE')} mode)`);
 
 export type App = typeof app;

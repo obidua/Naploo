@@ -54,11 +54,12 @@ function accessFor(method: string, seg: string, fullPath?: string): Access {
   // Partner inventory writes (listings + pricing)
   if (['hotels', 'rooms', 'pod-sets'].includes(seg) && ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) return 'partner';
   if (seg === 'partner' || seg === 'pms') return 'partner';
-  // Special-cases under /payments: the hosted checkout page and verify
-  // are public (HTML page + Razorpay HMAC signature is the auth).
+  // Special-cases under /payments: hosted checkout, gateway callbacks,
+  // and provider verification/webhooks are public (provider signatures/status checks apply).
   if (seg === 'payments' && fullPath) {
     if (method === 'GET' && fullPath.startsWith('/payments/checkout/')) return 'public';
     if (method === 'POST' && (fullPath === '/payments/verify' || fullPath === '/payments/webhook')) return 'public';
+    if (method === 'POST' && (fullPath === '/payments/cashfree/verify' || fullPath === '/payments/cashfree/webhook')) return 'public';
   }
   // Authenticated customer areas
   if (['bookings', 'payments', 'investors', 'associates', 'referrals'].includes(seg)) return 'authed';

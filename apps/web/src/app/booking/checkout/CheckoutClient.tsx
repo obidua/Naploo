@@ -249,8 +249,8 @@ export default function CheckoutClient() {
                   id="razorpay"
                   active={payMethod === 'razorpay'}
                   onSelect={() => setPayMethod('razorpay')}
-                  title="Razorpay (Card / NetBanking / Wallet)"
-                  subtitle="Secure checkout via Razorpay"
+                  title="Cashfree / Razorpay (UPI / Card / NetBanking)"
+                  subtitle="Secure checkout through the active payment gateway"
                 />
                 <PayOption
                   id="upi"
