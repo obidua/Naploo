@@ -74,12 +74,6 @@ Notifications.setNotificationHandler({
 
 export async function setupNotifications(): Promise<string | null> {
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-  if (finalStatus !== 'granted') return null;
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('smart-alerts', {
@@ -90,6 +84,8 @@ export async function setupNotifications(): Promise<string | null> {
       description: 'Rest reminders and nearby pod notifications',
     });
   }
+
+  if (existingStatus !== 'granted') return null;
 
   // Skip push token in dev / when no EAS projectId is configured.
   // (Local notifications still work without it; only Expo's push server needs it.)
@@ -358,8 +354,8 @@ export function stopSmartTracking() {
 // ─── Get Current Location Once ───
 export async function getCurrentLocation(): Promise<{ lat: number; lng: number } | null> {
   try {
-    const hasPermission = await requestLocationPermission();
-    if (!hasPermission) return null;
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status !== 'granted') return null;
     const location = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });

@@ -6,8 +6,8 @@ const IMAGE_BASE = process.env.EXPO_PUBLIC_IMAGE_BASE_URL || 'https://naploo.com
 
 function absolutize(path?: string): string {
   if (!path) return `${IMAGE_BASE}/Pods_Images/For%20Website%20main%20images/Main%20Pods%20Image.png`;
-  if (path.startsWith('http')) return path;
-  return `${IMAGE_BASE}${path}`;
+  if (path.startsWith('http')) return encodeURI(path);
+  return encodeURI(`${IMAGE_BASE}${path}`);
 }
 
 // ─── Hotel → Property/Pod adapters ────────────────────────────

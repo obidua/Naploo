@@ -80,6 +80,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
 const FALLBACK_IMAGE = 'https://naploo.com/Pods_Images/For%20Website%20main%20images/Main%20Pods%20Image.png';
 
+function imageUrl(value?: string): string {
+  if (!value) return FALLBACK_IMAGE;
+  if (value.startsWith('http')) return encodeURI(value);
+  return encodeURI(`https://naploo.com${value}`);
+}
+
 function parseJsonArr(v: unknown): string[] {
   if (Array.isArray(v)) return v as string[];
   if (typeof v === 'string') {
@@ -133,7 +139,7 @@ export const partnerApi = {
       rating: Number(h.rating) || 0,
       totalReviews: h.totalReviews || 0,
       status: h.status,
-      images: parseJsonArr(h.images).length ? parseJsonArr(h.images) : [FALLBACK_IMAGE],
+      images: parseJsonArr(h.images).length ? parseJsonArr(h.images).map(imageUrl) : [FALLBACK_IMAGE],
       amenities: parseJsonArr(h.amenities),
       rooms: (h.rooms || []).map((r: any) => ({
         id: r.id,

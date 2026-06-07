@@ -17,8 +17,8 @@ interface Deal {
 const IMAGE_BASE = process.env.EXPO_PUBLIC_IMAGE_BASE_URL || 'https://naploo.com';
 function abs(p?: string): string {
   if (!p) return `${IMAGE_BASE}/Pods_Images/For%20Website%20main%20images/Main%20Pods%20Image.png`;
-  if (p.startsWith('http')) return p;
-  return `${IMAGE_BASE}${p}`;
+  if (p.startsWith('http')) return encodeURI(p);
+  return encodeURI(`${IMAGE_BASE}${p}`);
 }
 
 // ─── Live array proxies (snapshot at import time = empty; updated after loadAll)

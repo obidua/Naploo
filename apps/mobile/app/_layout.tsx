@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { AppState } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/auth';
 import { useTheme } from '@/theme/useTheme';
-import { setupNotifications, startSmartTracking, stopSmartTracking } from '@/services/smartAlerts';
+import { setupNotifications } from '@/services/smartAlerts';
 
 export default function RootLayout() {
   const { colors, isDark } = useTheme();
@@ -12,18 +11,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     hydrate();
-    // Initialize smart alerts
     setupNotifications();
-    startSmartTracking();
-
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') startSmartTracking();
-    });
-
-    return () => {
-      sub.remove();
-      stopSmartTracking();
-    };
   }, []);
 
   return (

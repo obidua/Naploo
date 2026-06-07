@@ -1,8 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -10,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { FontSize, FontWeight, Spacing, BorderRadius } from '@/theme';
+import { FontSize, FontWeight, Spacing } from '@/theme';
 import { useTheme } from '@/theme/useTheme';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -22,49 +21,25 @@ export default function LoginScreen() {
   const router = useRouter();
   const { colors: c } = useTheme();
 
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [devOtp, setDevOtp] = useState('');
-  const otpRef = useRef<TextInput>(null);
   const setUser = useAuthStore((s) => s.setUser);
 
-  async function handleSendOtp() {
-    const cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.length < 10) {
-      Alert.alert('Invalid', 'Enter a valid 10-digit phone number');
+  async function handleLogin() {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
+      Alert.alert('Invalid', 'Enter your partner email and password');
       return;
     }
     setLoading(true);
     try {
-      const res = await authApi.sendOtp(cleanPhone);
-      if (res.otp) setDevOtp(res.otp);
-      setStep('otp');
-      setTimeout(() => otpRef.current?.focus(), 300);
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to send OTP');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleVerifyOtp() {
-    if (otp.length < 4) {
-      Alert.alert('Invalid', 'Enter the OTP');
-      return;
-    }
-    setLoading(true);
-    try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const res = await authApi.verifyOtp(cleanPhone, otp);
+      const res = await authApi.login(cleanEmail, password);
       await setTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
       setUser(res.user);
-
-      // Check if user is a partner/admin - for now any role can use the app
       router.replace('/(tabs)/dashboard');
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Invalid OTP');
+      Alert.alert('Login failed', e.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -84,54 +59,32 @@ export default function LoginScreen() {
             <Ionicons name="business" size={48} color={c.primary} />
           </View>
           <Text style={[styles.title, { color: c.text }]}>Naploo Partner</Text>
-          <Text style={[styles.subtitle, { color: c.textSecondary }]}>
-            Manage your property, bookings & earnings
-          </Text>
+          <Text style={[styles.subtitle, { color: c.textSecondary }]}>Manage your property, bookings & earnings</Text>
         </View>
 
-        {step === 'phone' ? (
-          <View style={styles.form}>
-            <Input
-              label="Phone Number"
-              placeholder="Enter your registered phone"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              maxLength={13}
-              icon={<Ionicons name="call-outline" size={20} color={c.textTertiary} />}
-            />
-            <Button title="Send OTP" onPress={handleSendOtp} loading={loading} />
-          </View>
-        ) : (
-          <View style={styles.form}>
-            <Text style={[styles.otpInfo, { color: c.textSecondary }]}>
-              OTP sent to +91 {phone.replace(/\D/g, '')}
-            </Text>
-            {devOtp ? (
-              <Text style={[styles.devOtp, { color: c.success }]}>Dev OTP: {devOtp}</Text>
-            ) : null}
-            <Input
-              label="Enter OTP"
-              placeholder="6-digit OTP"
-              value={otp}
-              onChangeText={setOtp}
-              keyboardType="number-pad"
-              maxLength={6}
-              ref={otpRef}
-              icon={<Ionicons name="lock-closed-outline" size={20} color={c.textTertiary} />}
-            />
-            <Button title="Verify & Login" onPress={handleVerifyOtp} loading={loading} />
-            <Button
-              title="Change Number"
-              variant="ghost"
-              onPress={() => {
-                setStep('phone');
-                setOtp('');
-                setDevOtp('');
-              }}
-            />
-          </View>
-        )}
+        <View style={styles.form}>
+          <Input
+            label="Email"
+            placeholder="partner@example.com"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="emailAddress"
+            icon={<Ionicons name="mail-outline" size={20} color={c.textTertiary} />}
+          />
+          <Input
+            label="Password"
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            textContentType="password"
+            icon={<Ionicons name="lock-closed-outline" size={20} color={c.textTertiary} />}
+          />
+          <Button title="Login" onPress={handleLogin} loading={loading} />
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -166,14 +119,5 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: Spacing.lg,
-  },
-  otpInfo: {
-    fontSize: FontSize.sm,
-    textAlign: 'center',
-  },
-  devOtp: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-    textAlign: 'center',
   },
 });
