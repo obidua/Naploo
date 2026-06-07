@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Rating } from '@/components/ui/Rating';
 import { PodSeatMap } from '@/components/PodSeatMap';
 import { BookingDateTimePicker } from '@/components/BookingDateTimePicker';
-import { getPropertyById, getPodsByProperty, getPodLayout, loadPropertyDetail } from '@/data/properties';
+import { getPropertyById, getPodsByProperty, getPodLayout, getPodLayoutFromSets, loadPropertyDetail } from '@/data/properties';
 import { useDataStore } from '@/store/app';
 import { useFavoritesStore } from '@/store/app';
 import { useSearchStore } from '@/store/search';
@@ -97,6 +97,7 @@ export default function PropertyDetailScreen() {
   // Subscribe to the live data store so we re-render after loadAll().
   const storeProperties = useDataStore((s) => s.properties);
   const [livePods, setLivePods] = useState<Pod[]>([]);
+  const [livePodSets, setLivePodSets] = useState<any[]>([]);
   const [liveProperty, setLiveProperty] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
 
@@ -109,6 +110,7 @@ export default function PropertyDetailScreen() {
         if (res) {
           setLiveProperty(res.property);
           setLivePods(res.pods);
+          setLivePodSets(res.podSets || []);
         }
         setLoadingDetail(false);
       })
@@ -118,7 +120,19 @@ export default function PropertyDetailScreen() {
   // Prefer the detailed fetch; fall back to the list entry while it loads.
   const property = liveProperty || storeProperties.find((p) => p.id === id) || getPropertyById(id);
   const propertyPods = useMemo(() => (livePods.length ? livePods : property ? getPodsByProperty(property.id) : []), [property, livePods]);
-  const podLayout = useMemo(() => (property ? getPodLayout(property.id) : undefined), [property]);
+  // Prefer the real backend-driven layout (uses partner-configured per-set
+  // hourlyRate). Only fall back to the synthesized grid if the detail call
+  // has not returned podSets yet.
+  const podLayout = useMemo(
+    () => {
+      if (!property) return undefined;
+      if (livePodSets && livePodSets.length > 0) {
+        return getPodLayoutFromSets(property.id, livePodSets);
+      }
+      return getPodLayout(property.id);
+    },
+    [property, livePodSets]
+  );
   const rooms = useMemo(() => (property ? generateRooms(property.id, property.roomsCount, property.roomStartPrice) : []), [property]);
   const reviews = useMemo(() => (property ? generateReviews(property.id, property.rating, 6) : []), [property]);
   const { toggle: toggleFav, isFavorite } = useFavoritesStore();
@@ -215,14 +229,11 @@ export default function PropertyDetailScreen() {
     checkIn.setHours(h, m, 0, 0);
     const checkOut = addHours(checkIn, podHours);
 
-    // The visual seat-map ids (e.g. `propertyId-A1-upper`) are synthetic; the
-    // backend booking + payment service expects a real podSet UUID. Map the
-    // selected slot to a real pod from the API (livePods) by index so the
-    // server-side booking call in /booking/confirm can succeed and the
-    // in-app Cashfree checkout can open. If no live pods are loaded, fall
-    // back to the synthetic id (confirm.tsx then takes the local path).
+    // When the seat-map was built from real podSets, `selectedPodSlot.id`
+    // is already the real podSet UUID. Fall back to the legacy index lookup
+    // only when we are still on the synthesized layout (livePodSets empty).
     let bookingItemId: string = selectedPodSlot.id;
-    if (livePods.length > 0) {
+    if ((!livePodSets || livePodSets.length === 0) && livePods.length > 0) {
       const slotIndex = Math.max(
         0,
         (selectedPodSlot.row || 0) * 2 + (selectedPodSlot.position === 'upper' ? 1 : 0)

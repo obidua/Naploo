@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import { useTheme } from '@/theme/useTheme';
 import { FontSize, FontWeight, Spacing } from '@/theme';
-import { paymentsApi } from '@/services/api';
+import { paymentsApi, bookingsApi } from '@/services/api';
 
 // In-app native checkout. Loads the hosted Cashfree (or Razorpay) page
 // served by the payment service, which uses the official PG Web SDK.
@@ -31,6 +31,7 @@ export default function BookingCheckoutScreen() {
   }>();
 
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const url = paymentsApi.getCheckoutUrl(params.bookingId);
 
@@ -43,6 +44,38 @@ export default function BookingCheckoutScreen() {
       mounted = false;
     };
   }, []);
+
+  // Cancel the in-flight booking on the server so the partner's inventory
+  // is released immediately and the payment row is not left dangling in
+  // `pending` forever. Safe to call from any dismiss path \u2014 the booking
+  // service no-ops if the booking is already cancelled or completed.
+  const cancelBookingAndExit = async (silent: boolean = false) => {
+    if (cancelling) return;
+    setCancelling(true);
+    try {
+      await bookingsApi.cancel(params.bookingId, 'User cancelled at payment screen');
+    } catch {
+      // Even if the cancel call fails (offline, etc.) we still close the
+      // screen so the user isn't stuck. A background job / next refresh
+      // will surface the pending state.
+    }
+    setCancelling(false);
+    if (!silent) {
+      Alert.alert('Payment cancelled', 'Your booking has been cancelled.');
+    }
+    router.back();
+  };
+
+  const confirmCancel = () => {
+    Alert.alert(
+      'Cancel payment?',
+      'This will cancel your booking. You can rebook anytime.',
+      [
+        { text: 'Keep paying', style: 'cancel' },
+        { text: 'Cancel booking', style: 'destructive', onPress: () => cancelBookingAndExit(false) },
+      ]
+    );
+  };
 
   // Intercept `naploo://` redirects so we don't actually leave the app.
   const onShouldStartLoadWithRequest = (req: { url: string }) => {
@@ -64,8 +97,10 @@ export default function BookingCheckoutScreen() {
       return false;
     }
     if (target.startsWith('naploo://payment-cancelled')) {
-      Alert.alert('Payment cancelled', 'You can retry the payment or change your booking.');
-      router.back();
+      // Auto-cancel the booking server-side so it doesn't linger as
+      // `pending`. We don't show an extra confirm prompt here because the
+      // PG SDK already told us the user dismissed/failed.
+      cancelBookingAndExit(false);
       return false;
     }
     // Allow https/http including the hosted checkout host and the Cashfree
@@ -86,25 +121,17 @@ export default function BookingCheckoutScreen() {
   // Hardware back: confirm cancel.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Cancel payment?', 'Your booking will remain pending.', [
-        { text: 'Stay', style: 'cancel' },
-        { text: 'Cancel payment', style: 'destructive', onPress: () => router.back() },
-      ]);
+      confirmCancel();
       return true;
     });
     return () => sub.remove();
-  }, []);
+  }, [cancelling]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + Spacing.sm, borderBottomColor: colors.divider }]}>
         <TouchableOpacity
-          onPress={() => {
-            Alert.alert('Cancel payment?', 'Your booking will remain pending.', [
-              { text: 'Stay', style: 'cancel' },
-              { text: 'Cancel payment', style: 'destructive', onPress: () => router.back() },
-            ]);
-          }}
+          onPress={confirmCancel}
           style={styles.backBtn}
         >
           <Ionicons name="close" size={24} color={colors.text} />
@@ -144,6 +171,29 @@ export default function BookingCheckoutScreen() {
           <Text style={[styles.loaderText, { color: colors.textSecondary }]}>Loading secure checkout…</Text>
         </View>
       )}
+
+      {/* Always-visible cancel button below the checkout so the user
+          has an obvious way out (and so any pending payment is cancelled
+          server-side, releasing the pod for someone else). */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.sm), borderTopColor: colors.divider, backgroundColor: colors.background }]}>
+        <TouchableOpacity
+          onPress={confirmCancel}
+          disabled={cancelling}
+          activeOpacity={0.85}
+          style={[styles.cancelBtn, { borderColor: colors.error || '#dc2626', opacity: cancelling ? 0.6 : 1 }]}
+        >
+          {cancelling ? (
+            <ActivityIndicator size="small" color={colors.error || '#dc2626'} />
+          ) : (
+            <>
+              <Ionicons name="close-circle-outline" size={18} color={colors.error || '#dc2626'} />
+              <Text style={[styles.cancelText, { color: colors.error || '#dc2626' }]}>
+                Cancel Payment
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -172,4 +222,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15,10,30,0.6)',
   },
   loaderText: { marginTop: 12, fontSize: FontSize.sm },
+  footer: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  cancelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  cancelText: { fontSize: FontSize.md, fontWeight: FontWeight.semibold },
 });

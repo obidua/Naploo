@@ -138,6 +138,7 @@ function adaptRoom(r: any) {
 function adaptPodSet(ps: any, hotel: any) {
   return {
     id: ps.id,
+    setNumber: ps.setNumber,
     name: `Pod set ${ps.setNumber}`,
     series: ps.section || 'Naploo Smart Pod',
     hotelId: hotel.id,
@@ -146,6 +147,17 @@ function adaptPodSet(ps: any, hotel: any) {
     image: parseJsonArr(hotel.images)[0] || FALLBACK_IMAGE,
     amenities: ['AC', 'Charger', 'Reading Light'],
     available: (ps.pods || []).some((p: any) => p.status === 'available'),
+    // Inner pods carry the real position (upper/lower), type (single/double)
+    // and status so the seat-map can drive its grid + pricing from real
+    // partner data instead of synthesizing a fake +50 markup.
+    pods: (ps.pods || []).map((p: any) => ({
+      id: p.id,
+      podNumber: p.podNumber,
+      position: p.position,
+      podType: p.podType,
+      status: p.status,
+      features: p.features,
+    })),
   };
 }
 
@@ -237,6 +249,10 @@ export const propertiesApi = {
         roomStartPrice: Number.isFinite(minRoomRate) && minRoomRate > 0 ? minRoomRate : card.roomStartPrice,
         rooms,
         pods,
+        // Raw podSets (with per-set hourlyRate + inner pods) so the seat
+        // map can render the real grid + the real partner-set pricing
+        // for each pod (no more synthetic +50 markup).
+        podSets,
       },
     };
   },

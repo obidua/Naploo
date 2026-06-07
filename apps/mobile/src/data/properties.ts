@@ -95,6 +95,7 @@ export async function loadPropertyDetail(propertyId: string): Promise<{
   property: Property;
   rooms: any[];
   pods: Pod[];
+  podSets: any[];
 } | null> {
   const res = await propertiesApi.getById(propertyId);
   if (!res.data) return null;
@@ -142,7 +143,85 @@ export async function loadPropertyDetail(propertyId: string): Promise<{
     amenities: p.amenities || ['AC', 'Charger', 'Reading Light'],
   } as unknown as Pod));
 
-  return { property, rooms: h.rooms || [], pods: podList };
+  return { property, rooms: h.rooms || [], pods: podList, podSets: h.podSets || [] };
+}
+
+// ─── Real seat-map layout from backend podSets (preferred) ────────────
+// Each podSet from the backend has its own `hourlyRate` and contains
+// the actual upper + lower pods with their podType (single/double) and
+// real status. Use this so the rate the customer sees on the seat-map
+// matches what the partner configured in the PMS — no more +50 markup
+// fudge factor.
+export function getPodLayoutFromSets(propertyId: string, livePodSets: any[]): any {
+  const total = livePodSets.reduce((acc, s) => acc + (s.pods?.length || 2), 0);
+  const N = livePodSets.length || 1;
+  const cols = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(N))));
+  const rows = Math.max(1, Math.ceil(N / cols));
+  const ROW_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const FEATURES = { ac: true, charger: true, tv: false, light: true, ventilation: true } as const;
+  const AMENITIES = ['AC', 'Charger', 'Reading Light', 'Ventilation'] as const;
+
+  const layout = Array.from({ length: rows }, (_, r) => {
+    const rowLetter = ROW_LETTERS[r] || `R${r + 1}`;
+    const slots: any[] = [];
+    for (let c = 0; c < cols; c++) {
+      const idx = r * cols + c;
+      const set = livePodSets[idx];
+      const hourlyRate = Number(set?.price ?? set?.hourlyRate) || 0;
+      const innerPods: any[] = set?.pods || [];
+      const upper = innerPods.find((p) => p.position === 'upper') || innerPods[1];
+      const lower = innerPods.find((p) => p.position === 'lower') || innerPods[0];
+      // Render both upper and lower for every cell. When the set has
+      // < 2 actual pods we still draw a maintenance placeholder so the
+      // grid stays symmetrical.
+      const positions: Array<'upper' | 'lower'> = ['upper', 'lower'];
+      for (const position of positions) {
+        const p = position === 'upper' ? upper : lower;
+        if (!set) {
+          slots.push({
+            id: `${propertyId}-${rowLetter}${c + 1}-${position}-empty`,
+            label: `${rowLetter}${c + 1}-${position === 'upper' ? 'U' : 'L'}`,
+            row: r,
+            col: c,
+            position,
+            type: 'single',
+            series: 'Naploo',
+            hourlyRate: 0,
+            status: 'maintenance',
+            amenities: [...AMENITIES],
+            features: FEATURES,
+          });
+          continue;
+        }
+        const status: 'available' | 'occupied' | 'maintenance' = p?.status === 'available' ? 'available' : p?.status === 'occupied' ? 'occupied' : 'maintenance';
+        const type: 'single' | 'double' = (p?.podType === 'double' ? 'double' : 'single');
+        slots.push({
+          // Real podSet UUID — booking + payment service consume this
+          // directly so we no longer need an index lookup in property/[id].
+          id: set.id,
+          podId: p?.id,
+          label: `${rowLetter}${c + 1}-${position === 'upper' ? 'U' : 'L'}`,
+          row: r,
+          col: c,
+          position,
+          type,
+          series: set.series || 'Naploo',
+          hourlyRate,
+          status,
+          amenities: [...AMENITIES],
+          features: p?.features || FEATURES,
+          setNumber: set.setNumber,
+        });
+      }
+    }
+    return { rowIndex: r, label: `Row ${rowLetter}`, slots };
+  });
+
+  const availablePods = layout.reduce(
+    (s, row) => s + row.slots.filter((sl: any) => sl.status === 'available').length,
+    0
+  );
+  return { propertyId, rows, cols, layout, totalPods: total, availablePods };
 }
 
 // Pod layout for the visual seat-map. Synthesizes a grid from the property's pod count.
@@ -175,7 +254,10 @@ export function getPodLayout(propertyId: string): any {
             ? 'available'
             : 'occupied';
         const type: 'single' | 'double' = seed % 2 === 0 ? 'single' : 'double';
-        const hourlyRate = baseRate + (type === 'double' ? 50 : 0);
+        // Always use the partner's base rate \u2014 do NOT inflate with a
+        // synthetic +50 markup for "double" pods. The real per-set rate
+        // is fetched via getPodLayoutFromSets() once detail loads.
+        const hourlyRate = baseRate;
         const label = `${rowLetter}${c + 1}-${position === 'upper' ? 'U' : 'L'}`;
         slots.push({
           id: `${propertyId}-${rowLetter}${c + 1}-${position}`,
