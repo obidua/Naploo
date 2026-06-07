@@ -2,8 +2,73 @@ import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { db } from '@naploo/db';
-import { payments, bookings } from '@naploo/db/schema';
-import { eq } from 'drizzle-orm';
+import { payments, bookings, users, pods, podSets, investors, investmentEarnings, investments } from '@naploo/db/schema';
+import { eq, and } from 'drizzle-orm';
+// Imports for investor notification hook
+
+const NOTIFY = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3008';
+
+async function notifyInvestorIfPodOwner(bookingId: string) {
+  try {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId));
+    if (!booking || !booking.podId) return;
+    const [pod] = await db.select().from(pods).where(eq(pods.id, booking.podId));
+    if (!pod) return;
+    const [set] = await db.select().from(podSets).where(eq(podSets.id, pod.podSetId));
+    if (!set || set.ownership !== 'investor' || !set.ownerId) return;
+
+    // Find investor + their owner user
+    const [investorRow] = await db.select().from(investors).where(eq(investors.userId, set.ownerId));
+    if (!investorRow) return;
+    const [investorUser] = await db.select().from(users).where(eq(users.id, set.ownerId));
+    if (!investorUser) return;
+
+    // Try to find their active investment for this pod set (for cumulative tracking)
+    const [investment] = await db.select().from(investments)
+      .where(and(eq(investments.investorId, investorRow.id), eq(investments.podSetId, set.id)))
+      .limit(1);
+
+    const investorShare = Number(booking.ownerShare); // pod ownerShare = investor's 60%
+    const bookingAmt = Number(booking.total);
+
+    if (investment) {
+      const cumulative = Number(investment.earnedSoFar) + investorShare;
+      await db.insert(investmentEarnings).values({
+        investmentId: investment.id,
+        bookingId: booking.id,
+        bookingAmount: String(bookingAmt),
+        investorShare: String(investorShare),
+        cumulativeEarnings: String(cumulative),
+      });
+      await db.update(investments).set({
+        earnedSoFar: String(cumulative),
+        guaranteeReached: cumulative >= Number(investment.guaranteeAmount),
+        updatedAt: new Date(),
+      }).where(eq(investments.id, investment.id));
+      await db.update(investors).set({
+        totalEarned: String(Number(investorRow.totalEarned) + investorShare),
+        updatedAt: new Date(),
+      }).where(eq(investors.id, investorRow.id));
+    }
+
+    // Send SMS + email
+    const name = [investorUser.firstName, investorUser.lastName].filter(Boolean).join(' ') || 'Investor';
+    const html = `<p>Hi ${name},</p><p>Your pod set <b>${set.setNumber}</b> just earned <b>Rs.${investorShare.toFixed(2)}</b> from a confirmed booking (${booking.bookingNumber}).</p><p>Total booking amount: Rs.${bookingAmt.toFixed(2)}<br>Your 60% share: Rs.${investorShare.toFixed(2)}</p><p>Login to your investor portal to see cumulative earnings.</p>`;
+    fetch(`${NOTIFY}/notify/email`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: investorUser.email || 'biduaindustries@gmail.com', subject: `New pod earning: Rs.${investorShare.toFixed(2)}`, html }),
+    }).catch(() => {});
+    if (investorUser.phone) {
+      fetch(`${NOTIFY}/notify/sms`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: investorUser.phone, message: `Naploo: New booking ${booking.bookingNumber} on your pod set ${set.setNumber}. Your share: Rs.${investorShare.toFixed(2)}. Login to see details.` }),
+      }).catch(() => {});
+    }
+  } catch (e) {
+    console.error('notifyInvestor failed:', e);
+  }
+}
+
 import { createHmac } from 'crypto';
 
 // ─── Razorpay config ──────────────────────────────────────────
@@ -239,6 +304,8 @@ setTimeout(()=>document.getElementById('pay').click(), 300);
       // Confirm the booking now that payment succeeded
       if (payment.bookingId) {
         await db.update(bookings).set({ status: 'confirmed', updatedAt: new Date() }).where(eq(bookings.id, payment.bookingId));
+        // Fire-and-forget investor notification
+        notifyInvestorIfPodOwner(payment.bookingId).catch(() => {});
       }
 
       return { success: true, payment: updated, bookingConfirmed: !!payment.bookingId };
@@ -266,7 +333,7 @@ setTimeout(()=>document.getElementById('pay').click(), 300);
       const [payment] = await db.select().from(payments).where(eq(payments.razorpayOrderId, entity.order_id));
       if (payment && payment.status !== 'completed') {
         await db.update(payments).set({ status: 'completed', razorpayPaymentId: entity.id, updatedAt: new Date() }).where(eq(payments.id, payment.id));
-        if (payment.bookingId) await db.update(bookings).set({ status: 'confirmed', updatedAt: new Date() }).where(eq(bookings.id, payment.bookingId));
+        if (payment.bookingId) { await db.update(bookings).set({ status: 'confirmed', updatedAt: new Date() }).where(eq(bookings.id, payment.bookingId)); notifyInvestorIfPodOwner(payment.bookingId).catch(() => {}); }
       }
     }
     return { success: true, received: true };

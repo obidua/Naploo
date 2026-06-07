@@ -237,6 +237,20 @@
         "typescript": "^5.3.0",
       },
     },
+    "services/ota-service": {
+      "name": "@naploo/ota-service",
+      "version": "1.0.0",
+      "dependencies": {
+        "@elysiajs/cors": "^1.1.0",
+        "@naploo/db": "workspace:*",
+        "drizzle-orm": "^0.39.0",
+        "elysia": "^1.2.0",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.3.0",
+      },
+    },
     "services/payment-service": {
       "name": "@naploo/payment-service",
       "version": "1.0.0",
@@ -703,6 +717,8 @@
     "@naploo/mobile": ["@naploo/mobile@workspace:apps/mobile"],
 
     "@naploo/notification-service": ["@naploo/notification-service@workspace:services/notification-service"],
+
+    "@naploo/ota-service": ["@naploo/ota-service@workspace:services/ota-service"],
 
     "@naploo/partner": ["@naploo/partner@workspace:apps/partner"],
 

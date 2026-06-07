@@ -10,6 +10,7 @@ import {
 } from '@naploo/db/schema';
 import { eq, and, desc, sql, inArray, or, lt, gt } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+import { registerExtensions, registerApiKeys } from './extensions';
 
 // ─── Helpers ──────────────────────────────────────────────────
 function round2(n: number): number {
@@ -886,12 +887,13 @@ const app = new Elysia()
       isPerNight: t.Optional(t.Boolean()),
       isPerPerson: t.Optional(t.Boolean()),
     }),
-  })
-
-  .listen({
-    hostname: process.env.PMS_SERVICE_HOST || '127.0.0.1',
-    port: Number(process.env.PMS_SERVICE_PORT || 3012),
   });
+
+const extendedApp = registerApiKeys(registerExtensions(app));
+extendedApp.listen({
+  hostname: process.env.PMS_SERVICE_HOST || '127.0.0.1',
+  port: Number(process.env.PMS_SERVICE_PORT || 3012),
+});
 
 console.log(`🏨 Naploo PMS Service running at http://localhost:${app.server?.port}`);
 

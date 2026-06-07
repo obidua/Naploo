@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Hotel, Calendar, IndianRupee, Building2, LogOut, Loader2, AlertCircle,
   Sparkles, ClipboardList, Wrench, UtensilsCrossed, Settings, Users2,
-  Receipt, BarChart3, Plus, FileText,
+  Receipt, BarChart3, Plus, FileText, Key, BookOpen,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { cn } from '@/lib/utils';
@@ -28,10 +28,13 @@ const ALL_NAV: NavItem[] = [
   { href: '/partner/portal/walk-in', label: 'Walk-in booking', icon: Plus, highlight: true, module: 'walk_in' },
   { href: '/partner/portal/bookings', label: 'Bookings', icon: Calendar },
   { href: '/partner/portal/inventory', label: 'Rooms & pods', icon: Hotel },
+  { href: '/partner/portal/calendar', label: 'Calendar', icon: Calendar },
   { href: '/partner/portal/housekeeping', label: 'Housekeeping', icon: Wrench, module: 'housekeeping' },
   { href: '/partner/portal/pos', label: 'F&B POS', icon: UtensilsCrossed, module: 'fnb_pos' },
+  { href: '/partner/portal/menu', label: 'Menu & outlets', icon: BookOpen, module: 'fnb_pos' },
   { href: '/partner/portal/services', label: 'Extras & services', icon: Sparkles, module: 'extra_services' },
   { href: '/partner/portal/rates', label: 'Rate plans', icon: BarChart3, module: 'corporate_rates' },
+  { href: '/partner/portal/api-keys', label: 'OTA API keys', icon: Key, ownerOnly: true },
   { href: '/partner/portal/earnings', label: 'Earnings', icon: IndianRupee, ownerOnly: true },
   { href: '/partner/portal/reports', label: 'Reports', icon: FileText, module: 'advanced_reports', ownerOnly: true },
   { href: '/partner/portal/staff', label: 'Staff', icon: Users2, ownerOnly: true },
