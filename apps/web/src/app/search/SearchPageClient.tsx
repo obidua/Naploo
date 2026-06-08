@@ -117,8 +117,8 @@ export default function SearchPageClient() {
   return (
     <main className="min-h-screen pt-24 pb-20 bg-slate-50">
       {/* Search header */}
-      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div className="relative lg:sticky lg:top-16 z-30 bg-white/95 backdrop-blur border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 lg:py-3">
           <SearchBar variant="compact" />
         </div>
       </div>

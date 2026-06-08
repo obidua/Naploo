@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MapPin, Calendar, Users, Search, Clock, Hotel as HotelIcon, Bed } from 'lucide-react';
+import { MapPin, Calendar, Users, Search, Hotel as HotelIcon, Bed } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getSuggestions, type StayMode } from '@/data/search';
 
@@ -130,13 +130,13 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-0 md:divide-x md:divide-gray-200 rounded-2xl md:border md:border-gray-200 md:bg-white overflow-visible items-stretch">
+      <div className="grid grid-cols-2 md:grid-cols-12 gap-2 md:gap-0 md:divide-x md:divide-gray-200 rounded-2xl md:border md:border-gray-200 md:bg-white overflow-visible items-stretch">
         {/* Stay-mode toggle — inline at the start of the row */}
-        <div className="md:col-span-2 flex items-center px-3 md:px-2 py-2">
+        <div className="col-span-2 md:col-span-2 flex items-center px-3 md:px-2 py-2">
           {ModeToggle}
         </div>
         {/* Location */}
-        <div className="relative md:col-span-3" ref={sugRef}>
+        <div className="relative col-span-2 md:col-span-2" ref={sugRef}>
           <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
             Where to?
           </label>
@@ -236,17 +236,16 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
                 />
               </div>
             </div>
-            <div className="md:col-span-1">
+            <div className="md:col-span-2">
               <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
                 Start
               </label>
-              <div className="flex items-center gap-2 px-4 pb-3">
-                <Clock className="w-4 h-4 text-primary-600 shrink-0" />
+              <div className="flex items-center px-4 pb-3">
                 <input
                   type="time"
                   value={state.startTime}
                   onChange={(e) => update('startTime', e.target.value)}
-                  className="w-full bg-transparent outline-none text-slate-800 text-sm min-w-0"
+                  className="w-full min-w-[88px] bg-transparent outline-none text-slate-800 text-sm [color-scheme:light]"
                 />
               </div>
             </div>
@@ -272,7 +271,7 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
         )}
 
         {/* Guests */}
-        <div className="relative md:col-span-2" ref={guestRef}>
+        <div className={cn('relative', state.mode === 'rooms' ? 'col-span-2 md:col-span-3' : 'md:col-span-2')} ref={guestRef}>
           <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
             Guests {state.mode === 'rooms' ? '& Rooms' : ''}
           </label>
@@ -317,7 +316,7 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
         </div>
 
         {/* Submit — mobile (full row), and desktop (inline at end) */}
-        <div className="md:col-span-1 md:hidden">
+        <div className="col-span-2 md:col-span-1 md:hidden">
           <button
             type="submit"
             className="w-full mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white font-semibold shadow-md"
