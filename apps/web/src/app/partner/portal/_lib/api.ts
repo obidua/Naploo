@@ -101,6 +101,8 @@ export async function createRoom(hotelId: string, input: {
   maxGuests?: number;
   bedType?: string;
   numBeds?: number;
+  floor?: number;
+  areaSqFt?: number;
   dailyRate: number;
   extraGuestCharge?: number;
   amenities?: string[];

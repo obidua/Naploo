@@ -12,6 +12,22 @@ const ROOM_TYPES = ['standard', 'deluxe', 'suite', 'family', 'dormitory'];
 const BED_TYPES = ['single', 'double', 'queen', 'king', 'bunk'];
 const POD_TYPES: Array<'single' | 'double' | 'king'> = ['single', 'double', 'king'];
 
+const POD_CATALOGUE = [
+  { key: 'galaxy-single', series: 'GALAXY', name: 'GALAXY — Horizontal Single', code: 'GAL-HS', type: 'single' as const, occupancy: 1, dimensions: '2060 x 1140 x 2400 mm (L x W x H, ladder 300 mm)' },
+  { key: 'galaxy-double', series: 'GALAXY', name: 'GALAXY — Horizontal Double', code: 'GAL-HD', type: 'double' as const, occupancy: 2, dimensions: '2060 x 1580 x 2400 mm (L x W x H, ladder 300 mm)' },
+  { key: 'galaxy-king', series: 'GALAXY', name: 'GALAXY — Horizontal Big Bed (King)', code: 'GAL-HK', type: 'king' as const, occupancy: 3, dimensions: '2060 x 1950 x 2400 mm (L x W x H, ladder 300 mm)' },
+  { key: 'cosmos-single', series: 'COSMOS', name: 'COSMOS — Horizontal Single', code: 'COS-HS', type: 'single' as const, occupancy: 1, dimensions: '2060 x 1140 x 2400 mm' },
+  { key: 'cosmos-double', series: 'COSMOS', name: 'COSMOS — Horizontal Double', code: 'COS-HD', type: 'double' as const, occupancy: 2, dimensions: '2060 x 1580 x 2400 mm' },
+  { key: 'cosmos-king', series: 'COSMOS', name: 'COSMOS — Horizontal Big Bed (King)', code: 'COS-HK', type: 'king' as const, occupancy: 3, dimensions: '2060 x 1950 x 2400 mm' },
+  { key: 'abs-single', series: 'ABS', name: 'ABS Flagship 2025 — Single Horizontal (ZZK-HC02)', code: 'ZZK-HC02', type: 'single' as const, occupancy: 1, dimensions: '2060 x 1140 x 2400 mm' },
+  { key: 'abs-double', series: 'ABS', name: 'ABS Flagship 2025 — Double Horizontal (ZZK-SR02)', code: 'ZZK-SR02', type: 'double' as const, occupancy: 2, dimensions: '2060 x 1580 x 2400 mm' },
+  { key: 'frp-single', series: 'FRP', name: 'Made-in-India FRP — Horizontal Single', code: 'FRP-HS', type: 'single' as const, occupancy: 1, dimensions: 'External 2150 x 1270 x 1270 mm | Internal 2000 x 1000 x 1000 mm' },
+  { key: 'frp-double', series: 'FRP', name: 'Made-in-India FRP — Horizontal Double', code: 'FRP-HD', type: 'double' as const, occupancy: 2, dimensions: 'External 2150 x 1700 x 1270 mm | Internal 2000 x 1430 x 1000 mm' },
+  { key: 'frp-king', series: 'FRP', name: 'Made-in-India FRP — Horizontal Big Bed (King)', code: 'FRP-HK', type: 'king' as const, occupancy: 3, dimensions: 'External 2150 x 2070 x 1270 mm | Internal 2000 x 1800 x 1000 mm' },
+];
+
+const seedCode = () => String(Date.now()).slice(-5);
+
 export default function InventoryPage() {
   return (
     <PortalShell>
@@ -348,9 +364,10 @@ function StandalonePodCard({ pod }: { pod: PartnerPod }) {
 }
 
 function AddRoomModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose: () => void; onSaved: () => void }) {
+  const [manualRoom, setManualRoom] = useState(false);
   const [draft, setDraft] = useState({
-    roomNumber: '', name: '', roomType: 'standard', maxGuests: 2, bedType: 'double',
-    numBeds: 1, dailyRate: 1500, extraGuestCharge: 500, description: '',
+    roomNumber: `RM-${seedCode()}`, name: 'Standard Room', roomType: 'standard', maxGuests: 2, bedType: 'double',
+    numBeds: 1, floor: 1, areaSqFt: 180, dailyRate: 1500, extraGuestCharge: 500, amenitiesText: 'WiFi, AC, TV', description: '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -358,7 +375,7 @@ function AddRoomModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose:
   async function save() {
     setSaving(true);
     setError('');
-    const res = await createRoom(hotelId, draft as any);
+    const res = await createRoom(hotelId, { ...draft, amenities: draft.amenitiesText.split(',').map((a) => a.trim()).filter(Boolean) } as any);
     setSaving(false);
     if (!res.ok) {
       setError(res.error || 'Failed to add room');
@@ -369,9 +386,14 @@ function AddRoomModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose:
 
   return (
     <Modal title="Add new room" onClose={onClose}>
+      <div className="flex justify-end mb-3">
+        <button type="button" onClick={() => setManualRoom((v) => !v)} className="text-xs font-semibold text-primary-700 hover:text-primary-800">
+          {manualRoom ? 'Use auto room number' : 'Manual room entry'}
+        </button>
+      </div>
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Room number *">
-          <input value={draft.roomNumber} onChange={(e) => setDraft({ ...draft, roomNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+          <input value={draft.roomNumber} disabled={!manualRoom} onChange={(e) => setDraft({ ...draft, roomNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" />
         </Field>
         <Field label="Display name">
           <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Ocean View Suite" />
@@ -392,11 +414,20 @@ function AddRoomModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose:
         <Field label="Number of beds">
           <input type="number" min={1} max={5} value={draft.numBeds} onChange={(e) => setDraft({ ...draft, numBeds: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
         </Field>
+        <Field label="Floor">
+          <input type="number" value={draft.floor} onChange={(e) => setDraft({ ...draft, floor: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </Field>
+        <Field label="Area (sq ft)">
+          <input type="number" value={draft.areaSqFt} onChange={(e) => setDraft({ ...draft, areaSqFt: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </Field>
         <Field label="Nightly rate (₹) *">
           <input type="number" value={draft.dailyRate} onChange={(e) => setDraft({ ...draft, dailyRate: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
         </Field>
         <Field label="Extra guest charge (₹)">
           <input type="number" value={draft.extraGuestCharge} onChange={(e) => setDraft({ ...draft, extraGuestCharge: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </Field>
+        <Field label="Amenities">
+          <input value={draft.amenitiesText} onChange={(e) => setDraft({ ...draft, amenitiesText: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="WiFi, AC, TV" />
         </Field>
         <label className="block sm:col-span-2">
           <span className="block text-xs text-slate-500 mb-1">Description</span>
@@ -421,11 +452,28 @@ function AddRoomModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose:
 }
 
 function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose: () => void; onSaved: () => void }) {
+  const [manualPod, setManualPod] = useState(false);
+  const [catalogueKey, setCatalogueKey] = useState('galaxy-single');
+  const [podSeed] = useState(seedCode());
+  const selectedModel = POD_CATALOGUE.find((p) => p.key === catalogueKey) || POD_CATALOGUE[0];
+  const buildAutoDraft = (mode: 'set' | 'single', model = selectedModel) => {
+    const base = `${model.code}-${podSeed}`;
+    return {
+      mode,
+      setNumber: mode === 'set' ? `SET-${base}` : base,
+      podNumber: mode === 'single' ? `${base}-S` : '',
+      podName: mode === 'single' ? model.name : '',
+      upperPodNumber: mode === 'set' ? `${base}-U` : '',
+      upperPodName: mode === 'set' ? `${model.series} Upper ${model.type}` : '',
+      lowerPodNumber: mode === 'set' ? `${base}-L` : '',
+      lowerPodName: mode === 'set' ? `${model.series} Lower ${model.type}` : '',
+      podType: model.type,
+      maxOccupancy: model.occupancy,
+      dimensions: model.dimensions,
+    };
+  };
   const [draft, setDraft] = useState({
-    mode: 'set' as 'set' | 'single',
-    setNumber: '', podNumber: '', podName: '',
-    upperPodNumber: '', upperPodName: '', lowerPodNumber: '', lowerPodName: '',
-    podType: 'single' as 'single' | 'double' | 'king', maxOccupancy: 1, dimensions: '',
+    ...buildAutoDraft('set', POD_CATALOGUE[0]),
     hourlyRate: 150, floor: 1, section: '',
   });
   const [saving, setSaving] = useState(false);
@@ -446,15 +494,42 @@ function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClos
   return (
     <Modal title={draft.mode === 'set' ? 'Add pod set (upper + lower)' : 'Add single standalone pod'} onClose={onClose}>
       <div className="grid grid-cols-2 gap-2 mb-4 rounded-xl bg-slate-100 p-1">
-        <button type="button" onClick={() => setDraft({ ...draft, mode: 'set' })} className={`rounded-lg px-3 py-2 text-sm font-semibold ${draft.mode === 'set' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500'}`}>Stacked set</button>
-        <button type="button" onClick={() => setDraft({ ...draft, mode: 'single' })} className={`rounded-lg px-3 py-2 text-sm font-semibold ${draft.mode === 'single' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500'}`}>Single pod</button>
+        <button type="button" onClick={() => setDraft({ ...draft, ...(manualPod ? { mode: 'set' as const } : buildAutoDraft('set')) })} className={`rounded-lg px-3 py-2 text-sm font-semibold ${draft.mode === 'set' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500'}`}>Stacked set</button>
+        <button type="button" onClick={() => setDraft({ ...draft, ...(manualPod ? { mode: 'single' as const } : buildAutoDraft('single')) })} className={`rounded-lg px-3 py-2 text-sm font-semibold ${draft.mode === 'single' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500'}`}>Single pod</button>
+      </div>
+      <div className="grid sm:grid-cols-[1fr_auto] gap-2 mb-3">
+        <Field label="Catalogue model">
+          <select
+            value={catalogueKey}
+            onChange={(e) => {
+              const next = POD_CATALOGUE.find((p) => p.key === e.target.value) || POD_CATALOGUE[0];
+              setCatalogueKey(next.key);
+              if (!manualPod) setDraft({ ...draft, ...buildAutoDraft(draft.mode, next) });
+            }}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          >
+            {POD_CATALOGUE.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+          </select>
+        </Field>
+        <button
+          type="button"
+          onClick={() => {
+            const next = !manualPod;
+            setManualPod(next);
+            if (!next) setDraft({ ...draft, ...buildAutoDraft(draft.mode) });
+          }}
+          className="self-end rounded-lg border border-primary-200 px-3 py-2 text-xs font-semibold text-primary-700 hover:bg-primary-50"
+        >
+          {manualPod ? 'Auto fill' : 'Manual entry'}
+        </button>
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label={draft.mode === 'set' ? 'Set number *' : 'Pod group / code *'}>
           <input
             value={draft.setNumber}
             onChange={(e) => setDraft({ ...draft, setNumber: e.target.value })}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            disabled={!manualPod}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500"
             placeholder={draft.mode === 'set' ? 'SET-001' : 'POD-001'}
           />
         </Field>
@@ -469,38 +544,38 @@ function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClos
         {draft.mode === 'single' ? (
           <>
             <Field label="Pod number *">
-              <input value={draft.podNumber} onChange={(e) => setDraft({ ...draft, podNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="POD-001-S" />
+              <input value={draft.podNumber} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, podNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" placeholder="POD-001-S" />
             </Field>
             <Field label="Pod display name">
-              <input value={draft.podName} onChange={(e) => setDraft({ ...draft, podName: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Solo king pod" />
+              <input value={draft.podName} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, podName: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" placeholder="Solo king pod" />
             </Field>
           </>
         ) : (
           <>
             <Field label="Upper pod number">
-              <input value={draft.upperPodNumber} onChange={(e) => setDraft({ ...draft, upperPodNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={`${draft.setNumber || 'SET-001'}-U`} />
+              <input value={draft.upperPodNumber} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, upperPodNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" placeholder={`${draft.setNumber || 'SET-001'}-U`} />
             </Field>
             <Field label="Upper pod name">
-              <input value={draft.upperPodName} onChange={(e) => setDraft({ ...draft, upperPodName: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Upper capsule" />
+              <input value={draft.upperPodName} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, upperPodName: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" placeholder="Upper capsule" />
             </Field>
             <Field label="Lower pod number">
-              <input value={draft.lowerPodNumber} onChange={(e) => setDraft({ ...draft, lowerPodNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={`${draft.setNumber || 'SET-001'}-L`} />
+              <input value={draft.lowerPodNumber} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, lowerPodNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" placeholder={`${draft.setNumber || 'SET-001'}-L`} />
             </Field>
             <Field label="Lower pod name">
-              <input value={draft.lowerPodName} onChange={(e) => setDraft({ ...draft, lowerPodName: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Lower capsule" />
+              <input value={draft.lowerPodName} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, lowerPodName: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" placeholder="Lower capsule" />
             </Field>
           </>
         )}
         <Field label="Pod size">
-          <select value={draft.podType} onChange={(e) => setDraft({ ...draft, podType: e.target.value as any, maxOccupancy: e.target.value === 'king' ? 3 : e.target.value === 'double' ? 2 : 1 })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+          <select value={draft.podType} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, podType: e.target.value as any, maxOccupancy: e.target.value === 'king' ? 3 : e.target.value === 'double' ? 2 : 1 })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500">
             {POD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </Field>
         <Field label="Max occupancy">
-          <input type="number" min={1} max={4} value={draft.maxOccupancy} onChange={(e) => setDraft({ ...draft, maxOccupancy: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+          <input type="number" min={1} max={4} value={draft.maxOccupancy} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, maxOccupancy: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" />
         </Field>
         <Field label="Dimensions">
-          <input value={draft.dimensions} onChange={(e) => setDraft({ ...draft, dimensions: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="2060 x 1140 x 2400 mm" />
+          <input value={draft.dimensions} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, dimensions: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" placeholder="2060 x 1140 x 2400 mm" />
         </Field>
         <Field label="Floor">
           <input
