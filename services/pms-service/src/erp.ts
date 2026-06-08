@@ -37,7 +37,7 @@ function expenseAccountCodeForGroup(group: string | null | undefined, slug?: str
 }
 
 // Map payment_mode → asset/liability account
-function paymentAccountCode(mode: string | null | undefined): string {
+export function paymentAccountCode(mode: string | null | undefined): string {
   const m = (mode || 'cash').toLowerCase();
   if (m === 'bank' || m === 'card' || m === 'upi' || m === 'neft' || m === 'rtgs' || m === 'cheque') return '1010';
   if (m === 'credit' || m === 'pending') return '2000'; // accounts payable
@@ -48,7 +48,7 @@ function paymentAccountCode(mode: string | null | undefined): string {
  * Insert a balanced double-entry pair into ledger_entries.
  * No-op if either account cannot be resolved.
  */
-async function postLedger(opts: {
+export async function postLedger(opts: {
   partnerId: string;
   date?: string;
   refType: string;
@@ -73,7 +73,7 @@ async function postLedger(opts: {
   `);
 }
 
-async function reverseLedger(refType: string, refId: string): Promise<void> {
+export async function reverseLedger(refType: string, refId: string): Promise<void> {
   await db.execute(sql`DELETE FROM ledger_entries WHERE ref_type = ${refType} AND ref_id = ${refId}`);
 }
 
@@ -577,12 +577,14 @@ export function registerErp(app: any) {
       if (!link) { set.status = 401; return { success: false }; }
       const from = query?.from || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
       const to = query?.to || new Date().toISOString().slice(0, 10);
+      const accountId = query?.accountId || null;
       const r = await db.execute(sql`
         SELECT l.*, a.code, a.name AS account_name, a.type AS account_type
         FROM ledger_entries l
         LEFT JOIN chart_of_accounts a ON a.id = l.account_id
         WHERE l.partner_id = ${link.partnerId}
           AND l.entry_date BETWEEN ${from} AND ${to}
+          ${accountId ? sql`AND l.account_id = ${accountId}` : sql``}
         ORDER BY l.entry_date DESC, l.created_at DESC
         LIMIT 500
       `);
@@ -597,6 +599,148 @@ export function registerErp(app: any) {
         GROUP BY a.type
       `);
       return { success: true, entries: _rows(r), pnl: _rows(pnl), from, to };
+    })
+
+    // ═══════ MANUAL JOURNAL VOUCHER ══════════════════════════════
+    // Accountant-friendly: post any balanced double-entry pair.
+    .post('/journal', async ({ headers, body, set }: any) => {
+      const link = await resolvePartnerId(headers);
+      if (!link) { set.status = 401; return { success: false }; }
+      if (link.role === 'front_desk') { set.status = 403; return { success: false }; }
+      const lines: Array<{ accountId: string; debit?: number; credit?: number }> = body.lines || [];
+      if (lines.length < 2) { set.status = 400; return { success: false, message: 'At least 2 lines required' }; }
+      const totalDebit = lines.reduce((s, l) => s + Number(l.debit || 0), 0);
+      const totalCredit = lines.reduce((s, l) => s + Number(l.credit || 0), 0);
+      if (Math.abs(totalDebit - totalCredit) > 0.01) {
+        set.status = 400; return { success: false, message: `Unbalanced: debit ${totalDebit} ≠ credit ${totalCredit}` };
+      }
+      const date = body.date || new Date().toISOString().slice(0, 10);
+      const refId = body.refId || crypto.randomUUID();
+      for (const line of lines) {
+        await db.execute(sql`
+          INSERT INTO ledger_entries (partner_id, entry_date, ref_type, ref_id, description, account_id, debit, credit, created_by)
+          VALUES (${link.partnerId}, ${date}, 'manual', ${refId}, ${body.description ?? null}, ${line.accountId}, ${line.debit ?? 0}, ${line.credit ?? 0}, ${link.userId})
+        `);
+      }
+      return { success: true, refId, lines: lines.length, totalDebit, totalCredit };
+    }, {
+      body: t.Object({
+        date: t.Optional(t.String()),
+        description: t.Optional(t.String()),
+        refId: t.Optional(t.String()),
+        lines: t.Array(t.Object({
+          accountId: t.String(),
+          debit: t.Optional(t.Number()),
+          credit: t.Optional(t.Number()),
+        })),
+      }),
+    })
+    .delete('/journal/:refId', async ({ headers, params, set }: any) => {
+      const link = await resolvePartnerId(headers);
+      if (!link) { set.status = 401; return { success: false }; }
+      if (link.role === 'front_desk') { set.status = 403; return { success: false }; }
+      await db.execute(sql`DELETE FROM ledger_entries WHERE ref_type='manual' AND ref_id=${params.refId} AND partner_id=${link.partnerId}`);
+      return { success: true };
+    })
+
+    // ═══════ TRIAL BALANCE ═══════════════════════════════════════
+    // Lists every account with its debit/credit totals + balance for the period.
+    .get('/trial-balance', async ({ headers, query, set }: any) => {
+      const link = await resolvePartnerId(headers);
+      if (!link) { set.status = 401; return { success: false }; }
+      const from = query?.from || '1970-01-01';
+      const to = query?.to || new Date().toISOString().slice(0, 10);
+      const r = await db.execute(sql`
+        SELECT a.id, a.code, a.name, a.type,
+               COALESCE(SUM(l.debit),0) AS debit,
+               COALESCE(SUM(l.credit),0) AS credit,
+               COALESCE(SUM(l.debit - l.credit),0) AS balance
+        FROM chart_of_accounts a
+        LEFT JOIN ledger_entries l
+          ON l.account_id = a.id
+         AND l.partner_id = ${link.partnerId}
+         AND l.entry_date BETWEEN ${from} AND ${to}
+        WHERE a.partner_id = ${link.partnerId} OR a.partner_id IS NULL
+        GROUP BY a.id, a.code, a.name, a.type
+        HAVING COALESCE(SUM(l.debit),0) + COALESCE(SUM(l.credit),0) > 0
+        ORDER BY a.code
+      `);
+      const rows = _rows(r);
+      const totals = rows.reduce((s: any, x: any) => ({
+        debit: s.debit + Number(x.debit), credit: s.credit + Number(x.credit),
+      }), { debit: 0, credit: 0 });
+      return { success: true, from, to, accounts: rows, totals };
+    })
+
+    // ═══════ GST SUMMARY ═════════════════════════════════════════
+    // Output GST = revenue invoices (folio_payments meta), input GST = expenses gst_amount.
+    // Kept simple: input from expenses, output from daily_statements / folios.
+    .get('/gst-summary', async ({ headers, query, set }: any) => {
+      const link = await resolvePartnerId(headers);
+      if (!link) { set.status = 401; return { success: false }; }
+      const from = query?.from || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+      const to = query?.to || new Date().toISOString().slice(0, 10);
+      const input = await db.execute(sql`
+        SELECT COALESCE(SUM(gst_amount),0) AS input_gst,
+               COALESCE(SUM(total_amount),0) AS total_expenses
+        FROM expenses
+        WHERE partner_id = ${link.partnerId}
+          AND expense_date BETWEEN ${from} AND ${to}
+      `);
+      // Output GST is computed from folio_payments meta column if present, else 0.
+      const output = await db.execute(sql`
+        SELECT COALESCE(SUM((meta->>'gstAmount')::numeric),0) AS output_gst,
+               COALESCE(SUM(amount),0) AS total_collected
+        FROM folio_payments
+        WHERE folio_id IN (SELECT id FROM folios WHERE partner_id = ${link.partnerId})
+          AND DATE(created_at) BETWEEN ${from} AND ${to}
+      `).catch(() => ({ rows: [{ output_gst: 0, total_collected: 0 }] }));
+      const i = _rows(input)[0] || {};
+      const o = _rows(output)[0] || {};
+      const inputGst = Number(i.input_gst || 0);
+      const outputGst = Number(o.output_gst || 0);
+      return {
+        success: true, from, to,
+        inputGst, outputGst,
+        netPayable: Math.max(0, outputGst - inputGst),
+        carryForward: Math.max(0, inputGst - outputGst),
+        totalExpenses: Number(i.total_expenses || 0),
+        totalCollected: Number(o.total_collected || 0),
+      };
+    })
+
+    // ═══════ BOOKING REVENUE HOOK ════════════════════════════════
+    // Internal endpoint: post revenue ledger entry when a booking is paid.
+    // Called by booking/payment service via x-internal-key header (or by partner manually).
+    .post('/ledger/booking-revenue', async ({ headers, body, set }: any) => {
+      const link = await resolvePartnerId(headers);
+      if (!link) { set.status = 401; return { success: false }; }
+      // Allow same partner only
+      const amount = Number(body.amount || 0);
+      if (amount <= 0) { set.status = 400; return { success: false, message: 'amount > 0 required' }; }
+      const revenueCode = body.bookingType === 'hourly' ? '4010' : (body.bookingType === 'fnb' ? '4020' : '4000');
+      const paymentCode = paymentAccountCode(body.paymentMode || 'bank');
+      await reverseLedger('booking', body.bookingId).catch(() => {});
+      await postLedger({
+        partnerId: link.partnerId,
+        date: body.date,
+        refType: 'booking',
+        refId: body.bookingId,
+        description: `Booking revenue ${body.bookingId} (${body.bookingType || 'daily'})`,
+        debitCode: paymentCode,
+        creditCode: revenueCode,
+        amount,
+        createdBy: link.userId,
+      });
+      return { success: true, debitCode: paymentCode, creditCode: revenueCode, amount };
+    }, {
+      body: t.Object({
+        bookingId: t.String(),
+        amount: t.Number(),
+        bookingType: t.Optional(t.String()), // daily / hourly / fnb
+        paymentMode: t.Optional(t.String()),
+        date: t.Optional(t.String()),
+      }),
     })
 
     // ═══════ DAILY STATEMENT ═════════════════════════════════════

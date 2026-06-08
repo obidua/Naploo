@@ -14,7 +14,7 @@ import { registerExtensions, registerApiKeys } from "./extensions";
 import { registerQloParity } from "./qlo-parity";
 import { registerQlo2 } from "./qlo2";
 import { registerQlo3 } from "./qlo3";
-import { registerErp } from "./erp";
+import { registerErp, postLedger, paymentAccountCode } from "./erp";
 
 // ─── Helpers ──────────────────────────────────────────────────
 function round2(n: number): number {
@@ -504,6 +504,28 @@ const app = new Elysia()
       balance: String(newBalance),
       updatedAt: new Date(),
     }).where(eq(folios.id, folio.id));
+
+    // ── Auto-ledger: post double entry for the payment ──
+    // Debit cash/bank (asset), credit revenue 4000 (room) / 4010 (pod/hourly)
+    try {
+      let revenueCode = '4000';
+      if ((folio as any).bookingId) {
+        const [bk] = await db.select().from(bookings).where(eq(bookings.id, (folio as any).bookingId));
+        if (bk?.bookingType === 'pod' || bk?.bookingType === 'hourly') revenueCode = '4010';
+      }
+      await postLedger({
+        partnerId: (folio as any).partnerId,
+        refType: 'folio_payment',
+        refId: payment.id,
+        description: `Folio payment ${payment.reference || payment.id} (${body.method})`,
+        debitCode: paymentAccountCode(body.method),
+        creditCode: revenueCode,
+        amount: body.amount,
+        createdBy: userId,
+      });
+    } catch (e) {
+      console.error('postLedger(folio_payment) failed', e);
+    }
 
     return { success: true, payment, folioBalance: newBalance };
   }, {

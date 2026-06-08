@@ -131,12 +131,29 @@ export const erpApi = {
 
   // Accounting
   listAccounts: () => api.get<{ accounts: any[] }>('/api/v1/pms/chart-of-accounts'),
-  getLedger: (from?: string, to?: string) => {
+  getLedger: (from?: string, to?: string, accountId?: string) => {
     const q = [];
     if (from) q.push('from=' + from);
     if (to) q.push('to=' + to);
+    if (accountId) q.push('accountId=' + accountId);
     return api.get<{ entries: LedgerEntry[]; pnl: { type: string; net: string }[]; from: string; to: string }>(`/api/v1/pms/ledger${q.length ? '?' + q.join('&') : ''}`);
   },
+  getTrialBalance: (from?: string, to?: string) => {
+    const q = [];
+    if (from) q.push('from=' + from);
+    if (to) q.push('to=' + to);
+    return api.get<{ accounts: any[]; totals: { debit: number; credit: number } }>(`/api/v1/pms/trial-balance${q.length ? '?' + q.join('&') : ''}`);
+  },
+  getGstSummary: (from?: string, to?: string) => {
+    const q = [];
+    if (from) q.push('from=' + from);
+    if (to) q.push('to=' + to);
+    return api.get<{ inputGst: number; outputGst: number; netPayable: number; carryForward: number; totalExpenses: number; totalCollected: number }>(`/api/v1/pms/gst-summary${q.length ? '?' + q.join('&') : ''}`);
+  },
+  postJournal: (input: { date?: string; description?: string; lines: { accountId: string; debit?: number; credit?: number }[] }) =>
+    api.post<{ success: boolean; refId: string; totalDebit: number; totalCredit: number }>('/api/v1/pms/journal', input),
+  deleteJournal: (refId: string) =>
+    api.delete<{ success: boolean }>(`/api/v1/pms/journal/${refId}`),
 
   // Daily statement
   getDailyStatement: (date?: string) =>
