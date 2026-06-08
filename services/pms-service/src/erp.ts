@@ -6,6 +6,77 @@ import { sql } from 'drizzle-orm';
 
 function _rows(r: any): any[] { return Array.isArray(r) ? r : (r?.rows ?? []); }
 
+// ─── Account lookup cache (chart_of_accounts) ────────────────
+// Resolves a code (e.g. '5010') against a partner's chart, falling back to
+// the global rows where partner_id IS NULL. Cached per partner+code.
+const _acctCache = new Map<string, string>(); // key: partnerId|code → accountId
+async function getAccountIdByCode(partnerId: string | null, code: string): Promise<string | null> {
+  const key = `${partnerId ?? 'GLOBAL'}|${code}`;
+  const hit = _acctCache.get(key);
+  if (hit) return hit;
+  const r = await db.execute(sql`
+    SELECT id FROM chart_of_accounts
+    WHERE code = ${code} AND (partner_id = ${partnerId} OR partner_id IS NULL)
+    ORDER BY (partner_id IS NULL) ASC LIMIT 1
+  `);
+  const id = _rows(r)[0]?.id ?? null;
+  if (id) _acctCache.set(key, id);
+  return id;
+}
+
+// Map expense category group → expense account code
+function expenseAccountCodeForGroup(group: string | null | undefined, slug?: string | null): string {
+  if (slug === 'salaries') return '5010';
+  if (slug === 'rent') return '5020';
+  if (slug && slug.startsWith('utilities_')) return '5030';
+  if (slug === 'marketing') return '5040';
+  if (slug === 'repairs') return '5050';
+  if (slug === 'ota_commission') return '5060';
+  if (group === 'cogs') return '5000';
+  return '5099';
+}
+
+// Map payment_mode → asset/liability account
+function paymentAccountCode(mode: string | null | undefined): string {
+  const m = (mode || 'cash').toLowerCase();
+  if (m === 'bank' || m === 'card' || m === 'upi' || m === 'neft' || m === 'rtgs' || m === 'cheque') return '1010';
+  if (m === 'credit' || m === 'pending') return '2000'; // accounts payable
+  return '1000'; // cash
+}
+
+/**
+ * Insert a balanced double-entry pair into ledger_entries.
+ * No-op if either account cannot be resolved.
+ */
+async function postLedger(opts: {
+  partnerId: string;
+  date?: string;
+  refType: string;
+  refId?: string | null;
+  description: string;
+  debitCode: string;
+  creditCode: string;
+  amount: number;
+  createdBy?: string | null;
+}): Promise<void> {
+  if (!opts.amount || opts.amount <= 0) return;
+  const debitId = await getAccountIdByCode(opts.partnerId, opts.debitCode);
+  const creditId = await getAccountIdByCode(opts.partnerId, opts.creditCode);
+  if (!debitId || !creditId) return;
+  const date = opts.date ?? new Date().toISOString().slice(0, 10);
+  const desc = opts.description;
+  await db.execute(sql`
+    INSERT INTO ledger_entries (partner_id, entry_date, ref_type, ref_id, description, account_id, debit, credit, created_by)
+    VALUES
+      (${opts.partnerId}, ${date}, ${opts.refType}, ${opts.refId ?? null}, ${desc}, ${debitId}, ${opts.amount}, 0, ${opts.createdBy ?? null}),
+      (${opts.partnerId}, ${date}, ${opts.refType}, ${opts.refId ?? null}, ${desc}, ${creditId}, 0, ${opts.amount}, ${opts.createdBy ?? null})
+  `);
+}
+
+async function reverseLedger(refType: string, refId: string): Promise<void> {
+  await db.execute(sql`DELETE FROM ledger_entries WHERE ref_type = ${refType} AND ref_id = ${refId}`);
+}
+
 async function resolvePartnerId(headers: Record<string, any>): Promise<{ partnerId: string; userId: string; role: string } | null> {
   const userId = headers['x-user-id'] as string | undefined;
   if (!userId) return null;
@@ -305,7 +376,7 @@ export function registerErp(app: any) {
         const pt = Number(s.professional_tax || 200);
         const net = totalGross - pf - esi - pt;
 
-        await db.execute(sql`
+        const ins = await db.execute(sql`
           INSERT INTO salary_payments (
             employee_id, partner_id, pay_period, days_worked, days_paid,
             basic, hra, allowances, overtime_pay, gross,
@@ -324,7 +395,26 @@ export function registerErp(app: any) {
             overtime_pay = EXCLUDED.overtime_pay, gross = EXCLUDED.gross,
             pf_deducted = EXCLUDED.pf_deducted, esi_deducted = EXCLUDED.esi_deducted,
             pt_deducted = EXCLUDED.pt_deducted, net_pay = EXCLUDED.net_pay
+          RETURNING id
         `);
+        const payId = _rows(ins)[0]?.id;
+        // Accrual: debit Salaries & wages (5010), credit Salaries payable (2100) for net_pay
+        if (payId) {
+          try {
+            await reverseLedger('salary_accrual', payId);
+            await postLedger({
+              partnerId: link.partnerId,
+              date: monthStart,
+              refType: 'salary_accrual',
+              refId: payId,
+              description: `Salary accrual ${period} — ${emp.full_name}`,
+              debitCode: '5010',
+              creditCode: '2100',
+              amount: net,
+              createdBy: link.userId,
+            });
+          } catch { /* ignore */ }
+        }
         generated++;
       }
       return { success: true, generated, period };
@@ -341,6 +431,27 @@ export function registerErp(app: any) {
           notes = COALESCE(${body.notes ?? null}, notes)
         WHERE id = ${params.id} AND partner_id = ${link.partnerId}
       `);
+      // Auto-ledger: when marking paid, debit Salaries payable (2100), credit cash/bank
+      if (body.status === 'paid') {
+        try {
+          const r = await db.execute(sql`SELECT id, net_pay, payment_mode, paid_at FROM salary_payments WHERE id = ${params.id}`);
+          const sp = _rows(r)[0];
+          if (sp) {
+            await reverseLedger('salary_payment', sp.id);
+            await postLedger({
+              partnerId: link.partnerId,
+              date: (sp.paid_at ? new Date(sp.paid_at).toISOString().slice(0, 10) : undefined),
+              refType: 'salary_payment',
+              refId: sp.id,
+              description: `Salary paid (${body.paymentRef || sp.payment_mode || 'cash'})`,
+              debitCode: '2100',
+              creditCode: paymentAccountCode(sp.payment_mode || body.paymentMode),
+              amount: Number(sp.net_pay || 0),
+              createdBy: link.userId,
+            });
+          }
+        } catch { /* ignore */ }
+      }
       return { success: true };
     }, {
       body: t.Object({
@@ -396,7 +507,28 @@ export function registerErp(app: any) {
           ${body.receiptUrl ?? null}, ${link.userId}, ${body.notes ?? null}
         ) RETURNING *
       `);
-      return { success: true, expense: _rows(r)[0] };
+      const exp = _rows(r)[0];
+      // Auto double-entry: debit expense category account, credit cash/bank/AP
+      try {
+        let group: string | null = null, slug: string | null = null;
+        if (exp?.category_id) {
+          const cr = await db.execute(sql`SELECT group_name, slug FROM expense_categories WHERE id = ${exp.category_id}`);
+          group = _rows(cr)[0]?.group_name ?? null;
+          slug = _rows(cr)[0]?.slug ?? null;
+        }
+        await postLedger({
+          partnerId: link.partnerId,
+          date: exp.expense_date,
+          refType: 'expense',
+          refId: exp.id,
+          description: `Expense: ${exp.description}`,
+          debitCode: expenseAccountCodeForGroup(group, slug),
+          creditCode: paymentAccountCode(exp.payment_mode),
+          amount: Number(exp.total_amount || exp.amount || 0),
+          createdBy: link.userId,
+        });
+      } catch { /* ledger errors must not block expense creation */ }
+      return { success: true, expense: exp };
     }, {
       body: t.Object({
         description: t.String(),
@@ -424,6 +556,7 @@ export function registerErp(app: any) {
     .delete('/expenses/:id', async ({ headers, params }: any) => {
       const link = await resolvePartnerId(headers);
       if (!link) return { success: false };
+      await reverseLedger('expense', params.id).catch(() => {});
       await db.execute(sql`DELETE FROM expenses WHERE id = ${params.id} AND partner_id = ${link.partnerId}`);
       return { success: true };
     })
@@ -620,5 +753,134 @@ export function registerErp(app: any) {
         ORDER BY statement_date DESC LIMIT ${limit}
       `);
       return { success: true, history: _rows(r) };
+    })
+
+    // ═══════ PAYSLIP (HTML, browser print → PDF) ═════════════════
+    .get('/employees/:id/payslip/:period', async ({ headers, params, set }: any) => {
+      const link = await resolvePartnerId(headers);
+      if (!link) { set.status = 401; return { success: false }; }
+      const empR = await db.execute(sql`
+        SELECT e.*, p.business_name AS partner_name
+        FROM employees e LEFT JOIN partners p ON p.id = e.partner_id
+        WHERE e.id = ${params.id} AND e.partner_id = ${link.partnerId}
+      `);
+      const emp = _rows(empR)[0];
+      if (!emp) { set.status = 404; return { success: false, message: 'Employee not found' }; }
+      const payR = await db.execute(sql`
+        SELECT * FROM salary_payments WHERE employee_id = ${params.id} AND pay_period = ${params.period}
+      `);
+      const pay = _rows(payR)[0];
+      if (!pay) { set.status = 404; return { success: false, message: 'Payment not found' }; }
+      const inr = (n: any) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>Payslip ${emp.full_name} ${pay.pay_period}</title>
+<style>
+  body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;background:#f8fafc;padding:32px;margin:0}
+  .sheet{max-width:780px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,.04)}
+  h1{margin:0 0 4px;font-size:22px}
+  .muted{color:#64748b;font-size:13px}
+  .row{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:16px}
+  .col{flex:1;min-width:240px}
+  .col h3{margin:0 0 6px;font-size:13px;color:#334155;text-transform:uppercase;letter-spacing:.04em}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #e2e8f0}
+  th{background:#f1f5f9;font-weight:600}
+  tr.total td{font-weight:700;background:#f8fafc;border-top:2px solid #0f172a}
+  .net{margin-top:24px;background:#0f172a;color:#fff;padding:16px 20px;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
+  .net b{font-size:24px}
+  .footer{margin-top:32px;font-size:11px;color:#64748b;text-align:center}
+  @media print{body{background:#fff;padding:0}.sheet{box-shadow:none;border:none}.print{display:none}}
+  .print{margin:16px auto;max-width:780px;text-align:right}
+  .print button{padding:8px 14px;background:#0f172a;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:14px}
+</style></head><body>
+<div class="print"><button onclick="window.print()">Save / Print PDF</button></div>
+<div class="sheet">
+  <div class="row" style="border-bottom:2px solid #0f172a;padding-bottom:12px">
+    <div class="col">
+      <h1>${emp.partner_name || 'Naploo'}</h1>
+      <div class="muted">Payslip · ${pay.pay_period}</div>
+    </div>
+    <div class="col" style="text-align:right">
+      <div class="muted">Pay period</div>
+      <div><b>${pay.pay_period}</b></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <h3>Employee</h3>
+      <div><b>${emp.full_name}</b></div>
+      <div class="muted">${emp.designation || ''} · ${emp.department || ''}</div>
+      <div class="muted">${emp.emp_code || ''} · ${emp.phone || ''}</div>
+    </div>
+    <div class="col">
+      <h3>Attendance</h3>
+      <div>Days worked: <b>${pay.days_worked}</b></div>
+      <div>Days paid: <b>${pay.days_paid}</b></div>
+      <div>Status: <b>${pay.status}</b></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <h3>Earnings</h3>
+      <table>
+        <tr><th>Component</th><th style="text-align:right">Amount</th></tr>
+        <tr><td>Basic</td><td style="text-align:right">${inr(pay.basic)}</td></tr>
+        <tr><td>HRA</td><td style="text-align:right">${inr(pay.hra)}</td></tr>
+        <tr><td>Allowances</td><td style="text-align:right">${inr(pay.allowances)}</td></tr>
+        <tr><td>Overtime</td><td style="text-align:right">${inr(pay.overtime_pay)}</td></tr>
+        <tr><td>Bonus</td><td style="text-align:right">${inr(pay.bonus)}</td></tr>
+        <tr class="total"><td>Gross</td><td style="text-align:right">${inr(pay.gross)}</td></tr>
+      </table>
+    </div>
+    <div class="col">
+      <h3>Deductions</h3>
+      <table>
+        <tr><th>Component</th><th style="text-align:right">Amount</th></tr>
+        <tr><td>PF (employee)</td><td style="text-align:right">${inr(pay.pf_deducted)}</td></tr>
+        <tr><td>ESI</td><td style="text-align:right">${inr(pay.esi_deducted)}</td></tr>
+        <tr><td>Professional tax</td><td style="text-align:right">${inr(pay.pt_deducted)}</td></tr>
+        <tr><td>Income tax</td><td style="text-align:right">${inr(pay.tax_deducted)}</td></tr>
+        <tr><td>Loan</td><td style="text-align:right">${inr(pay.loan_deducted)}</td></tr>
+        <tr><td>Other</td><td style="text-align:right">${inr(pay.other_deduct)}</td></tr>
+        <tr class="total"><td>Total deductions</td><td style="text-align:right">${inr(Number(pay.pf_deducted)+Number(pay.esi_deducted)+Number(pay.pt_deducted)+Number(pay.tax_deducted)+Number(pay.loan_deducted)+Number(pay.other_deduct))}</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="net"><span>Net pay</span><b>${inr(pay.net_pay)}</b></div>
+  <div class="footer">${pay.status === 'paid' ? `Paid on ${pay.paid_at ? new Date(pay.paid_at).toLocaleDateString('en-IN') : '—'} via ${pay.payment_mode || '—'} ${pay.payment_ref ? '· ref ' + pay.payment_ref : ''}` : 'Draft — payment pending'}<br/>This is a computer-generated payslip.</div>
+</div>
+</body></html>`;
+      set.headers['content-type'] = 'text/html; charset=utf-8';
+      return html;
+    })
+
+    // ═══════ DASHBOARD KPIs (for ERP home) ═══════════════════════
+    .get('/erp/dashboard', async ({ headers, query, set }: any) => {
+      const link = await resolvePartnerId(headers);
+      if (!link) { set.status = 401; return { success: false }; }
+      const from = query?.from || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+      const to = query?.to || new Date().toISOString().slice(0, 10);
+      const k = await db.execute(sql`
+        SELECT
+          (SELECT COUNT(*) FROM employees WHERE partner_id = ${link.partnerId} AND status = 'active') AS active_employees,
+          (SELECT COUNT(*) FROM employees WHERE partner_id = ${link.partnerId} AND status = 'inactive') AS inactive_employees,
+          (SELECT COALESCE(SUM(total_amount),0) FROM expenses WHERE partner_id = ${link.partnerId} AND expense_date BETWEEN ${from} AND ${to}) AS total_expenses,
+          (SELECT COALESCE(SUM(net_pay),0) FROM salary_payments WHERE partner_id = ${link.partnerId} AND status = 'paid' AND paid_at BETWEEN ${from}::date AND (${to}::date + INTERVAL '1 day')) AS payroll_paid,
+          (SELECT COALESCE(SUM(net_pay),0) FROM salary_payments WHERE partner_id = ${link.partnerId} AND status = 'draft') AS payroll_pending,
+          (SELECT COALESCE(SUM(total_revenue),0) FROM daily_statements WHERE partner_id = ${link.partnerId} AND statement_date BETWEEN ${from} AND ${to}) AS revenue_closed,
+          (SELECT COALESCE(SUM(net_profit),0) FROM daily_statements WHERE partner_id = ${link.partnerId} AND statement_date BETWEEN ${from} AND ${to}) AS net_profit_closed,
+          (SELECT COUNT(*) FROM leave_requests l JOIN employees e ON e.id = l.employee_id WHERE e.partner_id = ${link.partnerId} AND l.status = 'pending') AS pending_leaves,
+          (SELECT COUNT(*) FROM expenses WHERE partner_id = ${link.partnerId} AND status = 'recorded') AS unapproved_expenses
+      `);
+      // Expenses by group (chart)
+      const grp = await db.execute(sql`
+        SELECT COALESCE(c.group_name,'other') AS group_name,
+               COALESCE(SUM(e.total_amount),0) AS total
+        FROM expenses e LEFT JOIN expense_categories c ON c.id = e.category_id
+        WHERE e.partner_id = ${link.partnerId} AND e.expense_date BETWEEN ${from} AND ${to}
+        GROUP BY c.group_name ORDER BY total DESC
+      `);
+      return { success: true, from, to, kpis: _rows(k)[0] || {}, expensesByGroup: _rows(grp) };
     });
 }
+

@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { registerAdminQlo } from "./qlo-parity";
 import { registerAdminQlo2 } from "./qlo2";
+import { registerAdminErp } from "./erp-rollup";
 import { cors } from '@elysiajs/cors';
 import { db } from '@naploo/db';
 import { users, partners, bookings, payments, payouts, rooms, pods, podSets, investors } from '@naploo/db/schema';
@@ -265,7 +266,7 @@ const appBase = new Elysia()
   })
 
   ;
-const app = registerAdminQlo2(registerAdminQlo(appBase)).listen({
+const app = registerAdminErp(registerAdminQlo2(registerAdminQlo(appBase))).listen({
     hostname: process.env.ADMIN_SERVICE_HOST || '127.0.0.1',
     port: Number(process.env.ADMIN_SERVICE_PORT || 3011),
   });

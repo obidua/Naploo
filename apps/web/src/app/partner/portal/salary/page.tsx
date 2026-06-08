@@ -41,6 +41,22 @@ function Body() {
     load();
   }
 
+  async function openPayslip(p: SalaryPayment) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || `${window.location.protocol}//api.${window.location.hostname}`;
+    let token: string | null = null;
+    try {
+      const stored = localStorage.getItem('naploo-auth');
+      if (stored) token = JSON.parse(stored)?.state?.token || null;
+    } catch {}
+    const res = await fetch(`${apiUrl}/api/v1/pms/employees/${(p as any).employee_id}/payslip/${p.pay_period}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) { alert('Could not open payslip'); return; }
+    const html = await res.text();
+    const blob = new Blob([html], { type: 'text/html' });
+    window.open(URL.createObjectURL(blob), '_blank');
+  }
+
   const totals = payments.reduce((acc, p) => ({
     gross: acc.gross + Number(p.gross),
     net: acc.net + Number(p.net_pay),
@@ -106,6 +122,7 @@ function Body() {
                     p.status === 'approved' && 'bg-blue-50 text-blue-700',
                   )}>{p.status}</span></td>
                   <td className="px-4 py-3 text-right">
+                    <button onClick={() => openPayslip(p)} className="text-xs font-semibold text-violet-700 hover:underline mr-3">Payslip</button>
                     {p.status !== 'paid' && <button onClick={() => markPaid(p)} className="text-xs font-semibold text-emerald-700 hover:underline"><Check className="w-3 h-3 inline" /> Mark paid</button>}
                   </td>
                 </tr>
