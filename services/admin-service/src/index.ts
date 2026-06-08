@@ -5,7 +5,7 @@ import { registerAdminErp } from "./erp-rollup";
 import { cors } from '@elysiajs/cors';
 import { db } from '@naploo/db';
 import { users, partners, bookings, payments, payouts, rooms, pods, podSets, investors } from '@naploo/db/schema';
-import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 
 const PAYMENT = process.env.PAYMENT_SERVICE_URL || 'http://127.0.0.1:3003';
 
@@ -21,12 +21,97 @@ function monthBounds() {
   };
 }
 
+function shapePodCatalogue(row: any) {
+  return {
+    id: row.id,
+    key: row.catalogue_key,
+    series: row.series,
+    name: row.name,
+    code: row.code,
+    podType: row.pod_type,
+    layout: row.layout,
+    occupancy: Number(row.occupancy),
+    dimensions: row.dimensions,
+    material: row.material,
+    basePrice: Number(row.base_price),
+    setPrice: Number(row.set_price),
+    isActive: row.is_active,
+    sortOrder: Number(row.sort_order ?? 0),
+  };
+}
+
 // Gateway mounts this at /api/v1/admin/* (admin role enforced there) and
 // strips the /admin prefix, so handlers see /users, /partners, etc.
 const appBase = new Elysia()
   .use(cors({ origin: true, credentials: true }))
 
   .get('/health', () => ({ status: 'healthy', service: 'admin-service', timestamp: new Date().toISOString() }))
+
+  .get('/pod-catalogue', async () => {
+    const rows = await db.execute(sql`
+      SELECT * FROM pod_catalogue
+      ORDER BY is_active DESC, sort_order ASC, series ASC, name ASC
+    `);
+    return { success: true, models: (rows as any[]).map(shapePodCatalogue) };
+  })
+
+  .post('/pod-catalogue', async ({ body }) => {
+    const b = body as any;
+    const rows = await db.execute(sql`
+      INSERT INTO pod_catalogue (catalogue_key, series, name, code, pod_type, layout, occupancy, dimensions, material, base_price, set_price, is_active, sort_order)
+      VALUES (
+        ${b.key || `${String(b.code || 'pod').toLowerCase()}-${Date.now()}`}, ${b.series}, ${b.name}, ${b.code}, ${b.podType}, ${b.layout},
+        ${Number(b.occupancy || 1)}, ${b.dimensions}, ${b.material}, ${Number(b.basePrice || 0)}, ${Number(b.setPrice || 0)},
+        ${b.isActive !== false}, ${Number(b.sortOrder || 999)}
+      )
+      ON CONFLICT (catalogue_key) DO UPDATE SET
+        series = EXCLUDED.series,
+        name = EXCLUDED.name,
+        code = EXCLUDED.code,
+        pod_type = EXCLUDED.pod_type,
+        layout = EXCLUDED.layout,
+        occupancy = EXCLUDED.occupancy,
+        dimensions = EXCLUDED.dimensions,
+        material = EXCLUDED.material,
+        base_price = EXCLUDED.base_price,
+        set_price = EXCLUDED.set_price,
+        is_active = EXCLUDED.is_active,
+        sort_order = EXCLUDED.sort_order,
+        updated_at = NOW()
+      RETURNING *
+    `);
+    return { success: true, model: shapePodCatalogue((rows as any[])[0]) };
+  })
+
+  .patch('/pod-catalogue/:id', async ({ params, body, set }) => {
+    const b = body as any;
+    const rows = await db.execute(sql`
+      UPDATE pod_catalogue SET
+        series = COALESCE(${b.series ?? null}, series),
+        name = COALESCE(${b.name ?? null}, name),
+        code = COALESCE(${b.code ?? null}, code),
+        pod_type = COALESCE(${b.podType ?? null}, pod_type),
+        layout = COALESCE(${b.layout ?? null}, layout),
+        occupancy = COALESCE(${b.occupancy == null ? null : Number(b.occupancy)}, occupancy),
+        dimensions = COALESCE(${b.dimensions ?? null}, dimensions),
+        material = COALESCE(${b.material ?? null}, material),
+        base_price = COALESCE(${b.basePrice == null ? null : Number(b.basePrice)}, base_price),
+        set_price = COALESCE(${b.setPrice == null ? null : Number(b.setPrice)}, set_price),
+        is_active = COALESCE(${b.isActive ?? null}, is_active),
+        sort_order = COALESCE(${b.sortOrder == null ? null : Number(b.sortOrder)}, sort_order),
+        updated_at = NOW()
+      WHERE id = ${params.id}
+      RETURNING *
+    `);
+    const row = (rows as any[])[0];
+    if (!row) { set.status = 404; return { success: false, message: 'Pod catalogue model not found' }; }
+    return { success: true, model: shapePodCatalogue(row) };
+  })
+
+  .delete('/pod-catalogue/:id', async ({ params }) => {
+    await db.execute(sql`UPDATE pod_catalogue SET is_active = FALSE, updated_at = NOW() WHERE id = ${params.id}`);
+    return { success: true };
+  })
 
   // ─── Users ──────────────────────────────────────────────────
   .get('/users', async ({ query }) => {

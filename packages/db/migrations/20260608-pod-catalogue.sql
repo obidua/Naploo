@@ -1,0 +1,61 @@
+CREATE TABLE IF NOT EXISTS pod_catalogue (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  catalogue_key VARCHAR(80) NOT NULL UNIQUE,
+  series VARCHAR(120) NOT NULL,
+  name VARCHAR(220) NOT NULL,
+  code VARCHAR(60) NOT NULL UNIQUE,
+  pod_type VARCHAR(20) NOT NULL CHECK (pod_type IN ('single', 'double', 'king')),
+  layout VARCHAR(20) NOT NULL CHECK (layout IN ('horizontal', 'vertical')),
+  occupancy INTEGER NOT NULL DEFAULT 1,
+  dimensions TEXT NOT NULL,
+  material TEXT NOT NULL,
+  base_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  set_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pod_catalogue_active ON pod_catalogue(is_active, sort_order, series);
+CREATE INDEX IF NOT EXISTS idx_pod_catalogue_type_layout ON pod_catalogue(pod_type, layout);
+
+INSERT INTO pod_catalogue (catalogue_key, series, name, code, pod_type, layout, occupancy, dimensions, material, base_price, set_price, sort_order) VALUES
+('abs-single', 'ABS', 'ABS Flagship 2025 — Single Horizontal (ZZK-HC02)', 'ZZK-HC02', 'single', 'horizontal', 1, '2060 x 1140 x 2400 mm', 'Premium ABS + high-quality metal frame', 80600, 161200, 10),
+('abs-double', 'ABS', 'ABS Flagship 2025 — Double Horizontal (ZZK-SR02)', 'ZZK-SR02', 'double', 'horizontal', 2, '2060 x 1580 x 2400 mm', 'Premium ABS + high-quality metal frame', 101400, 202800, 20),
+('abs-vertical-single', 'ABS', 'ABS Flagship 2025 — Single Vertical (ZZK-SC02)', 'ZZK-SC02', 'single', 'vertical', 1, '2060 x 1140 x 2400 mm', 'Premium ABS + high-quality metal frame', 80600, 161200, 30),
+('future-single', 'BACK TO FUTURE 2047', 'BACK TO FUTURE 2047 — Horizontal Single', 'BTF-HS', 'single', 'horizontal', 1, '2060 x 1140 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 80600, 161200, 40),
+('future-double', 'BACK TO FUTURE 2047', 'BACK TO FUTURE 2047 — Horizontal Double', 'BTF-HD', 'double', 'horizontal', 2, '2060 x 1580 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 101400, 202800, 50),
+('future-vertical-single', 'BACK TO FUTURE 2047', 'BACK TO FUTURE 2047 — Vertical Single', 'BTF-VS', 'single', 'vertical', 1, '2060 x 1140 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 80600, 161200, 60),
+('galaxy-single', 'GALAXY', 'GALAXY — Horizontal Single', 'GAL-HS', 'single', 'horizontal', 1, '2060 x 1140 x 2400 mm (L x W x H, ladder 300 mm)', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 80600, 161200, 70),
+('galaxy-double', 'GALAXY', 'GALAXY — Horizontal Double', 'GAL-HD', 'double', 'horizontal', 2, '2060 x 1580 x 2400 mm (L x W x H, ladder 300 mm)', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 101400, 202800, 80),
+('galaxy-king', 'GALAXY', 'GALAXY — Horizontal Big Bed (King)', 'GAL-HK', 'king', 'horizontal', 3, '2060 x 1950 x 2400 mm (L x W x H, ladder 300 mm)', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 120900, 241800, 90),
+('cosmos-single', 'COSMOS', 'COSMOS — Horizontal Single', 'COS-HS', 'single', 'horizontal', 1, '2060 x 1140 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 80600, 161200, 100),
+('cosmos-double', 'COSMOS', 'COSMOS — Horizontal Double', 'COS-HD', 'double', 'horizontal', 2, '2060 x 1580 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 101400, 202800, 110),
+('cosmos-vertical-single', 'COSMOS', 'COSMOS — Vertical Single', 'COS-VS', 'single', 'vertical', 1, '2060 x 1140 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 80600, 161200, 120),
+('cosmos-king', 'COSMOS', 'COSMOS — Horizontal Big Bed (King)', 'COS-HK', 'king', 'horizontal', 3, '2060 x 1950 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 120900, 241800, 130),
+('esports-single', 'E-sports', 'E-sports — Horizontal Single', 'ESP-HS', 'single', 'horizontal', 1, '2150 x 1150 x 2400 mm (ladder 180 mm)', 'Eco board + Taiwan Chi-Mei V0 ABS + high-quality metal', 88700, 177400, 140),
+('explore-single', 'EXPLORE THE WORLD', 'EXPLORE THE WORLD — Horizontal Single', 'EXW-HS', 'single', 'horizontal', 1, '2060 x 1140 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 80600, 161200, 150),
+('explore-double', 'EXPLORE THE WORLD', 'EXPLORE THE WORLD — Horizontal Double', 'EXW-HD', 'double', 'horizontal', 2, '2060 x 1580 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 101400, 202800, 160),
+('space-single', 'SPACE', 'SPACE — Horizontal Single', 'SPC-HS', 'single', 'horizontal', 1, '2060 x 1140 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 80600, 161200, 170),
+('space-double', 'SPACE', 'SPACE — Horizontal Double', 'SPC-HD', 'double', 'horizontal', 2, '2060 x 1580 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 101400, 202800, 180),
+('space-king', 'SPACE', 'SPACE — Horizontal Big Bed (King)', 'SPC-HK', 'king', 'horizontal', 3, '2060 x 1950 x 2400 mm', 'Taiwan Chi-Mei V0 fire-retardant ABS + high-quality metal', 120900, 241800, 190),
+('wooden-single', 'WOODEN', 'WOODEN — Horizontal Single', 'WOD-HS', 'single', 'horizontal', 1, '2150 x 1100 x 2400 mm (ladder 480 mm)', 'Eco multi-layer board + high-quality metal', 84600, 169200, 200),
+('wooden-vertical-single', 'WOODEN', 'WOODEN — Vertical Single', 'WOD-VS', 'single', 'vertical', 1, '2150 x 1100 x 2400 mm (ladder 480 mm)', 'Eco multi-layer board + high-quality metal', 84600, 169200, 210),
+('frp-single', 'FRP', 'Made-in-India FRP — Horizontal Single', 'FRP-HS', 'single', 'horizontal', 1, 'External 2150 x 1270 x 1270 mm | Internal 2000 x 1000 x 1000 mm', 'Standard FRP (fibreglass) with mild-steel structure', 80600, 161200, 220),
+('frp-double', 'FRP', 'Made-in-India FRP — Horizontal Double', 'FRP-HD', 'double', 'horizontal', 2, 'External 2150 x 1700 x 1270 mm | Internal 2000 x 1430 x 1000 mm', 'Standard FRP (fibreglass) with mild-steel structure', 101400, 202800, 230),
+('frp-king', 'FRP', 'Made-in-India FRP — Horizontal Big Bed (King)', 'FRP-HK', 'king', 'horizontal', 3, 'External 2150 x 2070 x 1270 mm | Internal 2000 x 1800 x 1000 mm', 'Standard FRP (fibreglass) with mild-steel structure', 120900, 241800, 240)
+ON CONFLICT (catalogue_key) DO UPDATE SET
+  series = EXCLUDED.series,
+  name = EXCLUDED.name,
+  code = EXCLUDED.code,
+  pod_type = EXCLUDED.pod_type,
+  layout = EXCLUDED.layout,
+  occupancy = EXCLUDED.occupancy,
+  dimensions = EXCLUDED.dimensions,
+  material = EXCLUDED.material,
+  base_price = EXCLUDED.base_price,
+  set_price = EXCLUDED.set_price,
+  sort_order = EXCLUDED.sort_order,
+  is_active = TRUE,
+  updated_at = NOW();

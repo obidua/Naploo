@@ -26,6 +26,7 @@ const ROUTES: Record<string, { base: string; strip?: string }> = {
   hotels: { base: HOTEL },
   rooms: { base: HOTEL },
   'pod-sets': { base: HOTEL },
+  'pod-catalogue': { base: HOTEL },
   search: { base: SEARCH },
   nearby: { base: SEARCH },
   cities: { base: SEARCH },

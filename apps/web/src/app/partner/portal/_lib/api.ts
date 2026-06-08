@@ -1,5 +1,6 @@
 // Partner portal data layer — talks to the gateway and uses the auth-store JWT.
 import { api, authApi } from '@/lib/api';
+import type { PodCatalogueModel } from '@/lib/podCatalogue';
 
 export interface PartnerRoom {
   id: string;
@@ -92,6 +93,11 @@ export async function getMyHotel(): Promise<PartnerHotel | null> {
 export async function getPartnerBookings(partnerId: string): Promise<PartnerBooking[]> {
   const r = await api.get<{ bookings: PartnerBooking[] }>(`/api/v1/partner/${partnerId}/bookings`);
   return r.data?.bookings ?? [];
+}
+
+export async function getPodCatalogue(): Promise<PodCatalogueModel[]> {
+  const r = await api.get<{ success: boolean; models: PodCatalogueModel[] }>('/api/v1/pod-catalogue');
+  return r.data?.models ?? [];
 }
 
 export async function createRoom(hotelId: string, input: {

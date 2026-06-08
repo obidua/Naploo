@@ -3,7 +3,7 @@ import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { db } from '@naploo/db';
 import { partners, rooms, podSets, pods } from '@naploo/db/schema';
-import { eq, and, inArray, or } from 'drizzle-orm';
+import { eq, and, inArray, or, sql } from 'drizzle-orm';
 
 // ─── Helpers ──────────────────────────────────────────────────
 // Columns like amenities/images are stored as jsonb but were seeded as
@@ -24,6 +24,25 @@ function parseJson<T>(value: unknown, fallback: T): T {
 }
 
 const num = (v: unknown): number | null => (v == null || v === '' ? null : Number(v));
+
+function shapePodCatalogue(row: any) {
+  return {
+    id: row.id,
+    key: row.catalogue_key,
+    series: row.series,
+    name: row.name,
+    code: row.code,
+    podType: row.pod_type,
+    layout: row.layout,
+    occupancy: Number(row.occupancy),
+    dimensions: row.dimensions,
+    material: row.material,
+    basePrice: Number(row.base_price),
+    setPrice: Number(row.set_price),
+    isActive: row.is_active,
+    sortOrder: Number(row.sort_order ?? 0),
+  };
+}
 
 function shapeHotel(p: any) {
   return {
@@ -157,6 +176,15 @@ const app = new Elysia()
   )
 
   .get('/health', () => ({ status: 'healthy', service: 'hotel-service', timestamp: new Date().toISOString() }))
+
+  .get('/pod-catalogue', async () => {
+    const rows = await db.execute(sql`
+      SELECT * FROM pod_catalogue
+      WHERE is_active = TRUE
+      ORDER BY sort_order ASC, series ASC, name ASC
+    `);
+    return { success: true, models: (rows as any[]).map(shapePodCatalogue) };
+  })
 
   // ─── List hotels (customer-facing) ──────────────────────────
   .get(

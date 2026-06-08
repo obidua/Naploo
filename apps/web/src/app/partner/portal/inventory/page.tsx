@@ -2,29 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Hotel, Bed, Plus, Edit3, Save, X, Loader2 } from 'lucide-react';
+import { POD_CATALOGUE } from '@/lib/podCatalogue';
 import PortalShell, { ErrorBanner } from '../_lib/PortalShell';
 import {
-  getMyHotel, createRoom, updateRoom, createPodSet, updatePodSet,
+  getMyHotel, createRoom, updateRoom, createPodSet, updatePodSet, getPodCatalogue,
   type PartnerHotel, type PartnerRoom, type PartnerPodSet, type PartnerPod,
 } from '../_lib/api';
 
 const ROOM_TYPES = ['standard', 'deluxe', 'suite', 'family', 'dormitory'];
 const BED_TYPES = ['single', 'double', 'queen', 'king', 'bunk'];
 const POD_TYPES: Array<'single' | 'double' | 'king'> = ['single', 'double', 'king'];
-
-const POD_CATALOGUE = [
-  { key: 'galaxy-single', series: 'GALAXY', name: 'GALAXY — Horizontal Single', code: 'GAL-HS', type: 'single' as const, occupancy: 1, dimensions: '2060 x 1140 x 2400 mm (L x W x H, ladder 300 mm)' },
-  { key: 'galaxy-double', series: 'GALAXY', name: 'GALAXY — Horizontal Double', code: 'GAL-HD', type: 'double' as const, occupancy: 2, dimensions: '2060 x 1580 x 2400 mm (L x W x H, ladder 300 mm)' },
-  { key: 'galaxy-king', series: 'GALAXY', name: 'GALAXY — Horizontal Big Bed (King)', code: 'GAL-HK', type: 'king' as const, occupancy: 3, dimensions: '2060 x 1950 x 2400 mm (L x W x H, ladder 300 mm)' },
-  { key: 'cosmos-single', series: 'COSMOS', name: 'COSMOS — Horizontal Single', code: 'COS-HS', type: 'single' as const, occupancy: 1, dimensions: '2060 x 1140 x 2400 mm' },
-  { key: 'cosmos-double', series: 'COSMOS', name: 'COSMOS — Horizontal Double', code: 'COS-HD', type: 'double' as const, occupancy: 2, dimensions: '2060 x 1580 x 2400 mm' },
-  { key: 'cosmos-king', series: 'COSMOS', name: 'COSMOS — Horizontal Big Bed (King)', code: 'COS-HK', type: 'king' as const, occupancy: 3, dimensions: '2060 x 1950 x 2400 mm' },
-  { key: 'abs-single', series: 'ABS', name: 'ABS Flagship 2025 — Single Horizontal (ZZK-HC02)', code: 'ZZK-HC02', type: 'single' as const, occupancy: 1, dimensions: '2060 x 1140 x 2400 mm' },
-  { key: 'abs-double', series: 'ABS', name: 'ABS Flagship 2025 — Double Horizontal (ZZK-SR02)', code: 'ZZK-SR02', type: 'double' as const, occupancy: 2, dimensions: '2060 x 1580 x 2400 mm' },
-  { key: 'frp-single', series: 'FRP', name: 'Made-in-India FRP — Horizontal Single', code: 'FRP-HS', type: 'single' as const, occupancy: 1, dimensions: 'External 2150 x 1270 x 1270 mm | Internal 2000 x 1000 x 1000 mm' },
-  { key: 'frp-double', series: 'FRP', name: 'Made-in-India FRP — Horizontal Double', code: 'FRP-HD', type: 'double' as const, occupancy: 2, dimensions: 'External 2150 x 1700 x 1270 mm | Internal 2000 x 1430 x 1000 mm' },
-  { key: 'frp-king', series: 'FRP', name: 'Made-in-India FRP — Horizontal Big Bed (King)', code: 'FRP-HK', type: 'king' as const, occupancy: 3, dimensions: 'External 2150 x 2070 x 1270 mm | Internal 2000 x 1800 x 1000 mm' },
-];
 
 const seedCode = () => String(Date.now()).slice(-5);
 
@@ -453,9 +440,10 @@ function AddRoomModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose:
 
 function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose: () => void; onSaved: () => void }) {
   const [manualPod, setManualPod] = useState(false);
+  const [catalogue, setCatalogue] = useState(POD_CATALOGUE);
   const [catalogueKey, setCatalogueKey] = useState('galaxy-single');
   const [podSeed] = useState(seedCode());
-  const selectedModel = POD_CATALOGUE.find((p) => p.key === catalogueKey) || POD_CATALOGUE[0];
+  const selectedModel = catalogue.find((p) => p.key === catalogueKey) || catalogue[0] || POD_CATALOGUE[0];
   const buildAutoDraft = (mode: 'set' | 'single', model = selectedModel) => {
     const base = `${model.code}-${podSeed}`;
     return {
@@ -464,10 +452,10 @@ function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClos
       podNumber: mode === 'single' ? `${base}-S` : '',
       podName: mode === 'single' ? model.name : '',
       upperPodNumber: mode === 'set' ? `${base}-U` : '',
-      upperPodName: mode === 'set' ? `${model.series} Upper ${model.type}` : '',
+      upperPodName: mode === 'set' ? `${model.series} ${model.layout} upper ${model.podType}` : '',
       lowerPodNumber: mode === 'set' ? `${base}-L` : '',
-      lowerPodName: mode === 'set' ? `${model.series} Lower ${model.type}` : '',
-      podType: model.type,
+      lowerPodName: mode === 'set' ? `${model.series} ${model.layout} lower ${model.podType}` : '',
+      podType: model.podType,
       maxOccupancy: model.occupancy,
       dimensions: model.dimensions,
     };
@@ -478,6 +466,15 @@ function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClos
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    getPodCatalogue().then((models) => {
+      if (!models.length) return;
+      setCatalogue(models);
+      if (!models.some((m) => m.key === catalogueKey)) setCatalogueKey(models[0].key);
+      if (!manualPod) setDraft((current) => ({ ...current, ...buildAutoDraft(current.mode, models[0]) }));
+    }).catch(() => {});
+  }, []);
 
   async function save() {
     setSaving(true);
@@ -502,13 +499,13 @@ function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClos
           <select
             value={catalogueKey}
             onChange={(e) => {
-              const next = POD_CATALOGUE.find((p) => p.key === e.target.value) || POD_CATALOGUE[0];
+              const next = catalogue.find((p) => p.key === e.target.value) || catalogue[0] || POD_CATALOGUE[0];
               setCatalogueKey(next.key);
               if (!manualPod) setDraft({ ...draft, ...buildAutoDraft(draft.mode, next) });
             }}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
           >
-            {POD_CATALOGUE.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+            {catalogue.map((p) => <option key={p.key} value={p.key}>{p.name} · {p.material}</option>)}
           </select>
         </Field>
         <button
@@ -576,6 +573,9 @@ function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClos
         </Field>
         <Field label="Dimensions">
           <input value={draft.dimensions} disabled={!manualPod} onChange={(e) => setDraft({ ...draft, dimensions: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-500" placeholder="2060 x 1140 x 2400 mm" />
+        </Field>
+        <Field label="Layout / material">
+          <input value={`${selectedModel.layout} · ${selectedModel.material}`} disabled className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-500" />
         </Field>
         <Field label="Floor">
           <input

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { api, authApi } from '@/lib/api';
+import { POD_CATALOGUE, type PodCatalogueModel } from '@/lib/podCatalogue';
 import type { AdminPage } from './types';
 import * as D from './data';
 import { useAdminData } from './data';
@@ -728,6 +729,28 @@ function AssociatesView() {
 // ============================
 function PodsView() {
   const D = useAdminData();
+  const [models, setModels] = useState<PodCatalogueModel[]>(POD_CATALOGUE);
+  const [addingModel, setAddingModel] = useState(false);
+  const [modelError, setModelError] = useState('');
+
+  useEffect(() => {
+    api.get<{ success: boolean; models: PodCatalogueModel[] }>('/api/v1/admin/pod-catalogue').then((r) => {
+      if (r.data?.models?.length) setModels(r.data.models);
+      if (r.error) setModelError(r.error);
+    });
+  }, []);
+
+  const createModel = async (model: PodCatalogueModel) => {
+    setModelError('');
+    const res = await api.post<{ success: boolean; model?: PodCatalogueModel; message?: string }>('/api/v1/admin/pod-catalogue', model);
+    if (res.error || !res.data?.success || !res.data.model) {
+      setModelError(res.error || res.data?.message || 'Failed to save pod model');
+      return;
+    }
+    setModels((current) => [res.data!.model!, ...current.filter((m) => m.id !== res.data!.model!.id && m.key !== res.data!.model!.key)]);
+    setAddingModel(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -736,6 +759,36 @@ function PodsView() {
         <StatCard label="Available Now" value={String(D.mockPodSets.reduce((s, ps) => s + ps.availablePods, 0))} icon={CheckCircle} color="from-green-500 to-emerald-500" />
         <StatCard label="Avg Hourly Rate" value={`₹${Math.round(D.mockPodSets.reduce((s, ps) => s + ps.hourlyRate, 0) / D.mockPodSets.length)}`} icon={IndianRupee} color="from-amber-500 to-orange-500" />
       </div>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-slate-800">BIDUA pod model catalogue</h3>
+            <p className="text-xs text-slate-400 mt-1">Admin can maintain model code, layout, material, dimensions and base pricing before partners use inventory presets.</p>
+          </div>
+          <AddBtn label={addingModel ? 'Close Model Form' : 'Add Pod Model'} onClick={() => setAddingModel(v => !v)} />
+        </div>
+        {modelError && <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{modelError}</div>}
+        {addingModel && <AdminPodModelForm onCancel={() => setAddingModel(false)} onSave={createModel} />}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px]">
+            <thead><tr className="border-b border-gray-100 bg-gray-50/50"><th className="text-left text-xs font-medium text-slate-400 px-4 py-3">Model</th><th className="text-center text-xs font-medium text-slate-400 px-4 py-3">Type</th><th className="text-center text-xs font-medium text-slate-400 px-4 py-3">Layout</th><th className="text-left text-xs font-medium text-slate-400 px-4 py-3">Dimensions</th><th className="text-left text-xs font-medium text-slate-400 px-4 py-3">Material</th><th className="text-right text-xs font-medium text-slate-400 px-4 py-3">Base</th><th className="text-right text-xs font-medium text-slate-400 px-4 py-3">Set</th></tr></thead>
+            <tbody className="divide-y divide-gray-50">
+              {models.map(model => (
+                <tr key={model.key} className="hover:bg-gray-50/50 transition">
+                  <td className="px-4 py-3"><p className="text-sm font-medium text-slate-700">{model.name}</p><p className="text-[10px] text-slate-400">{model.code} · {model.series}</p></td>
+                  <td className="text-center"><StatusBadge status={model.podType} map={{ single: 'bg-blue-50 text-blue-600', double: 'bg-violet-50 text-violet-600', king: 'bg-amber-50 text-amber-600' }} /></td>
+                  <td className="text-center"><StatusBadge status={model.layout} map={{ horizontal: 'bg-emerald-50 text-emerald-600', vertical: 'bg-cyan-50 text-cyan-600' }} /></td>
+                  <td className="px-4 py-3 text-xs text-slate-600 max-w-[210px]">{model.dimensions}</td>
+                  <td className="px-4 py-3 text-xs text-slate-600 max-w-[240px]">{model.material}</td>
+                  <td className="px-4 py-3 text-right text-sm font-semibold text-slate-700">₹{model.basePrice.toLocaleString('en-IN')}</td>
+                  <td className="px-4 py-3 text-right text-sm font-semibold text-slate-700">₹{model.setPrice.toLocaleString('en-IN')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <PageHeader><FilterBtn /><ExportBtn /><AddBtn label="Add Pod Set" /></PageHeader>
       <DataTable headers={[{ label: 'Pod Set' }, { label: 'Location' }, { label: 'Ownership', align: 'center' }, { label: 'Series', align: 'center' }, { label: 'Pods', align: 'center' }, { label: 'Available', align: 'center' }, { label: 'Rate/Hr', align: 'right' }, { label: 'Actions', align: 'right' }]}>
         {D.mockPodSets.map(ps => (
@@ -753,6 +806,73 @@ function PodsView() {
       </DataTable>
     </div>
   );
+}
+
+function AdminPodModelForm({ onCancel, onSave }: { onCancel: () => void; onSave: (model: PodCatalogueModel) => void }) {
+  const [presetKey, setPresetKey] = useState(POD_CATALOGUE[0].key);
+  const [draft, setDraft] = useState<PodCatalogueModel>({ ...POD_CATALOGUE[0] });
+
+  return (
+    <div className="rounded-xl border border-primary-100 bg-primary-50/30 p-4">
+      <div className="grid md:grid-cols-3 gap-3">
+        <AdminField label="Load PDF model">
+          <select
+            value={presetKey}
+            onChange={(e) => {
+              const next = POD_CATALOGUE.find(m => m.key === e.target.value) || POD_CATALOGUE[0];
+              setPresetKey(next.key);
+              setDraft({ ...next });
+            }}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+          >
+            {POD_CATALOGUE.map(model => <option key={model.key} value={model.key}>{model.name}</option>)}
+          </select>
+        </AdminField>
+        <AdminField label="Model code">
+          <input value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </AdminField>
+        <AdminField label="Series">
+          <input value={draft.series} onChange={(e) => setDraft({ ...draft, series: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </AdminField>
+        <AdminField label="Model name">
+          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </AdminField>
+        <AdminField label="Pod type">
+          <select value={draft.podType} onChange={(e) => setDraft({ ...draft, podType: e.target.value as PodCatalogueModel['podType'], occupancy: e.target.value === 'king' ? 3 : e.target.value === 'double' ? 2 : 1 })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+            <option value="single">single</option><option value="double">double</option><option value="king">king</option>
+          </select>
+        </AdminField>
+        <AdminField label="Layout">
+          <select value={draft.layout} onChange={(e) => setDraft({ ...draft, layout: e.target.value as PodCatalogueModel['layout'] })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+            <option value="horizontal">horizontal</option><option value="vertical">vertical</option>
+          </select>
+        </AdminField>
+        <AdminField label="Occupancy">
+          <input type="number" min={1} max={4} value={draft.occupancy} onChange={(e) => setDraft({ ...draft, occupancy: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </AdminField>
+        <AdminField label="Base price">
+          <input type="number" value={draft.basePrice} onChange={(e) => setDraft({ ...draft, basePrice: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </AdminField>
+        <AdminField label="Set price">
+          <input type="number" value={draft.setPrice} onChange={(e) => setDraft({ ...draft, setPrice: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </AdminField>
+        <AdminField label="Dimensions">
+          <input value={draft.dimensions} onChange={(e) => setDraft({ ...draft, dimensions: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </AdminField>
+        <AdminField label="Material">
+          <input value={draft.material} onChange={(e) => setDraft({ ...draft, material: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </AdminField>
+      </div>
+      <div className="flex justify-end gap-2 mt-4">
+        <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-slate-600 hover:bg-white">Cancel</button>
+        <button type="button" onClick={() => onSave(draft)} className="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700">Save model</button>
+      </div>
+    </div>
+  );
+}
+
+function AdminField({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="block"><span className="block text-xs font-medium text-slate-500 mb-1">{label}</span>{children}</label>;
 }
 
 
