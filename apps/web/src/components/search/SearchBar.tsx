@@ -89,28 +89,28 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
   }
 
   const ModeToggle = (
-    <div className="inline-flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
+    <div className="inline-flex w-full items-center gap-1 p-1 bg-gray-100 rounded-xl">
       <button
         type="button"
         onClick={() => update('mode', 'pods')}
         className={cn(
-          'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+          'flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs lg:text-sm font-medium transition-all whitespace-nowrap',
           state.mode === 'pods' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
         )}
         aria-pressed={state.mode === 'pods'}
       >
-        <Bed className="w-4 h-4" /> Hourly Pods
+        <Bed className="w-4 h-4" /> <span>Hourly</span>
       </button>
       <button
         type="button"
         onClick={() => update('mode', 'rooms')}
         className={cn(
-          'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+          'flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs lg:text-sm font-medium transition-all whitespace-nowrap',
           state.mode === 'rooms' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
         )}
         aria-pressed={state.mode === 'rooms'}
       >
-        <HotelIcon className="w-4 h-4" /> Nightly Rooms
+        <HotelIcon className="w-4 h-4" /> <span>Nightly</span>
       </button>
     </div>
   );
@@ -124,16 +124,17 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
         className
       )}
     >
-      <div className="flex items-center justify-between mb-3">
-        {ModeToggle}
-        {variant === 'hero' && (
-          <span className="hidden sm:inline-flex text-xs text-slate-500">
-            {state.mode === 'pods' ? 'Pay only for the hours you stay' : 'Book full-night stays'}
-          </span>
-        )}
-      </div>
+      {variant === 'hero' && (
+        <div className="hidden sm:flex items-center justify-end mb-2 text-xs text-slate-500">
+          {state.mode === 'pods' ? 'Pay only for the hours you stay' : 'Book full-night stays'}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-0 md:divide-x md:divide-gray-200 rounded-2xl md:border md:border-gray-200 md:bg-white overflow-visible items-stretch">
+        {/* Stay-mode toggle — inline at the start of the row */}
+        <div className="md:col-span-2 flex items-center px-3 md:px-2 py-2">
+          {ModeToggle}
+        </div>
         {/* Location */}
         <div className="relative md:col-span-3" ref={sugRef}>
           <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
@@ -222,7 +223,7 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
           <>
             <div className="md:col-span-2">
               <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
-                Date & Start
+                Date
               </label>
               <div className="flex items-center gap-2 px-4 pb-3">
                 <Calendar className="w-4 h-4 text-primary-600 shrink-0" />
@@ -231,30 +232,37 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
                   min={todayIso()}
                   value={state.checkIn}
                   onChange={(e) => update('checkIn', e.target.value)}
-                  className="bg-transparent outline-none text-slate-800 text-sm"
+                  className="w-full bg-transparent outline-none text-slate-800 text-sm min-w-0"
                 />
+              </div>
+            </div>
+            <div className="md:col-span-1">
+              <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
+                Start
+              </label>
+              <div className="flex items-center gap-2 px-4 pb-3">
+                <Clock className="w-4 h-4 text-primary-600 shrink-0" />
                 <input
                   type="time"
                   value={state.startTime}
                   onChange={(e) => update('startTime', e.target.value)}
-                  className="bg-transparent outline-none text-slate-800 text-sm"
+                  className="w-full bg-transparent outline-none text-slate-800 text-sm min-w-0"
                 />
               </div>
             </div>
-            <div className="md:col-span-2">
+            <div className="md:col-span-1">
               <label className="block px-4 pt-3 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
-                Duration
+                Hours
               </label>
               <div className="flex items-center gap-2 px-4 pb-3">
-                <Clock className="w-4 h-4 text-primary-600 shrink-0" />
                 <select
                   value={state.duration}
                   onChange={(e) => update('duration', Number(e.target.value))}
-                  className="w-full bg-transparent outline-none text-slate-800 text-sm"
+                  className="w-full bg-transparent outline-none text-slate-800 text-sm min-w-0"
                 >
                   {[1, 2, 3, 4, 6, 8, 12].map((h) => (
                     <option key={h} value={h}>
-                      {h} {h === 1 ? 'hour' : 'hours'}
+                      {h} hr
                     </option>
                   ))}
                 </select>
@@ -321,7 +329,7 @@ export default function SearchBar({ variant = 'hero', className, initial, onSubm
           <button
             type="submit"
             aria-label="Search"
-            className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white shadow-md hover:shadow-lg transition-all"
+            className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white shadow-md hover:shadow-lg transition-all"
           >
             <Search className="w-5 h-5" />
           </button>

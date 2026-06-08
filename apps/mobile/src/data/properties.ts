@@ -196,10 +196,12 @@ export function getPodLayoutFromSets(propertyId: string, livePodSets: any[]): an
         const status: 'available' | 'occupied' | 'maintenance' = p?.status === 'available' ? 'available' : p?.status === 'occupied' ? 'occupied' : 'maintenance';
         const type: 'single' | 'double' = (p?.podType === 'double' ? 'double' : 'single');
         slots.push({
-          // Real podSet UUID — booking + payment service consume this
-          // directly so we no longer need an index lookup in property/[id].
-          id: set.id,
+          // Real INDIVIDUAL pod (bunk) id — so tapping one bunk only highlights
+          // that bunk, not its partner in the same set. Fall back to a
+          // synthetic id when the partner side hasn't created the pod row yet.
+          id: p?.id || `${set.id}-${position}`,
           podId: p?.id,
+          podSetId: set.id,
           label: `${rowLetter}${c + 1}-${position === 'upper' ? 'U' : 'L'}`,
           row: r,
           col: c,
