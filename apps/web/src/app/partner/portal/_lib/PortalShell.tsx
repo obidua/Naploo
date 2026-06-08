@@ -9,7 +9,8 @@ import {
   Receipt, BarChart3, Plus, FileText, Key, BookOpen,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
+import OnboardingWizard from "./OnboardingWizard";
 import { pmsApi, isModuleEnabled, type PartnerConfig } from './pms-api';
 
 interface NavItem {
@@ -63,6 +64,7 @@ export default function PortalShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [checking, setChecking] = useState(true);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [config, setConfig] = useState<PartnerConfig | null>(null);
 
   useEffect(() => {
@@ -77,7 +79,11 @@ export default function PortalShell({ children }: { children: ReactNode }) {
     setChecking(false);
     // Load PMS config (tier + featuresEnabled)
     pmsApi.getConfig().then((res) => {
-      if (res.data) setConfig(res.data);
+      if (res.data) {
+        setConfig(res.data);
+        const wc = (res.data.featuresEnabled as any)?.wizard_completed;
+        if (wc === false || wc === undefined) setWizardOpen(true);
+      }
     });
   }, [isAuthenticated, user, router]);
 
@@ -97,6 +103,8 @@ export default function PortalShell({ children }: { children: ReactNode }) {
   });
 
   return (
+    <>
+    {wizardOpen && <OnboardingWizard onDone={() => setWizardOpen(false)} />}
     <main className="min-h-screen bg-slate-50 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-[250px_1fr] gap-6 py-6">
         <aside className="lg:sticky lg:top-24 lg:self-start space-y-3">
@@ -153,6 +161,7 @@ export default function PortalShell({ children }: { children: ReactNode }) {
         <section>{children}</section>
       </div>
     </main>
+    </>
   );
 }
 

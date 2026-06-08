@@ -53,13 +53,29 @@ function Body() {
   const [tier, setTier] = useState('');
   const [modules, setModules] = useState<Record<string, boolean>>({});
   const [checkInTime, setCheckInTime] = useState('14:00');
+  const [tierAllowedModules, setTierAllowedModules] = useState<string[]>([]);
   const [checkOutTime, setCheckOutTime] = useState('11:00');
 
   useEffect(() => {
+    fetch('/api/v1/pms/tiers', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        if (d?.tiers && tier) {
+          const td = d.tiers.find((t: any) => t.slug === tier);
+          if (td) setTierAllowedModules(td.allowed_modules || []);
+        }
+      })
+      .catch(() => {});
     pmsApi.getConfig().then((res) => {
       if (res.data) {
         setConfig(res.data);
         setTier(res.data.tier);
+        // fetch tier-allowed modules
+        fetch('/api/v1/pms/tiers', { credentials: 'include' })
+          .then(r => r.json()).then(d => {
+            const td = d?.tiers?.find((t: any) => t.slug === res.data!.tier);
+            if (td) setTierAllowedModules(td.allowed_modules || []);
+          }).catch(() => {});
         setModules(res.data.featuresEnabled?.modules || {});
         setCheckInTime((res.data.checkInTime || '14:00:00').slice(0, 5));
         setCheckOutTime((res.data.checkOutTime || '11:00:00').slice(0, 5));
@@ -79,7 +95,7 @@ function Body() {
     };
     const res = await pmsApi.updateConfig({
       tier,
-      featuresEnabled: newConfig as any,
+      featuresEnabled: { ...newConfig, modules: Object.fromEntries(Object.entries(modules).filter(([k]) => tierAllowedModules.length === 0 || tierAllowedModules.includes(k) || MODULES.find(m => m.key === k)?.always)) } as any,
       checkInTime,
       checkOutTime,
     } as any);
@@ -142,33 +158,39 @@ function Body() {
         <h2 className="text-sm font-semibold text-slate-900 mb-1">Modules</h2>
         <p className="text-xs text-slate-500 mb-4">Toggle which features show in the sidebar. Disabled modules stay hidden.</p>
         <div className="grid sm:grid-cols-2 gap-2">
-          {MODULES.map((m) => (
-            <label
-              key={m.key}
-              className={cn(
-                'flex items-start gap-3 p-3 rounded-xl border cursor-pointer',
-                modules[m.key] && 'border-primary-300 bg-primary-50/30',
-                !modules[m.key] && 'border-gray-200',
-                m.disabled && 'opacity-50 cursor-not-allowed'
-              )}
-            >
-              <input
-                type="checkbox"
-                checked={!!modules[m.key]}
-                disabled={!!m.disabled || !!m.always}
-                onChange={(e) => setModules({ ...modules, [m.key]: e.target.checked })}
-                className="mt-1"
-              />
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-                  {m.label}
-                  {m.always && <span className="text-[10px] uppercase bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">always on</span>}
-                  {m.disabled && <span className="text-[10px] uppercase bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">soon</span>}
+          {MODULES.map((m) => {
+            const tierLocked = !m.always && tierAllowedModules.length > 0 && !tierAllowedModules.includes(m.key);
+            const isDisabled = !!m.disabled || !!m.always || tierLocked;
+            return (
+              <label
+                key={m.key}
+                className={cn(
+                  'flex items-start gap-3 p-3 rounded-xl border cursor-pointer',
+                  modules[m.key] && !tierLocked && 'border-primary-300 bg-primary-50/30',
+                  !modules[m.key] && 'border-gray-200',
+                  (m.disabled || tierLocked) && 'opacity-50 cursor-not-allowed'
+                )}
+                title={tierLocked ? 'Upgrade your tier to enable this module' : undefined}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!modules[m.key] && !tierLocked}
+                  disabled={isDisabled}
+                  onChange={(e) => setModules({ ...modules, [m.key]: e.target.checked })}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-slate-800 flex items-center gap-2 flex-wrap">
+                    {m.label}
+                    {m.always && <span className="text-[10px] uppercase bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">always on</span>}
+                    {m.disabled && <span className="text-[10px] uppercase bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">soon</span>}
+                    {tierLocked && <span className="text-[10px] uppercase bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">upgrade tier</span>}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">{m.desc}</div>
                 </div>
-                <div className="text-xs text-slate-500 mt-0.5">{m.desc}</div>
-              </div>
-            </label>
-          ))}
+              </label>
+            );
+          })}
         </div>
       </section>
 
