@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Tag, Star, Image as ImageIcon, UserCircle2, Gift, ConciergeBell, Flower2, Store, Hotel, Calendar, IndianRupee, Building2, LogOut, Loader2, AlertCircle,
+  LayoutDashboard, Tag, Star, Image as ImageIcon, UserCircle2, Gift, ConciergeBell, Flower2, Store, ClipboardCheck, Calculator, BookCheck, Hotel, Calendar, IndianRupee, Building2, LogOut, Loader2, AlertCircle,
   Sparkles, ClipboardList, Wrench, UtensilsCrossed, Settings, Users2,
   Receipt, BarChart3, Plus, FileText, Key, BookOpen,
 } from 'lucide-react';
@@ -39,6 +39,12 @@ const ALL_NAV: NavItem[] = [
   { href: '/partner/portal/loyalty', label: 'Loyalty', icon: Gift, module: 'loyalty' },
   { href: '/partner/portal/concierge', label: 'Concierge', icon: ConciergeBell, module: 'concierge' },
   { href: '/partner/portal/rates', label: 'Rate plans', icon: BarChart3, module: 'corporate_rates' },
+  { href: '/partner/portal/employees', label: 'Employees', icon: Users2, ownerOnly: true },
+  { href: '/partner/portal/attendance', label: 'Attendance', icon: ClipboardCheck, ownerOnly: true },
+  { href: '/partner/portal/salary', label: 'Salary & payroll', icon: IndianRupee, ownerOnly: true },
+  { href: '/partner/portal/expenses', label: 'Expenses', icon: Receipt, ownerOnly: true },
+  { href: '/partner/portal/accounting', label: 'Accounting', icon: Calculator, ownerOnly: true },
+  { href: '/partner/portal/statement', label: 'Daily statement', icon: BookCheck, ownerOnly: true },
   { href: '/partner/portal/api-keys', label: 'OTA API keys', icon: Key, ownerOnly: true },
   { href: '/partner/portal/earnings', label: 'Earnings', icon: IndianRupee, ownerOnly: true },
   { href: '/partner/portal/reports', label: 'Reports', icon: FileText, module: 'advanced_reports', ownerOnly: true },

@@ -14,6 +14,7 @@ import { registerExtensions, registerApiKeys } from "./extensions";
 import { registerQloParity } from "./qlo-parity";
 import { registerQlo2 } from "./qlo2";
 import { registerQlo3 } from "./qlo3";
+import { registerErp } from "./erp";
 
 // ─── Helpers ──────────────────────────────────────────────────
 function round2(n: number): number {
@@ -892,7 +893,7 @@ const app = new Elysia()
     }),
   });
 
-const extendedApp = registerQlo3(registerQlo2(registerQloParity(registerApiKeys(registerExtensions(app)))));
+const extendedApp = registerErp(registerQlo3(registerQlo2(registerQloParity(registerApiKeys(registerExtensions(app))))));
 extendedApp.listen({
   hostname: process.env.PMS_SERVICE_HOST || '127.0.0.1',
   port: Number(process.env.PMS_SERVICE_PORT || 3012),
