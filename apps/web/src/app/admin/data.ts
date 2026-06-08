@@ -228,6 +228,58 @@ async function fetchJson<T>(path: string): Promise<T | null> {
   return r.data as T;
 }
 
+
+// ── QloApps-parity adapters ──────────────────────────────────
+function couponBE(r: any) {
+  return {
+    id: r.id,
+    code: r.code,
+    description: r.name || '',
+    discountType: (r.kind === 'flat' ? 'flat' : 'percentage') as 'percentage' | 'flat',
+    discountValue: Number(r.value || 0),
+    minBookingAmount: Number(r.min_amount || 0),
+    maxDiscount: Number(r.max_discount || 0),
+    usageLimit: Number(r.max_uses || 0),
+    timesUsed: Number(r.uses || 0),
+    validFrom: r.starts_at || r.created_at,
+    validUntil: r.ends_at || r.created_at,
+    applicableFor: (r.scope as any) || 'global',
+    status: r.status,
+    createdAt: r.created_at,
+  } as any;
+}
+function ticketBE(r: any) {
+  return {
+    id: r.id,
+    ticketNumber: r.id.slice(0, 8).toUpperCase(),
+    userId: r.user_id || '',
+    userName: [r.first_name, r.last_name].filter(Boolean).join(' ') || '—',
+    userPhone: r.phone || '',
+    subject: r.subject,
+    category: 'general' as any,
+    priority: r.priority as any,
+    status: r.status === 'open' ? 'open' : (r.status === 'resolved' ? 'resolved' : (r.status === 'closed' ? 'closed' : 'in-progress')) as any,
+    description: r.body || '',
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  } as any;
+}
+function reviewBE(r: any) {
+  return {
+    id: r.id,
+    userId: r.user_id || '',
+    userName: [r.first_name, r.last_name].filter(Boolean).join(' ') || 'Anonymous',
+    bookingId: r.booking_id || '',
+    propertyName: r.partner_name || '—',
+    location: '',
+    rating: Number(r.rating || 0),
+    comment: r.body || '',
+    title: r.title || '',
+    createdAt: r.created_at,
+    status: r.status,
+  } as any;
+}
+
 function formatINR(n: number): string {
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`;
   if (n >= 100000) return `₹${(n / 100000).toFixed(2)} L`;
@@ -280,7 +332,7 @@ export const useAdminData = create<AdminState>((set, get) => ({
 
   loadAll: async () => {
     set({ loading: true });
-    const [usersResp, partnersResp, bookingsResp, paymentsResp, payoutsResp, investorsResp, overviewResp] = await Promise.all([
+    const [usersResp, partnersResp, bookingsResp, paymentsResp, payoutsResp, investorsResp, overviewResp, couponsResp, ticketsResp, reviewsResp, refundsResp] = await Promise.all([
       fetchJson<{ users: BackendUser[] }>('/api/v1/admin/users'),
       fetchJson<{ partners: BackendPartner[] }>('/api/v1/admin/partners'),
       fetchJson<{ bookings: BackendBooking[] }>('/api/v1/admin/bookings'),
@@ -288,6 +340,10 @@ export const useAdminData = create<AdminState>((set, get) => ({
       fetchJson<{ payouts: BackendPayout[] }>('/api/v1/admin/payouts'),
       fetchJson<{ investors: BackendInvestor[] }>('/api/v1/admin/investors'),
       fetchJson<{ overview: OverviewResp }>('/api/v1/analytics/overview'),
+      fetchJson<{ coupons: any[] }>('/api/v1/admin/coupons'),
+      fetchJson<{ tickets: any[] }>('/api/v1/admin/tickets'),
+      fetchJson<{ reviews: any[] }>('/api/v1/admin/reviews'),
+      fetchJson<{ refunds: any[] }>('/api/v1/admin/refunds'),
     ]);
 
     const allUsers = usersResp?.users || [];
@@ -309,10 +365,10 @@ export const useAdminData = create<AdminState>((set, get) => ({
       mockPodSets: [],
       mockRooms: [],
       mockAssociates: [],
-      mockCoupons: [],
-      mockTickets: [],
+      mockCoupons: (couponsResp?.coupons || []).map(couponBE),
+      mockTickets: (ticketsResp?.tickets || []).map(ticketBE),
       mockApplications: [],
-      mockReviews: [],
+      mockReviews: (reviewsResp?.reviews || []).map(reviewBE),
       mockLocations: [],
       mockCommissions: [],
       mockStaff: [],
