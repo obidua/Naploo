@@ -772,7 +772,7 @@ export function registerErp(app: any) {
         FROM bookings b
         LEFT JOIN pods p ON p.id = b.pod_id
         LEFT JOIN pod_sets ps ON ps.id = p.pod_set_id
-        WHERE (ps.partner_id = ${link.partnerId}
+        WHERE (COALESCE(ps.partner_id, p.partner_id) = ${link.partnerId}
             OR b.room_id IN (SELECT id FROM rooms WHERE partner_id = ${link.partnerId}))
           AND DATE(b.check_in) = ${date}::date
       `);

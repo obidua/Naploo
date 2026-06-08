@@ -128,7 +128,7 @@ export const pmsApi = {
 
   // Housekeeping
   housekeepingBoard: () =>
-    api.get<{ success: boolean; rooms: any[]; podSets: any[] }>('/api/v1/pms/housekeeping/board'),
+    api.get<{ success: boolean; rooms: any[]; podSets: any[]; standalonePods?: any[] }>('/api/v1/pms/housekeeping/board'),
   setHousekeepingStatus: (input: { roomId?: string; podId?: string; status: string; note?: string }) =>
     api.post<{ success: boolean }>('/api/v1/pms/housekeeping/status', input),
 

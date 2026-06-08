@@ -29,6 +29,7 @@ export default function HousekeepingPage() {
 function Body() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [podSets, setPodSets] = useState<any[]>([]);
+  const [standalonePods, setStandalonePods] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -42,6 +43,7 @@ function Body() {
     }
     setRooms(res.data.rooms || []);
     setPodSets(res.data.podSets || []);
+    setStandalonePods(res.data.standalonePods || []);
   }
   useEffect(() => { load(); }, []);
 
@@ -54,7 +56,7 @@ function Body() {
   const counts: Record<string, number> = {};
   for (const r of rooms) counts[r.status] = (counts[r.status] || 0) + 1;
 
-  if (loading && rooms.length === 0 && podSets.length === 0) {
+  if (loading && rooms.length === 0 && podSets.length === 0 && standalonePods.length === 0) {
     return <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center"><Loader2 className="w-6 h-6 animate-spin text-primary-600 mx-auto" /></div>;
   }
 
@@ -105,6 +107,18 @@ function Body() {
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {podSets.map((p: any) => (
               <RoomCell key={p.id} target="pod" id={p.id} label={p.setNumber} status={p.status} onChange={changeStatus} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Standalone pods */}
+      {standalonePods.length > 0 && (
+        <section className="bg-white border border-gray-200 rounded-2xl p-5">
+          <h2 className="text-sm font-semibold text-slate-900 mb-3">Single pods ({standalonePods.length})</h2>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+            {standalonePods.map((p: any) => (
+              <RoomCell key={p.id} target="pod" id={p.id} label={p.podNumber} status={p.status} onChange={changeStatus} />
             ))}
           </div>
         </section>

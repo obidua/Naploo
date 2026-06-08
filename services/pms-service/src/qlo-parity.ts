@@ -173,8 +173,8 @@ export function registerQloParity(app: any) {
         FROM bookings b
         JOIN users u ON u.id = b.user_id
         JOIN pods p ON p.id = b.pod_id
-        JOIN pod_sets ps ON ps.id = p.pod_set_id
-        WHERE ps.partner_id = ${link.partnerId}
+        LEFT JOIN pod_sets ps ON ps.id = p.pod_set_id
+        WHERE COALESCE(ps.partner_id, p.partner_id) = ${link.partnerId}
         GROUP BY u.id, u.email, u.phone, u.first_name, u.last_name
         ORDER BY booking_count DESC
         LIMIT 500

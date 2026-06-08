@@ -65,7 +65,7 @@ function Body() {
       if (cRes.data) setConfig(cRes.data);
       // Default to time from config
       if (cRes.data?.checkInTime) setCheckInTime(cRes.data.checkInTime.slice(0, 5));
-      // Auto-select first available room
+      // Auto-select first available unit
       if (hRes.rooms.length > 0) {
         setUnitId(hRes.rooms[0].id);
       } else if (hRes.podSets.length > 0) {
@@ -74,6 +74,11 @@ function Body() {
         setUnitId(firstSet.id);
         const firstFree = firstSet.pods?.find((p) => p.status === 'available') || firstSet.pods?.[0];
         if (firstFree) setPodBunkId(firstFree.id);
+      } else if ((hRes.standalonePods || []).length > 0) {
+        setTab('pod');
+        const firstStandalone = hRes.standalonePods![0];
+        setUnitId(firstStandalone.id);
+        setPodBunkId(firstStandalone.id);
       }
       setLoading(false);
     })();
@@ -102,6 +107,22 @@ function Body() {
         total: taxable + gst,
       };
     } else {
+      const standalone = (hotel.standalonePods || []).find((p) => p.id === unitId);
+      if (standalone) {
+        const base = standalone.hourlyRate * hours;
+        const taxable = Math.max(0, base - discount);
+        const gst = Math.round(taxable * 0.12);
+        return {
+          unit: `Single pod ${standalone.displayName || standalone.podNumber}`,
+          baseRate: standalone.hourlyRate,
+          units: hours,
+          unitsLabel: `${hours} hr`,
+          subtotal: base,
+          discount,
+          gst,
+          total: taxable + gst,
+        };
+      }
       const set = hotel.podSets.find((s) => s.id === unitId);
       if (!set) return null;
       const base = set.hourlyRate * hours;
@@ -128,8 +149,11 @@ function Body() {
       return;
     }
     if (tab === 'pod' && !podBunkId) {
-      setError('Please pick a single pod (upper or lower bunk).');
-      return;
+      const isStandalone = (hotel.standalonePods || []).some((p) => p.id === unitId);
+      if (!isStandalone) {
+        setError('Please pick a single pod (upper or lower bunk).');
+        return;
+      }
     }
     const checkInISO = new Date(`${checkInDate}T${checkInTime}:00`).toISOString();
     const input: WalkInInput = {
@@ -267,14 +291,14 @@ function Body() {
                     setPodBunkId(firstFree?.id || '');
                   }
                 }}
-                disabled={hotel.podSets.length === 0}
+                disabled={hotel.podSets.length === 0 && (hotel.standalonePods || []).length === 0}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium',
                   tab === 'pod' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500',
-                  hotel.podSets.length === 0 && 'opacity-40'
+                  hotel.podSets.length === 0 && (hotel.standalonePods || []).length === 0 && 'opacity-40'
                 )}
               >
-                <Bed className="w-4 h-4" /> Pod ({hotel.podSets.length} sets)
+                <Bed className="w-4 h-4" /> Pod ({hotel.podSets.length} sets{(hotel.standalonePods || []).length ? ` + ${(hotel.standalonePods || []).length} single` : ''})
               </button>
             </div>
 
@@ -297,27 +321,51 @@ function Body() {
                       </div>
                     </button>
                   ))
-                : hotel.podSets.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => {
-                        setUnitId(s.id);
-                        const firstFree = s.pods?.find((p) => p.status === 'available') || s.pods?.[0];
-                        setPodBunkId(firstFree?.id || '');
-                      }}
-                      className={cn(
-                        'text-left p-3 rounded-xl border transition-all',
-                        unitId === s.id
-                          ? 'border-primary-500 bg-primary-50/50'
-                          : 'border-gray-200 hover:border-primary-200'
-                      )}
-                    >
-                      <div className="font-semibold text-slate-900 text-sm">Pod set {s.setNumber}</div>
-                      <div className="text-xs text-slate-500">
-                        Floor {s.floor} • {s.pods.length} pods • {formatMoney(s.hourlyRate)}/hr
-                      </div>
-                    </button>
-                  ))}
+                : (
+                    <>
+                      {hotel.podSets.map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => {
+                            setUnitId(s.id);
+                            const firstFree = s.pods?.find((p) => p.status === 'available') || s.pods?.[0];
+                            setPodBunkId(firstFree?.id || '');
+                          }}
+                          className={cn(
+                            'text-left p-3 rounded-xl border transition-all',
+                            unitId === s.id
+                              ? 'border-primary-500 bg-primary-50/50'
+                              : 'border-gray-200 hover:border-primary-200'
+                          )}
+                        >
+                          <div className="font-semibold text-slate-900 text-sm">Pod set {s.setNumber}</div>
+                          <div className="text-xs text-slate-500">
+                            Floor {s.floor} • {s.pods.length} pods • {formatMoney(s.hourlyRate)}/hr
+                          </div>
+                        </button>
+                      ))}
+                      {(hotel.standalonePods || []).map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => {
+                            setUnitId(p.id);
+                            setPodBunkId(p.id);
+                          }}
+                          className={cn(
+                            'text-left p-3 rounded-xl border transition-all',
+                            unitId === p.id
+                              ? 'border-primary-500 bg-primary-50/50'
+                              : 'border-gray-200 hover:border-primary-200'
+                          )}
+                        >
+                          <div className="font-semibold text-slate-900 text-sm">Single pod {p.displayName || p.podNumber}</div>
+                          <div className="text-xs text-slate-500">
+                            {p.podType} • up to {p.maxOccupancy} guest{(p.maxOccupancy || 1) > 1 ? 's' : ''} • {formatMoney(p.hourlyRate)}/hr
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
             </div>
             {tab === 'pod' && unitId && (() => {
               const selectedSet = hotel.podSets.find((s) => s.id === unitId);
