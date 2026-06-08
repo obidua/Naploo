@@ -116,32 +116,39 @@ function backendRoomToRoom(r: BackendRoom, hotelImages: string[]): Room {
   };
 }
 
-function podSetToPod(ps: BackendPodSet, hotel: HotelCard): Pod {
-  const first = ps.pods?.[0];
-  const f = first?.features || {};
-  const amenities: string[] = [];
-  if (f.hasAC) amenities.push('AC');
-  if (f.hasTV) amenities.push('TV');
-  if (f.hasCharger) amenities.push('Charger');
-  if (f.hasLight) amenities.push('Reading Light');
-  if (f.hasVentilation) amenities.push('Ventilation');
+function podSetToPods(ps: BackendPodSet, hotel: HotelCard): Pod[] {
   const hotelImages = hotel.images && hotel.images.length ? hotel.images : [FALLBACK_IMAGE];
-  return {
-    id: ps.id,
-    name: `Sleeping Pod ${ps.setNumber}`,
-    series: ps.section || 'Naploo Smart Pod',
-    hotelId: hotel.id,
-    hotelName: hotel.businessName,
-    hotelType: hotel.businessType,
-    location: hotel.address,
-    city: hotel.city,
-    price: Number(ps.hourlyRate),
-    rating: hotel.rating ?? 0,
-    reviews: hotel.totalReviews ?? 0,
-    image: hotelImages[0],
-    amenities: amenities.length ? amenities : ['AC', 'Charger', 'Reading Light'],
-    available: (ps.pods || []).some((p) => p.status === 'available'),
-  };
+  const podList = ps.pods && ps.pods.length ? ps.pods : [];
+  // One UI entry per individual pod (bunk).
+  return podList.map((p) => {
+    const f = p.features || {};
+    const amenities: string[] = [];
+    if (f.hasAC) amenities.push('AC');
+    if (f.hasTV) amenities.push('TV');
+    if (f.hasCharger) amenities.push('Charger');
+    if (f.hasLight) amenities.push('Reading Light');
+    if (f.hasVentilation) amenities.push('Ventilation');
+    const positionLabel = p.position === 'upper' ? 'Upper bunk' : p.position === 'lower' ? 'Lower bunk' : (p.position || 'Bunk');
+    return {
+      id: p.id, // real pod id (single bunk)
+      name: `Pod ${ps.setNumber} — ${positionLabel}`,
+      series: ps.section || 'Naploo Smart Pod',
+      hotelId: hotel.id,
+      hotelName: hotel.businessName,
+      hotelType: hotel.businessType,
+      location: hotel.address,
+      city: hotel.city,
+      price: Number(ps.hourlyRate),
+      rating: hotel.rating ?? 0,
+      reviews: hotel.totalReviews ?? 0,
+      image: hotelImages[0],
+      amenities: amenities.length ? amenities : ['AC', 'Charger', 'Reading Light'],
+      available: p.status === 'available',
+      podSetId: ps.id,
+      position: p.position,
+      podNumber: p.podNumber,
+    };
+  });
 }
 
 const STATUS_MAP: Record<string, BookingStatus> = {
@@ -235,13 +242,13 @@ export async function getHotel(id: string): Promise<{ property: Property; rooms:
     podStartPrice: podRates.length ? Math.min(...podRates) : 0,
   };
   const rooms = (h.rooms || []).filter((r) => r.isActive).map((r) => backendRoomToRoom(r, hotelImages));
-  const pods = (h.podSets || []).filter((p) => p.isActive).map((p) => podSetToPod(p, h));
+  const pods = (h.podSets || []).filter((p) => p.isActive).flatMap((p) => podSetToPods(p, h));
   return { property, rooms, pods };
 }
 
 export interface QuoteInput {
   kind: BookingKind;
-  itemId: string; // roomId or podSetId
+  itemId: string; // roomId or podId (single bunk)
   checkInISO: string;
   hours?: number;
   nights?: number;
@@ -261,7 +268,7 @@ export interface Quote {
 export async function getQuote(input: QuoteInput): Promise<Quote | null> {
   const body =
     input.kind === 'pod'
-      ? { bookingType: 'pod', podSetId: input.itemId, checkIn: input.checkInISO, hours: input.hours, guestCount: input.guestCount, couponDiscount: input.couponDiscount ?? 0 }
+      ? { bookingType: 'pod', podId: input.itemId, checkIn: input.checkInISO, hours: input.hours, guestCount: input.guestCount, couponDiscount: input.couponDiscount ?? 0 }
       : { bookingType: 'room', roomId: input.itemId, checkIn: input.checkInISO, nights: input.nights, guestCount: input.guestCount, couponDiscount: input.couponDiscount ?? 0 };
   const res = await api.post<any>('/api/v1/quote', body);
   if (res.error || !res.data?.success) return null;
@@ -279,7 +286,7 @@ export async function getQuote(input: QuoteInput): Promise<Quote | null> {
 export interface CreateBookingInput {
   userId: string;
   kind: BookingKind;
-  itemId: string; // roomId or podSetId
+  itemId: string; // roomId or podId (single bunk)
   checkInISO: string;
   hours?: number; // pods
   nights?: number; // rooms
@@ -293,7 +300,7 @@ export async function createBooking(input: CreateBookingInput): Promise<{ id: st
       ? {
           userId: input.userId,
           bookingType: 'pod',
-          podSetId: input.itemId,
+          podId: input.itemId,
           checkIn: input.checkInISO,
           hours: input.hours,
           guestCount: input.guestCount,

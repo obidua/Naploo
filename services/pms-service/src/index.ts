@@ -245,22 +245,66 @@ const app = new Elysia()
     let lockedRoomId: string | null = null;
 
     if (body.kind === 'pod') {
-      const [podSet] = await db.select().from(podSets).where(eq(podSets.id, body.unitId));
-      if (!podSet || podSet.partnerId !== partnerId) {
-        set.status = 404;
-        return { success: false, message: 'Pod set not found in your hotel' };
+      // Preferred: caller supplied a specific pod (single bunk).
+      // Legacy: caller supplied a pod_set in unitId and we auto-pick a free pod.
+      let podSetForPricing: typeof podSets.$inferSelect | undefined;
+      let chosenPod: typeof pods.$inferSelect | undefined;
+      if (body.podId) {
+        const [pod] = await db.select().from(pods).where(eq(pods.id, body.podId));
+        if (!pod) {
+          set.status = 404;
+          return { success: false, message: 'Pod not found' };
+        }
+        const [ps] = await db.select().from(podSets).where(eq(podSets.id, pod.podSetId));
+        if (!ps || ps.partnerId !== partnerId) {
+          set.status = 404;
+          return { success: false, message: 'Pod not found in your hotel' };
+        }
+        podSetForPricing = ps;
+        chosenPod = pod;
+      } else {
+        const [podSet] = await db.select().from(podSets).where(eq(podSets.id, body.unitId));
+        if (!podSet || podSet.partnerId !== partnerId) {
+          set.status = 404;
+          return { success: false, message: 'Pod set not found in your hotel' };
+        }
+        podSetForPricing = podSet;
       }
       units = body.hours || 1;
       checkOut = new Date(checkIn.getTime() + units * 60 * 60 * 1000);
-      baseRate = Number(podSet.hourlyRate);
+      baseRate = Number(podSetForPricing!.hourlyRate);
       bookingType = 'pod';
-      unitDescription = `Pod set ${podSet.setNumber} × ${units} hr`;
-      const podId = await findFreePod(podSet.id, checkIn, checkOut);
-      if (!podId) {
-        set.status = 409;
-        return { success: false, message: 'No pods available for this time window' };
+      if (chosenPod) {
+        if (chosenPod.status !== 'available') {
+          set.status = 409;
+          return { success: false, message: `Pod is ${chosenPod.status}` };
+        }
+        const overlaps = await db
+          .select({ id: bookings.id })
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.podId, chosenPod.id),
+              inArray(bookings.status, ACTIVE_STATUSES as unknown as string[]),
+              lt(bookings.checkIn, checkOut),
+              gt(bookings.checkOut, checkIn)
+            )
+          );
+        if (overlaps.length > 0) {
+          set.status = 409;
+          return { success: false, message: 'This pod is already booked for the selected time' };
+        }
+        lockedPodId = chosenPod.id;
+        unitDescription = `Pod ${chosenPod.podNumber} (${chosenPod.position}) × ${units} hr`;
+      } else {
+        const podId = await findFreePod(podSetForPricing!.id, checkIn, checkOut);
+        if (!podId) {
+          set.status = 409;
+          return { success: false, message: 'No pods available for this time window' };
+        }
+        lockedPodId = podId;
+        unitDescription = `Pod set ${podSetForPricing!.setNumber} × ${units} hr`;
       }
-      lockedPodId = podId;
     } else {
       const [room] = await db.select().from(rooms).where(eq(rooms.id, body.unitId));
       if (!room || room.partnerId !== partnerId) {
@@ -407,6 +451,7 @@ const app = new Elysia()
     body: t.Object({
       kind: t.Union([t.Literal('room'), t.Literal('pod')]),
       unitId: t.String(),
+      podId: t.Optional(t.String()),
       checkIn: t.String(),
       hours: t.Optional(t.Number()),
       nights: t.Optional(t.Number()),

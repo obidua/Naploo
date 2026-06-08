@@ -229,10 +229,10 @@ export default function PropertyDetailScreen() {
     checkIn.setHours(h, m, 0, 0);
     const checkOut = addHours(checkIn, podHours);
 
-    // When the seat-map was built from real podSets, `selectedPodSlot.id`
-    // is already the real podSet UUID. Fall back to the legacy index lookup
-    // only when we are still on the synthesized layout (livePodSets empty).
-    let bookingItemId: string = selectedPodSlot.id;
+    // Seat-map slots carry both the podSet id (slot.id) and the real
+    // individual pod id (slot.podId). The booking now reserves a single
+    // pod (bunk), so we prefer the explicit podId when present.
+    let bookingItemId: string = (selectedPodSlot as any).podId || selectedPodSlot.id;
     if ((!livePodSets || livePodSets.length === 0) && livePods.length > 0) {
       const slotIndex = Math.max(
         0,

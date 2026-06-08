@@ -22,6 +22,8 @@ export interface PartnerConfig {
 export interface WalkInInput {
   kind: 'room' | 'pod';
   unitId: string;
+  /** For pod walk-ins: specific bunk id within the pod set. */
+  podId?: string;
   checkIn: string;       // ISO date-time
   nights?: number;
   hours?: number;

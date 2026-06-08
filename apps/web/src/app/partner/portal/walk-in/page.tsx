@@ -30,6 +30,7 @@ function Body() {
 
   const [tab, setTab] = useState<Tab>('room');
   const [unitId, setUnitId] = useState('');
+  const [podBunkId, setPodBunkId] = useState('');
   const [checkInDate, setCheckInDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [checkInTime, setCheckInTime] = useState('14:00');
   const [nights, setNights] = useState(1);
@@ -69,7 +70,10 @@ function Body() {
         setUnitId(hRes.rooms[0].id);
       } else if (hRes.podSets.length > 0) {
         setTab('pod');
-        setUnitId(hRes.podSets[0].id);
+        const firstSet = hRes.podSets[0];
+        setUnitId(firstSet.id);
+        const firstFree = firstSet.pods?.find((p) => p.status === 'available') || firstSet.pods?.[0];
+        if (firstFree) setPodBunkId(firstFree.id);
       }
       setLoading(false);
     })();
@@ -123,10 +127,15 @@ function Body() {
       setError('Guest name and a valid 10-digit phone are required.');
       return;
     }
+    if (tab === 'pod' && !podBunkId) {
+      setError('Please pick a single pod (upper or lower bunk).');
+      return;
+    }
     const checkInISO = new Date(`${checkInDate}T${checkInTime}:00`).toISOString();
     const input: WalkInInput = {
       kind: tab,
       unitId,
+      ...(tab === 'pod' && podBunkId ? { podId: podBunkId } : {}),
       checkIn: checkInISO,
       ...(tab === 'room' ? { nights } : { hours }),
       guestCount,
@@ -251,7 +260,12 @@ function Body() {
               <button
                 onClick={() => {
                   setTab('pod');
-                  if (hotel.podSets.length > 0) setUnitId(hotel.podSets[0].id);
+                  if (hotel.podSets.length > 0) {
+                    const firstSet = hotel.podSets[0];
+                    setUnitId(firstSet.id);
+                    const firstFree = firstSet.pods?.find((p) => p.status === 'available') || firstSet.pods?.[0];
+                    setPodBunkId(firstFree?.id || '');
+                  }
                 }}
                 disabled={hotel.podSets.length === 0}
                 className={cn(
@@ -286,7 +300,11 @@ function Body() {
                 : hotel.podSets.map((s) => (
                     <button
                       key={s.id}
-                      onClick={() => setUnitId(s.id)}
+                      onClick={() => {
+                        setUnitId(s.id);
+                        const firstFree = s.pods?.find((p) => p.status === 'available') || s.pods?.[0];
+                        setPodBunkId(firstFree?.id || '');
+                      }}
                       className={cn(
                         'text-left p-3 rounded-xl border transition-all',
                         unitId === s.id
@@ -301,6 +319,40 @@ function Body() {
                     </button>
                   ))}
             </div>
+            {tab === 'pod' && unitId && (() => {
+              const selectedSet = hotel.podSets.find((s) => s.id === unitId);
+              if (!selectedSet) return null;
+              const podsInSet = selectedSet.pods || [];
+              return (
+                <div className="mt-3">
+                  <div className="text-xs font-semibold text-slate-700 mb-2">Pick a bunk (single pod):</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {podsInSet.map((p) => {
+                      const isFree = p.status === 'available';
+                      const isSelected = podBunkId === p.id;
+                      const label = p.position === 'upper' ? 'Upper bunk' : p.position === 'lower' ? 'Lower bunk' : (p.position || 'Bunk');
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => isFree && setPodBunkId(p.id)}
+                          disabled={!isFree}
+                          className={cn(
+                            'text-left p-3 rounded-xl border transition-all',
+                            isSelected
+                              ? 'border-primary-500 bg-primary-50/50'
+                              : 'border-gray-200 hover:border-primary-200',
+                            !isFree && 'opacity-50 cursor-not-allowed'
+                          )}
+                        >
+                          <div className="text-sm font-semibold text-slate-900">{label}</div>
+                          <div className="text-[11px] text-slate-500">{p.podNumber} • {p.status}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </section>
 
           {/* Date/time */}

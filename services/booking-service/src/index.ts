@@ -116,6 +116,30 @@ const app = new Elysia()
     { query: t.Object({ roomId: t.String(), checkIn: t.String(), checkOut: t.String() }) }
   )
 
+  // Pod (single): returns whether THIS pod is free for the window
+  .get(
+    '/availability/pod',
+    async ({ query, set }) => {
+      const [pod] = await db.select().from(pods).where(eq(pods.id, query.podId));
+      if (!pod) {
+        set.status = 404;
+        return { success: false, message: 'Pod not found' };
+      }
+      const checkIn = new Date(query.checkIn);
+      const checkOut = new Date(query.checkOut);
+      if (!(checkIn < checkOut)) {
+        set.status = 400;
+        return { success: false, message: 'checkOut must be after checkIn' };
+      }
+      if (pod.status !== 'available') {
+        return { success: true, available: false, podId: pod.id, reason: `pod status: ${pod.status}` };
+      }
+      const overlaps = await overlappingBookings('podId', pod.id, checkIn, checkOut);
+      return { success: true, available: overlaps.length === 0, podId: pod.id };
+    },
+    { query: t.Object({ podId: t.String(), checkIn: t.String(), checkOut: t.String() }) }
+  )
+
   // Pod set: returns whether any pod in the set is free for the window
   .get(
     '/availability/pod-set',
@@ -160,6 +184,7 @@ const app = new Elysia()
       body: t.Object({
         bookingType: t.Union([t.Literal('pod'), t.Literal('room')]),
         roomId: t.Optional(t.String()),
+        podId: t.Optional(t.String()),
         podSetId: t.Optional(t.String()),
         checkIn: t.String(),
         hours: t.Optional(t.Number()),
@@ -186,20 +211,40 @@ const app = new Elysia()
       const checkOut = quote.checkOut;
 
       if (body.bookingType === 'pod') {
-        const setPods = await db
-          .select()
-          .from(pods)
-          .where(and(eq(pods.podSetId, body.podSetId!), eq(pods.status, 'available')));
-        for (const pod of setPods) {
-          const overlaps = await overlappingBookings('podId', pod.id, checkIn, checkOut);
-          if (overlaps.length === 0) {
-            podId = pod.id;
-            break;
+        // Preferred path: caller specified a single pod (single bunk)
+        if (body.podId) {
+          const [pod] = await db.select().from(pods).where(eq(pods.id, body.podId));
+          if (!pod) {
+            set.status = 404;
+            return { success: false, message: 'Pod not found' };
           }
-        }
-        if (!podId) {
-          set.status = 409;
-          return { success: false, message: 'No pods available for the selected time' };
+          if (pod.status !== 'available') {
+            set.status = 409;
+            return { success: false, message: `Pod is ${pod.status}` };
+          }
+          const overlaps = await overlappingBookings('podId', pod.id, checkIn, checkOut);
+          if (overlaps.length > 0) {
+            set.status = 409;
+            return { success: false, message: 'This pod is already booked for the selected time' };
+          }
+          podId = pod.id;
+        } else {
+          // Legacy fallback: pick first free pod in the set
+          const setPods = await db
+            .select()
+            .from(pods)
+            .where(and(eq(pods.podSetId, body.podSetId!), eq(pods.status, 'available')));
+          for (const pod of setPods) {
+            const overlaps = await overlappingBookings('podId', pod.id, checkIn, checkOut);
+            if (overlaps.length === 0) {
+              podId = pod.id;
+              break;
+            }
+          }
+          if (!podId) {
+            set.status = 409;
+            return { success: false, message: 'No pods available for the selected time' };
+          }
         }
       } else {
         const overlaps = await overlappingBookings('roomId', body.roomId!, checkIn, checkOut);
@@ -246,6 +291,7 @@ const app = new Elysia()
         userId: t.Optional(t.String()),
         bookingType: t.Union([t.Literal('pod'), t.Literal('room')]),
         roomId: t.Optional(t.String()),
+        podId: t.Optional(t.String()),
         podSetId: t.Optional(t.String()),
         checkIn: t.String(),
         hours: t.Optional(t.Number()),
@@ -356,11 +402,25 @@ async function computeQuote(body: any, set: any) {
   }
 
   if (body.bookingType === 'pod') {
-    if (!body.podSetId || !body.hours) {
+    if (!body.hours) {
       set.status = 400;
-      return { success: false, message: 'podSetId and hours are required for pod bookings' } as any;
+      return { success: false, message: 'hours is required for pod bookings' } as any;
     }
-    const [podSet] = await db.select().from(podSets).where(eq(podSets.id, body.podSetId));
+    // Caller may supply either podId (preferred) or podSetId (legacy).
+    let podSetIdToPrice: string | null = body.podSetId || null;
+    if (!podSetIdToPrice && body.podId) {
+      const [pod] = await db.select().from(pods).where(eq(pods.id, body.podId));
+      if (!pod) {
+        set.status = 404;
+        return { success: false, message: 'Pod not found' } as any;
+      }
+      podSetIdToPrice = pod.podSetId;
+    }
+    if (!podSetIdToPrice) {
+      set.status = 400;
+      return { success: false, message: 'podId or podSetId is required for pod bookings' } as any;
+    }
+    const [podSet] = await db.select().from(podSets).where(eq(podSets.id, podSetIdToPrice));
     if (!podSet) {
       set.status = 404;
       return { success: false, message: 'Pod set not found' } as any;
@@ -375,7 +435,7 @@ async function computeQuote(body: any, set: any) {
     const ownerShare = round2(taxable * POD_OWNER_SHARE);
     const naplooShare = round2(taxable - ownerShare);
     const checkOut = new Date(checkIn.getTime() + units * 60 * 60 * 1000);
-    return { success: true, bookingType: 'pod', units, baseRate, subtotal, discount, gst, total, ownerShare, naplooShare, checkOut } as any;
+    return { success: true, bookingType: 'pod', units, baseRate, subtotal, discount, gst, total, ownerShare, naplooShare, checkOut, podSetId: podSetIdToPrice } as any;
   }
 
   // room

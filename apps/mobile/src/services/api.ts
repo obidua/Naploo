@@ -273,14 +273,14 @@ export const bookingsApi = {
     request<any>('/api/v1/quote', {
       method: 'POST',
       body: input.kind === 'pod'
-        ? { bookingType: 'pod', podSetId: input.itemId, checkIn: input.checkInISO, hours: input.hours, guestCount: input.guests, couponDiscount: input.couponDiscount ?? 0 }
+        ? { bookingType: 'pod', podId: input.itemId, checkIn: input.checkInISO, hours: input.hours, guestCount: input.guests, couponDiscount: input.couponDiscount ?? 0 }
         : { bookingType: 'room', roomId: input.itemId, checkIn: input.checkInISO, nights: input.nights, guestCount: input.guests, couponDiscount: input.couponDiscount ?? 0 },
     }),
   create: (input: { kind: 'pod' | 'room'; itemId: string; checkInISO: string; hours?: number; nights?: number; guests?: number; couponDiscount?: number }) =>
     request<{ success: boolean; booking: any }>('/api/v1/bookings', {
       method: 'POST',
       body: input.kind === 'pod'
-        ? { bookingType: 'pod', podSetId: input.itemId, checkIn: input.checkInISO, hours: input.hours, guestCount: input.guests, couponDiscount: input.couponDiscount ?? 0 }
+        ? { bookingType: 'pod', podId: input.itemId, checkIn: input.checkInISO, hours: input.hours, guestCount: input.guests, couponDiscount: input.couponDiscount ?? 0 }
         : { bookingType: 'room', roomId: input.itemId, checkIn: input.checkInISO, nights: input.nights, guestCount: input.guests, couponDiscount: input.couponDiscount ?? 0 },
     }),
   list: async () => {

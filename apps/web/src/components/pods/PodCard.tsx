@@ -19,6 +19,12 @@ export interface Pod {
   image: string;
   amenities: string[];
   available: boolean;
+  /** Parent pod-set id (a set has 1 upper + 1 lower bunk). */
+  podSetId?: string;
+  /** 'upper' or 'lower' bunk within the set. */
+  position?: string;
+  /** Visible bunk label, e.g. 'POD-A1-U'. */
+  podNumber?: string;
 }
 
 interface PodCardProps {
