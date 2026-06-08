@@ -1,3 +1,4 @@
+import { registerInvestorOffers } from "./qlo2";
 import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { db } from '@naploo/db';
@@ -11,7 +12,7 @@ function genInvoice(): string {
   return `INV-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
 }
 
-const app = new Elysia()
+const appBase = new Elysia()
   .use(cors({ origin: true, credentials: true }))
 
   .get('/health', () => ({ status: 'healthy', service: 'investor-service', timestamp: new Date().toISOString() }))
@@ -105,7 +106,8 @@ const app = new Elysia()
     return { success: true, count: rows.length, earnings: rows };
   })
 
-  .listen({
+  ;
+const app = registerInvestorOffers(appBase).listen({
     hostname: process.env.INVESTOR_SERVICE_HOST || '127.0.0.1',
     port: Number(process.env.INVESTOR_SERVICE_PORT || 3004),
   });

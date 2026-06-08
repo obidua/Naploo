@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Tag, Star, Image as ImageIcon, UserCircle2, Hotel, Calendar, IndianRupee, Building2, LogOut, Loader2, AlertCircle,
+  LayoutDashboard, Tag, Star, Image as ImageIcon, UserCircle2, Gift, ConciergeBell, Flower2, Store, Hotel, Calendar, IndianRupee, Building2, LogOut, Loader2, AlertCircle,
   Sparkles, ClipboardList, Wrench, UtensilsCrossed, Settings, Users2,
   Receipt, BarChart3, Plus, FileText, Key, BookOpen,
 } from 'lucide-react';
@@ -33,6 +33,10 @@ const ALL_NAV: NavItem[] = [
   { href: '/partner/portal/pos', label: 'F&B POS', icon: UtensilsCrossed, module: 'fnb_pos' },
   { href: '/partner/portal/menu', label: 'Menu & outlets', icon: BookOpen, module: 'fnb_pos' },
   { href: '/partner/portal/services', label: 'Extras & services', icon: Sparkles, module: 'extra_services' },
+  { href: '/partner/portal/spa', label: 'Spa', icon: Flower2, module: 'spa_services' },
+  { href: '/partner/portal/outlets', label: 'Multi-outlet', icon: Store, module: 'multi_outlet' },
+  { href: '/partner/portal/loyalty', label: 'Loyalty', icon: Gift, module: 'loyalty' },
+  { href: '/partner/portal/concierge', label: 'Concierge', icon: ConciergeBell, module: 'concierge' },
   { href: '/partner/portal/rates', label: 'Rate plans', icon: BarChart3, module: 'corporate_rates' },
   { href: '/partner/portal/api-keys', label: 'OTA API keys', icon: Key, ownerOnly: true },
   { href: '/partner/portal/earnings', label: 'Earnings', icon: IndianRupee, ownerOnly: true },

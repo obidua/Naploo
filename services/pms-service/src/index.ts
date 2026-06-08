@@ -12,6 +12,7 @@ import { eq, and, desc, sql, inArray, or, lt, gt } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { registerExtensions, registerApiKeys } from "./extensions";
 import { registerQloParity } from "./qlo-parity";
+import { registerQlo2 } from "./qlo2";
 
 // ─── Helpers ──────────────────────────────────────────────────
 function round2(n: number): number {
@@ -890,7 +891,7 @@ const app = new Elysia()
     }),
   });
 
-const extendedApp = registerQloParity(registerApiKeys(registerExtensions(app)));
+const extendedApp = registerQlo2(registerQloParity(registerApiKeys(registerExtensions(app))));
 extendedApp.listen({
   hostname: process.env.PMS_SERVICE_HOST || '127.0.0.1',
   port: Number(process.env.PMS_SERVICE_PORT || 3012),

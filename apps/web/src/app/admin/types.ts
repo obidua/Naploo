@@ -394,6 +394,6 @@ export interface StaffMember {
 // Active page type for sidebar routing
 export type AdminPage = 'dashboard' | 'users' | 'partners' | 'pods' | 'rooms' |
   'bookings' | 'investors' | 'associates' | 'revenue' | 'payments' | 'payouts' |
-  'coupons' | 'tickets' | 'applications' | 'reviews' | 'locations' |
+  'coupons' | 'investor-offers' | 'naploo-team' | 'tickets' | 'applications' | 'reviews' | 'locations' |
   'commissions' | 'staff' | 'analytics' | 'marketing' | 'content' |
   'notifications' | 'settings';

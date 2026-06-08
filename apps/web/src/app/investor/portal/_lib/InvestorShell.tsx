@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Wallet, Package, TrendingUp, FileText,
+  LayoutDashboard, Wallet, Package, TrendingUp, FileText, Briefcase,
   LogOut, Loader2, AlertCircle, User,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/investor/portal', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: '/investor/portal/offers', label: 'Open offers', icon: Briefcase },
   { href: '/investor/portal/investments', label: 'My investments', icon: Package },
   { href: '/investor/portal/earnings', label: 'Earnings', icon: TrendingUp },
   { href: '/investor/portal/payouts', label: 'Payouts', icon: Wallet },

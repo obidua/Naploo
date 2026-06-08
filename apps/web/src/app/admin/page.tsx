@@ -99,7 +99,7 @@ function AdminLogin({ onLogin }: { onLogin: (email: string, pass: string) => Pro
 // ============================
 // SIDEBAR CONFIGURATION
 // ============================
-const sidebarSections: { title: string; items: { id: AdminPage; label: string; icon: React.ElementType; badge?: number }[] }[] = [
+const sidebarSections: { title: string; items: { id: AdminPage; label: string; icon: React.ElementType; badge?: number; href?: string }[] }[] = [
   {
     title: 'Overview',
     items: [
@@ -132,6 +132,7 @@ const sidebarSections: { title: string; items: { id: AdminPage; label: string; i
       { id: 'payments', label: 'Payments', icon: CreditCard },
       { id: 'payouts', label: 'Payouts', icon: IndianRupee },
       { id: 'coupons', label: 'Coupons & Deals', icon: Tag },
+      { id: 'investor-offers', label: 'Investor Offers', icon: Tag, href: '/admin/offers' },
     ],
   },
   {
@@ -147,6 +148,7 @@ const sidebarSections: { title: string; items: { id: AdminPage; label: string; i
     items: [
       { id: 'commissions', label: 'Commission Config', icon: Percent },
       { id: 'staff', label: 'Staff', icon: Shield },
+      { id: 'naploo-team', label: 'Naploo team', icon: Shield, href: '/admin/team' },
       { id: 'marketing', label: 'Marketing', icon: Megaphone },
       { id: 'content', label: 'Content', icon: BookOpen },
       { id: 'settings', label: 'Settings', icon: Settings },
