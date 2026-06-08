@@ -5,11 +5,12 @@ import { Hotel, Bed, Plus, Edit3, Save, X, Loader2 } from 'lucide-react';
 import PortalShell, { ErrorBanner } from '../_lib/PortalShell';
 import {
   getMyHotel, createRoom, updateRoom, createPodSet, updatePodSet,
-  type PartnerHotel, type PartnerRoom, type PartnerPodSet,
+  type PartnerHotel, type PartnerRoom, type PartnerPodSet, type PartnerPod,
 } from '../_lib/api';
 
 const ROOM_TYPES = ['standard', 'deluxe', 'suite', 'family', 'dormitory'];
 const BED_TYPES = ['single', 'double', 'queen', 'king', 'bunk'];
+const POD_TYPES: Array<'single' | 'double' | 'king'> = ['single', 'double', 'king'];
 
 export default function InventoryPage() {
   return (
@@ -71,7 +72,7 @@ function InventoryBody() {
             onClick={() => setTab('pods')}
             className={`flex-1 px-4 py-3 text-sm font-medium ${tab === 'pods' ? 'text-primary-700 border-b-2 border-primary-600 bg-primary-50/30' : 'text-slate-500 hover:text-slate-800'}`}
           >
-            💤 Sleeping pods ({hotel.podSets.length} sets)
+            💤 Sleeping pods ({hotel.podSets.length} sets + {hotel.standalonePods?.length || 0} single)
           </button>
         </div>
 
@@ -81,7 +82,7 @@ function InventoryBody() {
               onClick={() => setAdding(true)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white text-sm font-semibold"
             >
-              <Plus className="w-4 h-4" /> Add {tab === 'rooms' ? 'room' : 'pod set'}
+              <Plus className="w-4 h-4" /> Add {tab === 'rooms' ? 'room' : 'pod'}
             </button>
           </div>
 
@@ -95,10 +96,13 @@ function InventoryBody() {
             </>
           ) : (
             <>
-              {hotel.podSets.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-8">No pod sets yet — click "Add pod set" to start.</p>
+              {hotel.podSets.length === 0 && !(hotel.standalonePods?.length) ? (
+                <p className="text-sm text-slate-500 text-center py-8">No pods yet — add a stacked set or a standalone pod.</p>
               ) : (
-                hotel.podSets.map((s) => <PodSetCard key={s.id} podSet={s} onSaved={reload} />)
+                <>
+                  {(hotel.standalonePods || []).map((p) => <StandalonePodCard key={p.id} pod={p} />)}
+                  {hotel.podSets.map((s) => <PodSetCard key={s.id} podSet={s} onSaved={reload} />)}
+                </>
               )}
             </>
           )}
@@ -259,6 +263,14 @@ function PodSetCard({ podSet, onSaved }: { podSet: PartnerPodSet; onSaved: () =>
           <p className="text-xs text-slate-500 mt-1">
             Floor {podSet.floor}{podSet.section ? ` • ${podSet.section}` : ''} • {podSet.pods.length} pods
           </p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {podSet.pods.map((pod) => (
+              <span key={pod.id} className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1 text-xs text-slate-600">
+                <Bed className="w-3 h-3 text-primary-600" />
+                {pod.podNumber}{pod.displayName ? ` — ${pod.displayName}` : ''} · {pod.position} · {pod.podType} · {pod.maxOccupancy} pax
+              </span>
+            ))}
+          </div>
         </div>
         <button onClick={() => setEditing(!editing)} className="inline-flex items-center gap-1 text-sm text-primary-700 hover:text-primary-800">
           {editing ? <><X className="w-4 h-4" /> Cancel</> : <><Edit3 className="w-4 h-4" /> Edit</>}
@@ -309,6 +321,28 @@ function PodSetCard({ podSet, onSaved }: { podSet: PartnerPodSet; onSaved: () =>
           </button>
         </div>
       )}
+    </article>
+  );
+}
+
+function StandalonePodCard({ pod }: { pod: PartnerPod }) {
+  return (
+    <article className="border border-violet-200 bg-violet-50/30 rounded-2xl p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-slate-900">Single pod {pod.podNumber}{pod.displayName ? ` — ${pod.displayName}` : ''}</h3>
+            <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-violet-100 text-violet-700">standalone</span>
+            <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">{pod.status}</span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            {pod.podType} size · up to {pod.maxOccupancy} guest{pod.maxOccupancy > 1 ? 's' : ''}{pod.dimensions ? ` · ${pod.dimensions}` : ''}
+          </p>
+        </div>
+        <div className="text-right text-sm font-semibold text-slate-800">
+          ₹{pod.hourlyRate.toLocaleString('en-IN')}<span className="text-xs font-normal text-slate-500">/hr</span>
+        </div>
+      </div>
     </article>
   );
 }
@@ -387,7 +421,13 @@ function AddRoomModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose:
 }
 
 function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClose: () => void; onSaved: () => void }) {
-  const [draft, setDraft] = useState({ setNumber: '', hourlyRate: 150, floor: 1, section: '' });
+  const [draft, setDraft] = useState({
+    mode: 'set' as 'set' | 'single',
+    setNumber: '', podNumber: '', podName: '',
+    upperPodNumber: '', upperPodName: '', lowerPodNumber: '', lowerPodName: '',
+    podType: 'single' as 'single' | 'double' | 'king', maxOccupancy: 1, dimensions: '',
+    hourlyRate: 150, floor: 1, section: '',
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -397,21 +437,25 @@ function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClos
     const res = await createPodSet(hotelId, draft as any);
     setSaving(false);
     if (!res.ok) {
-      setError(res.error || 'Failed to add pod set');
+      setError(res.error || 'Failed to add pod');
       return;
     }
     onSaved();
   }
 
   return (
-    <Modal title="Add new pod set (2 stacked pods)" onClose={onClose}>
+    <Modal title={draft.mode === 'set' ? 'Add pod set (upper + lower)' : 'Add single standalone pod'} onClose={onClose}>
+      <div className="grid grid-cols-2 gap-2 mb-4 rounded-xl bg-slate-100 p-1">
+        <button type="button" onClick={() => setDraft({ ...draft, mode: 'set' })} className={`rounded-lg px-3 py-2 text-sm font-semibold ${draft.mode === 'set' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500'}`}>Stacked set</button>
+        <button type="button" onClick={() => setDraft({ ...draft, mode: 'single' })} className={`rounded-lg px-3 py-2 text-sm font-semibold ${draft.mode === 'single' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500'}`}>Single pod</button>
+      </div>
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Set number *">
+        <Field label={draft.mode === 'set' ? 'Set number *' : 'Pod group / code *'}>
           <input
             value={draft.setNumber}
             onChange={(e) => setDraft({ ...draft, setNumber: e.target.value })}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-            placeholder="SET-001"
+            placeholder={draft.mode === 'set' ? 'SET-001' : 'POD-001'}
           />
         </Field>
         <Field label="Hourly rate (₹) *">
@@ -421,6 +465,42 @@ function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClos
             onChange={(e) => setDraft({ ...draft, hourlyRate: Number(e.target.value) })}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
           />
+        </Field>
+        {draft.mode === 'single' ? (
+          <>
+            <Field label="Pod number *">
+              <input value={draft.podNumber} onChange={(e) => setDraft({ ...draft, podNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="POD-001-S" />
+            </Field>
+            <Field label="Pod display name">
+              <input value={draft.podName} onChange={(e) => setDraft({ ...draft, podName: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Solo king pod" />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field label="Upper pod number">
+              <input value={draft.upperPodNumber} onChange={(e) => setDraft({ ...draft, upperPodNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={`${draft.setNumber || 'SET-001'}-U`} />
+            </Field>
+            <Field label="Upper pod name">
+              <input value={draft.upperPodName} onChange={(e) => setDraft({ ...draft, upperPodName: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Upper capsule" />
+            </Field>
+            <Field label="Lower pod number">
+              <input value={draft.lowerPodNumber} onChange={(e) => setDraft({ ...draft, lowerPodNumber: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={`${draft.setNumber || 'SET-001'}-L`} />
+            </Field>
+            <Field label="Lower pod name">
+              <input value={draft.lowerPodName} onChange={(e) => setDraft({ ...draft, lowerPodName: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Lower capsule" />
+            </Field>
+          </>
+        )}
+        <Field label="Pod size">
+          <select value={draft.podType} onChange={(e) => setDraft({ ...draft, podType: e.target.value as any, maxOccupancy: e.target.value === 'king' ? 3 : e.target.value === 'double' ? 2 : 1 })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+            {POD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </Field>
+        <Field label="Max occupancy">
+          <input type="number" min={1} max={4} value={draft.maxOccupancy} onChange={(e) => setDraft({ ...draft, maxOccupancy: Number(e.target.value) })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </Field>
+        <Field label="Dimensions">
+          <input value={draft.dimensions} onChange={(e) => setDraft({ ...draft, dimensions: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="2060 x 1140 x 2400 mm" />
         </Field>
         <Field label="Floor">
           <input
@@ -439,14 +519,16 @@ function AddPodSetModal({ hotelId, onClose, onSaved }: { hotelId: string; onClos
           />
         </Field>
       </div>
-      <p className="text-xs text-slate-500 mt-3">Each set creates 2 pods automatically (upper + lower).</p>
+      <p className="text-xs text-slate-500 mt-3">
+        {draft.mode === 'set' ? 'Each set creates 2 pods. Numbers can be manual or auto-assigned as -U and -L.' : 'Use single pod when layout has space for one standalone capsule only.'}
+      </p>
       {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
       <button
         onClick={save}
-        disabled={saving || !draft.setNumber || !draft.hourlyRate}
+        disabled={saving || !draft.setNumber || !draft.hourlyRate || (draft.mode === 'single' && !draft.podNumber)}
         className="w-full mt-4 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-violet-600 text-white font-semibold disabled:opacity-60"
       >
-        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Add pod set
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Add {draft.mode === 'set' ? 'pod set' : 'single pod'}
       </button>
     </Modal>
   );

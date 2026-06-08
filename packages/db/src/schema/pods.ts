@@ -6,7 +6,8 @@ import { users } from './users';
 // Enums
 export const podTypeEnum = pgEnum('pod_type', [
   'single',    // Single occupancy
-  'double'     // Double occupancy
+  'double',    // Double occupancy
+  'king'       // Large / king pod occupancy
 ]);
 
 export const podStatusEnum = pgEnum('pod_status', [
@@ -32,7 +33,7 @@ export const podSets = pgTable('pod_sets', {
   // Location within premises
   floor: integer('floor').default(1),
   section: varchar('section', { length: 50 }),
-  setNumber: varchar('set_number', { length: 20 }).notNull(),
+  setNumber: varchar('set_number', { length: 40 }).notNull(),
   
   // Pricing
   hourlyRate: decimal('hourly_rate', { precision: 10, scale: 2 }).default('150').notNull(),
@@ -48,12 +49,18 @@ export const podSets = pgTable('pod_sets', {
 // Individual Pods
 export const pods = pgTable('pods', {
   id: uuid('id').primaryKey().defaultRandom(),
-  podSetId: uuid('pod_set_id').references(() => podSets.id).notNull(),
+  partnerId: uuid('partner_id').references(() => partners.id),
+  podSetId: uuid('pod_set_id').references(() => podSets.id),
   
   // Pod Details
-  podNumber: varchar('pod_number', { length: 20 }).notNull(),
-  position: varchar('position', { length: 10 }).notNull(), // 'upper' or 'lower'
+  podNumber: varchar('pod_number', { length: 40 }).notNull(),
+  displayName: varchar('display_name', { length: 80 }),
+  position: varchar('position', { length: 10 }).notNull(), // 'upper', 'lower' or 'single'
   podType: podTypeEnum('pod_type').default('single').notNull(),
+  maxOccupancy: integer('max_occupancy').default(1).notNull(),
+  dimensions: varchar('dimensions', { length: 120 }),
+  hourlyRate: decimal('hourly_rate', { precision: 10, scale: 2 }),
+  isStandalone: boolean('is_standalone').default(false).notNull(),
   
   // Status
   status: podStatusEnum('status').default('available').notNull(),

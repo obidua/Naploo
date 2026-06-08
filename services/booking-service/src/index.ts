@@ -326,7 +326,10 @@ const app = new Elysia()
     const pRooms = await db.select({ id: rooms.id }).from(rooms).where(eq(rooms.partnerId, params.partnerId));
     const pSets = await db.select({ id: podSets.id }).from(podSets).where(eq(podSets.partnerId, params.partnerId));
     const setIds = pSets.map((s) => s.id);
-    const pPods = setIds.length ? await db.select({ id: pods.id }).from(pods).where(inArray(pods.podSetId, setIds)) : [];
+    const pPods = await db
+      .select({ id: pods.id })
+      .from(pods)
+      .where(or(eq(pods.partnerId, params.partnerId), setIds.length ? inArray(pods.podSetId, setIds) : eq(pods.partnerId, params.partnerId)));
     const roomIds = pRooms.map((r) => r.id);
     const podIds = pPods.map((p) => p.id);
     if (!roomIds.length && !podIds.length) return { success: true, count: 0, bookings: [] };
@@ -408,25 +411,27 @@ async function computeQuote(body: any, set: any) {
     }
     // Caller may supply either podId (preferred) or podSetId (legacy).
     let podSetIdToPrice: string | null = body.podSetId || null;
+    let podForPricing: typeof pods.$inferSelect | undefined;
     if (!podSetIdToPrice && body.podId) {
       const [pod] = await db.select().from(pods).where(eq(pods.id, body.podId));
       if (!pod) {
         set.status = 404;
         return { success: false, message: 'Pod not found' } as any;
       }
+      podForPricing = pod;
       podSetIdToPrice = pod.podSetId;
     }
-    if (!podSetIdToPrice) {
+    if (!podSetIdToPrice && !podForPricing?.hourlyRate) {
       set.status = 400;
       return { success: false, message: 'podId or podSetId is required for pod bookings' } as any;
     }
-    const [podSet] = await db.select().from(podSets).where(eq(podSets.id, podSetIdToPrice));
-    if (!podSet) {
+    const [podSet] = podSetIdToPrice ? await db.select().from(podSets).where(eq(podSets.id, podSetIdToPrice)) : [];
+    if (podSetIdToPrice && !podSet) {
       set.status = 404;
       return { success: false, message: 'Pod set not found' } as any;
     }
     const units = body.hours;
-    const baseRate = Number(podSet.hourlyRate);
+    const baseRate = Number(podForPricing?.hourlyRate ?? podSet?.hourlyRate ?? 150);
     const subtotal = round2(baseRate * units);
     const discount = round2(body.couponDiscount ?? 0);
     const taxable = Math.max(0, subtotal - discount);
@@ -435,7 +440,7 @@ async function computeQuote(body: any, set: any) {
     const ownerShare = round2(taxable * POD_OWNER_SHARE);
     const naplooShare = round2(taxable - ownerShare);
     const checkOut = new Date(checkIn.getTime() + units * 60 * 60 * 1000);
-    return { success: true, bookingType: 'pod', units, baseRate, subtotal, discount, gst, total, ownerShare, naplooShare, checkOut, podSetId: podSetIdToPrice } as any;
+    return { success: true, bookingType: 'pod', units, baseRate, subtotal, discount, gst, total, ownerShare, naplooShare, checkOut, podSetId: podSetIdToPrice, podId: body.podId } as any;
   }
 
   // room
@@ -474,10 +479,10 @@ async function enrich(rows: any[]) {
   const podIds = [...new Set(rows.map((b) => b.podId).filter(Boolean))];
   const roomRows = roomIds.length ? await db.select().from(rooms).where(inArray(rooms.id, roomIds)) : [];
   const podRows = podIds.length ? await db.select().from(pods).where(inArray(pods.id, podIds)) : [];
-  const setIds = [...new Set(podRows.map((p) => p.podSetId))];
+  const setIds = [...new Set(podRows.map((p) => p.podSetId).filter(Boolean))];
   const setRows = setIds.length ? await db.select().from(podSets).where(inArray(podSets.id, setIds)) : [];
   const partnerIds = [
-    ...new Set([...roomRows.map((r) => r.partnerId), ...setRows.map((s) => s.partnerId)].filter(Boolean)),
+    ...new Set([...roomRows.map((r) => r.partnerId), ...setRows.map((s) => s.partnerId), ...podRows.map((p) => p.partnerId)].filter(Boolean)),
   ];
   const partnerRows = partnerIds.length ? await db.select().from(partners).where(inArray(partners.id, partnerIds)) : [];
 
@@ -494,8 +499,8 @@ async function enrich(rows: any[]) {
     } else if (b.podId) {
       const pod = podRows.find((x) => x.id === b.podId);
       const s = setRows.find((x) => x.id === pod?.podSetId);
-      const p = partnerOf(s?.partnerId);
-      unit = pod ? { type: 'pod', podNumber: pod.podNumber, position: pod.position, setNumber: s?.setNumber } : null;
+      const p = partnerOf(s?.partnerId || pod?.partnerId);
+      unit = pod ? { type: 'pod', podNumber: pod.podNumber, position: pod.position, podType: pod.podType, maxOccupancy: pod.maxOccupancy, setNumber: s?.setNumber } : null;
       hotel = p ? { id: p.id, name: p.businessName, city: p.city, address: p.address } : null;
     }
     return { ...b, unit, hotel };

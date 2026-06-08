@@ -28,10 +28,14 @@ interface HotelCard {
   minPodHourlyRate?: number | null;
   roomCount?: number;
   podSetCount?: number;
+  podCount?: number;
+  standalonePodCount?: number;
   distanceKm?: number;
   summary?: {
     roomCount: number;
     podSetCount: number;
+    podCount?: number;
+    standalonePodCount?: number;
     minRoomRate: number | null;
     minPodHourlyRate: number | null;
   };
@@ -62,7 +66,22 @@ interface BackendPodSet {
   section?: string;
   hourlyRate: number;
   isActive: boolean;
-  pods: Array<{ id: string; podNumber: string; position: string; status: string; features?: Record<string, boolean> }>;
+  pods: BackendPod[];
+}
+
+interface BackendPod {
+  id: string;
+  podSetId?: string | null;
+  podNumber: string;
+  displayName?: string;
+  position: string;
+  podType?: 'single' | 'double' | 'king';
+  maxOccupancy?: number;
+  dimensions?: string;
+  hourlyRate?: number;
+  isStandalone?: boolean;
+  status: string;
+  features?: Record<string, boolean>;
 }
 
 // ─── Adapters ─────────────────────────────────────────────────
@@ -81,7 +100,7 @@ function cardToProperty(h: HotelCard): Property {
     description: h.description ?? '',
     images,
     amenities: h.amenities ?? [],
-    podsCount: (h.podSetCount ?? h.summary?.podSetCount ?? 0) * 2,
+    podsCount: h.podCount ?? h.summary?.podCount ?? ((h.podSetCount ?? h.summary?.podSetCount ?? 0) * 2 + (h.standalonePodCount ?? h.summary?.standalonePodCount ?? 0)),
     roomsCount: h.roomCount ?? h.summary?.roomCount ?? 0,
     podStartPrice: minPod ?? 0,
     roomStartPrice: minRoom ?? 0,
@@ -131,14 +150,14 @@ function podSetToPods(ps: BackendPodSet, hotel: HotelCard): Pod[] {
     const positionLabel = p.position === 'upper' ? 'Upper bunk' : p.position === 'lower' ? 'Lower bunk' : (p.position || 'Bunk');
     return {
       id: p.id, // real pod id (single bunk)
-      name: `Pod ${ps.setNumber} — ${positionLabel}`,
+      name: p.displayName || `Pod ${ps.setNumber} — ${positionLabel}`,
       series: ps.section || 'Naploo Smart Pod',
       hotelId: hotel.id,
       hotelName: hotel.businessName,
       hotelType: hotel.businessType,
       location: hotel.address,
       city: hotel.city,
-      price: Number(ps.hourlyRate),
+      price: Number(p.hourlyRate ?? ps.hourlyRate),
       rating: hotel.rating ?? 0,
       reviews: hotel.totalReviews ?? 0,
       image: hotelImages[0],
@@ -149,6 +168,36 @@ function podSetToPods(ps: BackendPodSet, hotel: HotelCard): Pod[] {
       podNumber: p.podNumber,
     };
   });
+}
+
+function standalonePodToPod(p: BackendPod, hotel: HotelCard): Pod {
+  const hotelImages = hotel.images && hotel.images.length ? hotel.images : [FALLBACK_IMAGE];
+  const f = p.features || {};
+  const amenities: string[] = [];
+  if (f.hasAC) amenities.push('AC');
+  if (f.hasTV) amenities.push('TV');
+  if (f.hasCharger) amenities.push('Charger');
+  if (f.hasLight) amenities.push('Reading Light');
+  if (f.hasVentilation) amenities.push('Ventilation');
+  return {
+    id: p.id,
+    name: p.displayName || `Pod ${p.podNumber}`,
+    series: `${p.podType || 'single'} standalone`,
+    hotelId: hotel.id,
+    hotelName: hotel.businessName,
+    hotelType: hotel.businessType,
+    location: hotel.address,
+    city: hotel.city,
+    price: Number(p.hourlyRate ?? 0),
+    rating: hotel.rating ?? 0,
+    reviews: hotel.totalReviews ?? 0,
+    image: hotelImages[0],
+    amenities: amenities.length ? amenities : ['AC', 'Charger', 'Reading Light'],
+    available: p.status === 'available',
+    podSetId: p.podSetId || undefined,
+    position: p.position,
+    podNumber: p.podNumber,
+  };
 }
 
 const STATUS_MAP: Record<string, BookingStatus> = {
@@ -230,19 +279,26 @@ export async function nearbyHotels(lat: number, lng: number, radiusKm = 25, mode
 export async function getHotel(id: string): Promise<{ property: Property; rooms: Room[]; pods: Pod[] } | null> {
   const res = await api.get<{ success: boolean; hotel: any }>(`/api/v1/hotels/${id}`);
   if (res.error || !res.data?.hotel) return null;
-  const h = res.data.hotel as HotelCard & { rooms: BackendRoom[]; podSets: BackendPodSet[] };
+  const h = res.data.hotel as HotelCard & { rooms: BackendRoom[]; podSets: BackendPodSet[]; standalonePods?: BackendPod[] };
   const hotelImages = h.images && h.images.length ? h.images : [FALLBACK_IMAGE];
   const roomRates = (h.rooms || []).map((r) => Number(r.dailyRate)).filter((n) => !isNaN(n));
-  const podRates = (h.podSets || []).map((p) => Number(p.hourlyRate)).filter((n) => !isNaN(n));
+  const standalonePods = h.standalonePods || [];
+  const podRates = [
+    ...(h.podSets || []).map((p) => Number(p.hourlyRate)),
+    ...standalonePods.map((p) => Number(p.hourlyRate)),
+  ].filter((n) => !isNaN(n));
   const property: Property = {
     ...cardToProperty(h),
     roomsCount: (h.rooms || []).filter((r) => r.isActive).length,
-    podsCount: (h.podSets || []).filter((p) => p.isActive).reduce((sum, p) => sum + (p.pods?.length || 0), 0),
+    podsCount: (h.podSets || []).filter((p) => p.isActive).reduce((sum, p) => sum + (p.pods?.length || 0), 0) + standalonePods.length,
     roomStartPrice: roomRates.length ? Math.min(...roomRates) : 0,
     podStartPrice: podRates.length ? Math.min(...podRates) : 0,
   };
   const rooms = (h.rooms || []).filter((r) => r.isActive).map((r) => backendRoomToRoom(r, hotelImages));
-  const pods = (h.podSets || []).filter((p) => p.isActive).flatMap((p) => podSetToPods(p, h));
+  const pods = [
+    ...(h.podSets || []).filter((p) => p.isActive).flatMap((p) => podSetToPods(p, h)),
+    ...standalonePods.map((p) => standalonePodToPod(p, h)),
+  ];
   return { property, rooms, pods };
 }
 

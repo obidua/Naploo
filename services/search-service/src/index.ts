@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { db } from '@naploo/db';
-import { partners, rooms, podSets } from '@naploo/db/schema';
+import { partners, rooms, podSets, pods } from '@naploo/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 function parseJson<T>(value: unknown, fallback: T): T {
@@ -39,11 +39,16 @@ async function buildCards(rows: any[]) {
   if (!ids.length) return [];
   const allRooms = await db.select().from(rooms);
   const allSets = await db.select().from(podSets);
+  const allPods = await db.select().from(pods);
   return rows.map((p) => {
     const pRooms = allRooms.filter((r) => r.partnerId === p.id && r.isActive);
     const pSets = allSets.filter((s) => s.partnerId === p.id && s.isActive);
+    const pStandalonePods = allPods.filter((pod) => pod.partnerId === p.id && (!pod.podSetId || pod.isStandalone) && pod.status !== 'inactive');
     const roomRates = pRooms.map((r) => Number(r.dailyRate)).filter((n) => !isNaN(n));
-    const podRates = pSets.map((s) => Number(s.hourlyRate)).filter((n) => !isNaN(n));
+    const podRates = [
+      ...pSets.map((s) => Number(s.hourlyRate)),
+      ...pStandalonePods.map((pod) => Number(pod.hourlyRate)),
+    ].filter((n) => !isNaN(n));
     return {
       id: p.id,
       businessName: p.businessName,
@@ -62,7 +67,9 @@ async function buildCards(rows: any[]) {
       minPodHourlyRate: podRates.length ? Math.min(...podRates) : null,
       roomCount: pRooms.length,
       podSetCount: pSets.length,
-      hasPods: pSets.length > 0,
+      standalonePodCount: pStandalonePods.length,
+      podCount: pSets.length * 2 + pStandalonePods.length,
+      hasPods: pSets.length > 0 || pStandalonePods.length > 0,
       hasRooms: pRooms.length > 0,
     };
   });

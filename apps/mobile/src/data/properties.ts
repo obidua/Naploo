@@ -153,7 +153,7 @@ export async function loadPropertyDetail(propertyId: string): Promise<{
 // matches what the partner configured in the PMS — no more +50 markup
 // fudge factor.
 export function getPodLayoutFromSets(propertyId: string, livePodSets: any[]): any {
-  const total = livePodSets.reduce((acc, s) => acc + (s.pods?.length || 2), 0);
+  const total = livePodSets.reduce((acc, s) => acc + (s.isStandalone ? 1 : (s.pods?.length || 2)), 0);
   const N = livePodSets.length || 1;
   const cols = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(N))));
   const rows = Math.max(1, Math.ceil(N / cols));
@@ -169,18 +169,20 @@ export function getPodLayoutFromSets(propertyId: string, livePodSets: any[]): an
       const set = livePodSets[idx];
       const hourlyRate = Number(set?.price ?? set?.hourlyRate) || 0;
       const innerPods: any[] = set?.pods || [];
+      const standalone = set?.isStandalone || innerPods.some((p) => p.position === 'single');
       const upper = innerPods.find((p) => p.position === 'upper') || innerPods[1];
       const lower = innerPods.find((p) => p.position === 'lower') || innerPods[0];
+      const single = innerPods.find((p) => p.position === 'single') || innerPods[0];
       // Render both upper and lower for every cell. When the set has
       // < 2 actual pods we still draw a maintenance placeholder so the
       // grid stays symmetrical.
-      const positions: Array<'upper' | 'lower'> = ['upper', 'lower'];
+      const positions: Array<'upper' | 'lower' | 'single'> = standalone ? ['single'] : ['upper', 'lower'];
       for (const position of positions) {
-        const p = position === 'upper' ? upper : lower;
+        const p = position === 'single' ? single : position === 'upper' ? upper : lower;
         if (!set) {
           slots.push({
             id: `${propertyId}-${rowLetter}${c + 1}-${position}-empty`,
-            label: `${rowLetter}${c + 1}-${position === 'upper' ? 'U' : 'L'}`,
+            label: `${rowLetter}${c + 1}-${position === 'single' ? 'S' : position === 'upper' ? 'U' : 'L'}`,
             row: r,
             col: c,
             position,
@@ -194,7 +196,7 @@ export function getPodLayoutFromSets(propertyId: string, livePodSets: any[]): an
           continue;
         }
         const status: 'available' | 'occupied' | 'maintenance' = p?.status === 'available' ? 'available' : p?.status === 'occupied' ? 'occupied' : 'maintenance';
-        const type: 'single' | 'double' = (p?.podType === 'double' ? 'double' : 'single');
+        const type = p?.podType === 'king' ? 'king' : p?.podType === 'double' ? 'double' : 'single';
         slots.push({
           // Real INDIVIDUAL pod (bunk) id — so tapping one bunk only highlights
           // that bunk, not its partner in the same set. Fall back to a
@@ -202,17 +204,19 @@ export function getPodLayoutFromSets(propertyId: string, livePodSets: any[]): an
           id: p?.id || `${set.id}-${position}`,
           podId: p?.id,
           podSetId: set.id,
-          label: `${rowLetter}${c + 1}-${position === 'upper' ? 'U' : 'L'}`,
+          label: `${rowLetter}${c + 1}-${position === 'single' ? 'S' : position === 'upper' ? 'U' : 'L'}`,
           row: r,
           col: c,
           position,
           type,
           series: set.series || 'Naploo',
-          hourlyRate,
+          hourlyRate: Number(p?.hourlyRate ?? hourlyRate),
           status,
           amenities: [...AMENITIES],
           features: p?.features || FEATURES,
           setNumber: set.setNumber,
+          maxOccupancy: p?.maxOccupancy,
+          dimensions: p?.dimensions,
         });
       }
     }

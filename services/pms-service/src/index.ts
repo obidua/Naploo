@@ -255,8 +255,8 @@ const app = new Elysia()
           set.status = 404;
           return { success: false, message: 'Pod not found' };
         }
-        const [ps] = await db.select().from(podSets).where(eq(podSets.id, pod.podSetId));
-        if (!ps || ps.partnerId !== partnerId) {
+        const [ps] = pod.podSetId ? await db.select().from(podSets).where(eq(podSets.id, pod.podSetId)) : [];
+        if ((ps && ps.partnerId !== partnerId) || (!ps && pod.partnerId !== partnerId)) {
           set.status = 404;
           return { success: false, message: 'Pod not found in your hotel' };
         }
@@ -272,7 +272,7 @@ const app = new Elysia()
       }
       units = body.hours || 1;
       checkOut = new Date(checkIn.getTime() + units * 60 * 60 * 1000);
-      baseRate = Number(podSetForPricing!.hourlyRate);
+      baseRate = Number(chosenPod?.hourlyRate ?? podSetForPricing?.hourlyRate ?? 150);
       bookingType = 'pod';
       if (chosenPod) {
         if (chosenPod.status !== 'available') {
@@ -659,7 +659,10 @@ const app = new Elysia()
     const partnerRooms = await db.select({ id: rooms.id }).from(rooms).where(eq(rooms.partnerId, partnerId));
     const partnerSets = await db.select({ id: podSets.id }).from(podSets).where(eq(podSets.partnerId, partnerId));
     const setIds = partnerSets.map((s) => s.id);
-    const partnerPods = setIds.length ? await db.select({ id: pods.id }).from(pods).where(inArray(pods.podSetId, setIds)) : [];
+    const partnerPods = await db
+      .select({ id: pods.id })
+      .from(pods)
+      .where(or(eq(pods.partnerId, partnerId), setIds.length ? inArray(pods.podSetId, setIds) : eq(pods.partnerId, partnerId)));
     const roomIds = partnerRooms.map((r) => r.id);
     const podIds = partnerPods.map((p) => p.id);
 
@@ -770,6 +773,11 @@ const app = new Elysia()
     // For each room: latest status (or "vacant_clean" default)
     const partnerRooms = await db.select().from(rooms).where(eq(rooms.partnerId, link.partnerId));
     const partnerSets = await db.select().from(podSets).where(eq(podSets.partnerId, link.partnerId));
+    const setIds = partnerSets.map((s) => s.id);
+    const partnerPods = await db
+      .select()
+      .from(pods)
+      .where(or(eq(pods.partnerId, link.partnerId), setIds.length ? inArray(pods.podSetId, setIds) : eq(pods.partnerId, link.partnerId)));
 
     const latestStatus = await db
       .select()
@@ -794,6 +802,16 @@ const app = new Elysia()
         id: s.id, setNumber: s.setNumber, floor: s.floor,
         status: 'vacant_clean', // pod-level status pending
       })),
+      standalonePods: partnerPods
+        .filter((p) => !p.podSetId || p.isStandalone)
+        .map((p) => ({
+          id: p.id,
+          podNumber: p.podNumber,
+          displayName: p.displayName,
+          podType: p.podType,
+          maxOccupancy: p.maxOccupancy,
+          status: podStatusMap.get(p.id) || 'vacant_clean',
+        })),
     };
   })
 

@@ -18,6 +18,21 @@ export interface PartnerRoom {
   description?: string;
 }
 
+export interface PartnerPod {
+  id: string;
+  partnerId?: string;
+  podSetId?: string | null;
+  podNumber: string;
+  displayName?: string;
+  position: string;
+  podType: 'single' | 'double' | 'king';
+  maxOccupancy: number;
+  dimensions?: string;
+  hourlyRate: number;
+  isStandalone: boolean;
+  status: string;
+}
+
 export interface PartnerPodSet {
   id: string;
   setNumber: string;
@@ -25,7 +40,7 @@ export interface PartnerPodSet {
   hourlyRate: number;
   floor: number;
   isActive: boolean;
-  pods: { id: string; podNumber: string; position: string; status: string }[];
+  pods: PartnerPod[];
 }
 
 export interface PartnerHotel {
@@ -42,6 +57,7 @@ export interface PartnerHotel {
   status: string;
   rooms: PartnerRoom[];
   podSets: PartnerPodSet[];
+  standalonePods?: PartnerPod[];
 }
 
 export interface PartnerBooking {
@@ -102,8 +118,20 @@ export async function updateRoom(roomId: string, patch: Partial<PartnerRoom>): P
 }
 
 export async function createPodSet(hotelId: string, input: {
+  mode?: 'set' | 'single';
   setNumber: string;
+  podNumber?: string;
+  podName?: string;
+  upperPodNumber?: string;
+  upperPodName?: string;
+  lowerPodNumber?: string;
+  lowerPodName?: string;
+  podType?: 'single' | 'double' | 'king';
+  maxOccupancy?: number;
+  dimensions?: string;
   hourlyRate: number;
+  upperHourlyRate?: number;
+  lowerHourlyRate?: number;
   floor?: number;
   section?: string;
   ownership?: string;

@@ -3,7 +3,7 @@ import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { db } from '@naploo/db';
 import { partners, rooms, podSets, pods } from '@naploo/db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, or } from 'drizzle-orm';
 
 // ─── Helpers ──────────────────────────────────────────────────
 // Columns like amenities/images are stored as jsonb but were seeded as
@@ -90,9 +90,16 @@ function shapePodSet(ps: any, podList: any[]) {
     isActive: ps.isActive,
     pods: setPods.map((p) => ({
       id: p.id,
+      partnerId: p.partnerId,
+      podSetId: p.podSetId,
       podNumber: p.podNumber,
+      displayName: p.displayName,
       position: p.position,
       podType: p.podType,
+      maxOccupancy: p.maxOccupancy ?? (p.podType === 'double' ? 2 : p.podType === 'king' ? 3 : 1),
+      dimensions: p.dimensions,
+      hourlyRate: num(p.hourlyRate) ?? num(ps.hourlyRate) ?? 0,
+      isStandalone: !!p.isStandalone,
       status: p.status,
       features: {
         hasAC: p.hasAC,
@@ -104,6 +111,39 @@ function shapePodSet(ps: any, podList: any[]) {
     })),
   };
 }
+
+function shapeStandalonePod(p: any) {
+  return {
+    id: p.id,
+    partnerId: p.partnerId,
+    podSetId: p.podSetId,
+    podNumber: p.podNumber,
+    displayName: p.displayName,
+    position: p.position,
+    podType: p.podType,
+    maxOccupancy: p.maxOccupancy ?? (p.podType === 'double' ? 2 : p.podType === 'king' ? 3 : 1),
+    dimensions: p.dimensions,
+    hourlyRate: num(p.hourlyRate) ?? 0,
+    isStandalone: !!p.isStandalone,
+    status: p.status,
+    features: {
+      hasAC: p.hasAC,
+      hasTV: p.hasTV,
+      hasCharger: p.hasCharger,
+      hasLight: p.hasLight,
+      hasVentilation: p.hasVentilation,
+    },
+  };
+}
+
+const occupancyForType = (type?: string, override?: number) => {
+  if (override && override > 0) return override;
+  if (type === 'king') return 3;
+  if (type === 'double') return 2;
+  return 1;
+};
+
+const autoPodNumber = (prefix: string, suffix: string) => `${prefix}-${suffix}`;
 
 const app = new Elysia()
   .use(cors({ origin: true, credentials: true }))
@@ -131,20 +171,27 @@ const app = new Elysia()
 
       const allRooms = ids.length ? await db.select().from(rooms).where(inArray(rooms.partnerId, ids)) : [];
       const allSets = ids.length ? await db.select().from(podSets).where(inArray(podSets.partnerId, ids)) : [];
+      const allPods = ids.length ? await db.select().from(pods).where(inArray(pods.partnerId, ids)) : [];
 
       const data = rows.map((p) => {
         const pRooms = allRooms.filter((r) => r.partnerId === p.id && r.isActive);
         const pSets = allSets.filter((s) => s.partnerId === p.id && s.isActive);
+        const pStandalonePods = allPods.filter((pod) => pod.partnerId === p.id && (!pod.podSetId || pod.isStandalone) && pod.status !== 'inactive');
         const roomRates = pRooms.map((r) => Number(r.dailyRate)).filter((n) => !isNaN(n));
-        const podRates = pSets.map((s) => Number(s.hourlyRate)).filter((n) => !isNaN(n));
+        const podRates = [
+          ...pSets.map((s) => Number(s.hourlyRate)),
+          ...pStandalonePods.map((pod) => Number(pod.hourlyRate)),
+        ].filter((n) => !isNaN(n));
         return {
           ...shapeHotel(p),
           summary: {
             roomCount: pRooms.length,
             podSetCount: pSets.length,
+            standalonePodCount: pStandalonePods.length,
+            podCount: pSets.length * 2 + pStandalonePods.length,
             minRoomRate: roomRates.length ? Math.min(...roomRates) : null,
             minPodHourlyRate: podRates.length ? Math.min(...podRates) : null,
-            hasPods: pSets.length > 0,
+            hasPods: pSets.length > 0 || pStandalonePods.length > 0,
             hasRooms: pRooms.length > 0,
           },
         };
@@ -170,13 +217,14 @@ const app = new Elysia()
     const pRooms = await db.select().from(rooms).where(eq(rooms.partnerId, p.id));
     const pSets = await db.select().from(podSets).where(eq(podSets.partnerId, p.id));
     const setIds = pSets.map((s) => s.id);
-    const pPods = setIds.length ? await db.select().from(pods).where(inArray(pods.podSetId, setIds)) : [];
+    const pPods = await db.select().from(pods).where(or(eq(pods.partnerId, p.id), setIds.length ? inArray(pods.podSetId, setIds) : eq(pods.partnerId, p.id)));
     return {
       success: true,
       hotel: {
         ...shapeHotel(p),
         rooms: pRooms.map(shapeRoom),
         podSets: pSets.map((s) => shapePodSet(s, pPods)),
+        standalonePods: pPods.filter((pod) => !pod.podSetId || pod.isStandalone).map(shapeStandalonePod),
       },
     };
   })
@@ -191,7 +239,7 @@ const app = new Elysia()
     const pRooms = await db.select().from(rooms).where(eq(rooms.partnerId, p.id));
     const pSets = await db.select().from(podSets).where(eq(podSets.partnerId, p.id));
     const setIds = pSets.map((s) => s.id);
-    const pPods = setIds.length ? await db.select().from(pods).where(inArray(pods.podSetId, setIds)) : [];
+    const pPods = await db.select().from(pods).where(or(eq(pods.partnerId, p.id), setIds.length ? inArray(pods.podSetId, setIds) : eq(pods.partnerId, p.id)));
 
     return {
       success: true,
@@ -199,6 +247,7 @@ const app = new Elysia()
         ...shapeHotel(p),
         rooms: pRooms.map(shapeRoom),
         podSets: pSets.map((s) => shapePodSet(s, pPods)),
+        standalonePods: pPods.filter((pod) => !pod.podSetId || pod.isStandalone).map(shapeStandalonePod),
       },
     };
   })
@@ -213,8 +262,13 @@ const app = new Elysia()
   .get('/hotels/:id/pods', async ({ params }) => {
     const pSets = await db.select().from(podSets).where(eq(podSets.partnerId, params.id));
     const setIds = pSets.map((s) => s.id);
-    const pPods = setIds.length ? await db.select().from(pods).where(inArray(pods.podSetId, setIds)) : [];
-    return { success: true, count: pSets.length, podSets: pSets.map((s) => shapePodSet(s, pPods)) };
+    const pPods = await db.select().from(pods).where(or(eq(pods.partnerId, params.id), setIds.length ? inArray(pods.podSetId, setIds) : eq(pods.partnerId, params.id)));
+    return {
+      success: true,
+      count: pSets.length,
+      podSets: pSets.map((s) => shapePodSet(s, pPods)),
+      standalonePods: pPods.filter((pod) => !pod.podSetId || pod.isStandalone).map(shapeStandalonePod),
+    };
   })
 
   .get('/rooms/:id', async ({ params, set }) => {
@@ -337,7 +391,7 @@ const app = new Elysia()
     }
   )
 
-  // Add a pod set (2 stacked pods) to a hotel
+  // Add a pod set (2 stacked pods) or a standalone single pod to a hotel
   .post(
     '/hotels/:id/pod-sets',
     async ({ params, body, set }) => {
@@ -345,6 +399,28 @@ const app = new Elysia()
       if (!partner) {
         set.status = 404;
         return { success: false, message: 'Hotel not found' };
+      }
+      const podType = (body.podType as any) ?? 'single';
+      const maxOccupancy = occupancyForType(body.podType, body.maxOccupancy);
+      if (body.mode === 'single') {
+        const podNumber = body.podNumber || autoPodNumber(body.setNumber || 'POD', 'S');
+        const [createdPod] = await db
+          .insert(pods)
+          .values({
+            partnerId: params.id,
+            podSetId: null,
+            podNumber,
+            displayName: body.podName,
+            position: 'single',
+            podType,
+            maxOccupancy,
+            dimensions: body.dimensions,
+            hourlyRate: String(body.hourlyRate ?? 150),
+            isStandalone: true,
+          })
+          .returning();
+        set.status = 201;
+        return { success: true, pod: shapeStandalonePod(createdPod) };
       }
       const [createdSet] = await db
         .insert(podSets)
@@ -359,12 +435,34 @@ const app = new Elysia()
         })
         .returning();
 
-      // Auto-create the two stacked pods (upper + lower)
+      // Auto-create the two stacked pods (upper + lower), with optional manual numbers/names.
       const created = await db
         .insert(pods)
         .values([
-          { podSetId: createdSet.id, podNumber: `${body.setNumber}-U`, position: 'upper', podType: 'single' },
-          { podSetId: createdSet.id, podNumber: `${body.setNumber}-L`, position: 'lower', podType: 'single' },
+          {
+            partnerId: params.id,
+            podSetId: createdSet.id,
+            podNumber: body.upperPodNumber || autoPodNumber(body.setNumber, 'U'),
+            displayName: body.upperPodName,
+            position: 'upper',
+            podType,
+            maxOccupancy,
+            dimensions: body.dimensions,
+            hourlyRate: body.upperHourlyRate != null ? String(body.upperHourlyRate) : null,
+            isStandalone: false,
+          },
+          {
+            partnerId: params.id,
+            podSetId: createdSet.id,
+            podNumber: body.lowerPodNumber || autoPodNumber(body.setNumber, 'L'),
+            displayName: body.lowerPodName,
+            position: 'lower',
+            podType,
+            maxOccupancy,
+            dimensions: body.dimensions,
+            hourlyRate: body.lowerHourlyRate != null ? String(body.lowerHourlyRate) : null,
+            isStandalone: false,
+          },
         ])
         .returning();
 
@@ -373,8 +471,20 @@ const app = new Elysia()
     },
     {
       body: t.Object({
+        mode: t.Optional(t.Union([t.Literal('set'), t.Literal('single')])),
         setNumber: t.String(),
+        podNumber: t.Optional(t.String()),
+        podName: t.Optional(t.String()),
+        upperPodNumber: t.Optional(t.String()),
+        upperPodName: t.Optional(t.String()),
+        lowerPodNumber: t.Optional(t.String()),
+        lowerPodName: t.Optional(t.String()),
+        podType: t.Optional(t.Union([t.Literal('single'), t.Literal('double'), t.Literal('king')])),
+        maxOccupancy: t.Optional(t.Number()),
+        dimensions: t.Optional(t.String()),
         hourlyRate: t.Optional(t.Number()),
+        upperHourlyRate: t.Optional(t.Number()),
+        lowerHourlyRate: t.Optional(t.Number()),
         ownership: t.Optional(t.String()),
         ownerId: t.Optional(t.String()),
         floor: t.Optional(t.Number()),

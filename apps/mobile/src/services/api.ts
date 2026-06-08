@@ -153,11 +153,43 @@ function adaptPodSet(ps: any, hotel: any) {
     pods: (ps.pods || []).map((p: any) => ({
       id: p.id,
       podNumber: p.podNumber,
+      displayName: p.displayName,
       position: p.position,
       podType: p.podType,
+      maxOccupancy: p.maxOccupancy,
+      dimensions: p.dimensions,
+      hourlyRate: Number(p.hourlyRate ?? ps.hourlyRate),
       status: p.status,
       features: p.features,
     })),
+  };
+}
+
+function adaptStandalonePod(p: any, hotel: any) {
+  return {
+    id: `single-${p.id}`,
+    setNumber: p.podNumber,
+    name: p.displayName || `Single pod ${p.podNumber}`,
+    series: `${p.podType || 'single'} standalone`,
+    hotelId: hotel.id,
+    hotelName: hotel.businessName,
+    price: Number(p.hourlyRate),
+    image: parseJsonArr(hotel.images)[0] || FALLBACK_IMAGE,
+    amenities: ['AC', 'Charger', 'Reading Light'],
+    available: p.status === 'available',
+    isStandalone: true,
+    pods: [{
+      id: p.id,
+      podNumber: p.podNumber,
+      displayName: p.displayName,
+      position: 'single',
+      podType: p.podType,
+      maxOccupancy: p.maxOccupancy,
+      dimensions: p.dimensions,
+      hourlyRate: Number(p.hourlyRate),
+      status: p.status,
+      features: p.features,
+    }],
   };
 }
 
@@ -226,8 +258,11 @@ export const propertiesApi = {
     const data = await request<{ success: boolean; hotel: any }>(`/api/v1/hotels/${encodeURIComponent(id)}`, { auth: false });
     const h = data.hotel;
     const rooms = (h.rooms || []).map(adaptRoom);
-    const podSets = (h.podSets || []);
-    const pods = podSets.map((s: any) => adaptPodSet(s, h));
+    const podSets = [
+      ...(h.podSets || []).map((s: any) => adaptPodSet(s, h)),
+      ...(h.standalonePods || []).map((p: any) => adaptStandalonePod(p, h)),
+    ];
+    const pods = podSets;
     // The /hotels/:id detail endpoint does NOT include a `summary` block,
     // so derive Pods/Rooms counts and start prices from the actual arrays
     // (each pod set holds 2 sleeping pods — upper + lower).
@@ -236,7 +271,7 @@ export const propertiesApi = {
       ? Math.min(...rooms.map((r: any) => Number(r.pricePerNight) || Infinity).filter((n: number) => Number.isFinite(n)))
       : 0;
     const minPodRate = podSets.length
-      ? Math.min(...podSets.map((s: any) => Number(s.hourlyRate) || Infinity).filter((n: number) => Number.isFinite(n)))
+      ? Math.min(...podSets.map((s: any) => Number(s.price ?? s.hourlyRate) || Infinity).filter((n: number) => Number.isFinite(n)))
       : 0;
     const card = adaptHotelCard(h);
     return {
@@ -261,8 +296,8 @@ export const propertiesApi = {
     return { success: true, data: data.rooms.map(adaptRoom) };
   },
   getPods: async (propertyId: string) => {
-    const data = await request<{ success: boolean; podSets: any[] }>(`/api/v1/hotels/${encodeURIComponent(propertyId)}/pods`, { auth: false });
-    return { success: true, data: data.podSets };
+    const data = await request<{ success: boolean; podSets: any[]; standalonePods?: any[] }>(`/api/v1/hotels/${encodeURIComponent(propertyId)}/pods`, { auth: false });
+    return { success: true, data: [...(data.podSets || []), ...(data.standalonePods || []).map((p: any) => ({ ...adaptStandalonePod(p, { id: propertyId, businessName: '', images: [] }), hourlyRate: p.hourlyRate }))] };
   },
   getCities: () => request<{ cities: { city: string; state: string; count: number }[] }>(`/api/v1/cities`, { auth: false }),
 };
