@@ -395,5 +395,5 @@ export interface StaffMember {
 export type AdminPage = 'dashboard' | 'users' | 'partners' | 'pods' | 'rooms' |
   'bookings' | 'investors' | 'associates' | 'revenue' | 'payments' | 'payouts' |
   'coupons' | 'investor-offers' | 'naploo-team' | 'tickets' | 'applications' | 'reviews' | 'locations' |
-  'commissions' | 'staff' | 'analytics' | 'marketing' | 'content' |
+  'commissions' | 'deal-calculator' | 'staff' | 'analytics' | 'marketing' | 'content' |
   'notifications' | 'settings';

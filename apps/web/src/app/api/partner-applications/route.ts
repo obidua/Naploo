@@ -16,6 +16,37 @@ export type PartnerApplicationStatus =
   | 'approved'
   | 'rejected';
 
+export type PropertyOfferMode = 'percentage' | 'fixed' | 'hybrid';
+
+export interface PropertyOfferDetails {
+  // Inputs
+  pods: number;
+  occupancyHours: number;
+  hourlyRate: number;
+  investorSharePct: number;   // typically 60
+  naplooGrossSharePct: number; // typically 40
+  operatingCostPct: number;   // typically 10
+  offerMode: PropertyOfferMode;
+  propertyPct?: number;       // for 'percentage' mode (% of GROSS revenue)
+  fixedRent?: number;         // for 'fixed' mode (₹/month)
+  hybridBase?: number;        // for 'hybrid' mode (₹/month base)
+  hybridPct?: number;         // for 'hybrid' mode (% of GROSS revenue)
+  // Computed snapshot
+  monthlyGrossRevenue: number;
+  monthlyInvestorPayout: number;
+  monthlyNaplooGross: number;
+  monthlyOperatingCost: number;
+  monthlyPropertyPayout: number;
+  monthlyNaplooNet: number;
+  naplooMarginPct: number;
+  yearlyNaplooNet: number;
+  verdict: 'profitable' | 'tight' | 'loss';
+  // Meta
+  notes?: string;
+  savedBy?: string;
+  savedAt: string;
+}
+
 export interface PartnerApplication {
   id: string;
   applicationNumber: string;
@@ -71,6 +102,8 @@ export interface PartnerApplication {
   // Meta
   ip?: string;
   userAgent?: string;
+  // Internal — admin deal offer (set via PATCH from Deal Calculator)
+  offerDetails?: PropertyOfferDetails;
 }
 
 async function ensureFile() {
@@ -257,31 +290,96 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
   const id = asStr(body.id);
-  const status = asStr(body.status) as PartnerApplicationStatus;
-  const reviewNotes = asStr(body.reviewNotes);
-  const allowed: PartnerApplicationStatus[] = [
-    'submitted',
-    'under-review',
-    'approved',
-    'rejected',
-  ];
-  if (!id || !allowed.includes(status)) {
-    return NextResponse.json(
-      { error: 'id and a valid status are required.' },
-      { status: 400 }
-    );
+  if (!id) {
+    return NextResponse.json({ error: 'id is required.' }, { status: 400 });
   }
   const list = await readAll();
   const idx = list.findIndex((a) => a.id === id);
   if (idx === -1) {
     return NextResponse.json({ error: 'Application not found.' }, { status: 404 });
   }
-  list[idx] = {
-    ...list[idx],
-    status,
-    reviewNotes: reviewNotes || list[idx].reviewNotes,
+
+  const allowedStatus: PartnerApplicationStatus[] = [
+    'submitted',
+    'under-review',
+    'approved',
+    'rejected',
+  ];
+  const updates: Partial<PartnerApplication> = {
     updatedAt: new Date().toISOString(),
   };
+
+  // Optional status change
+  const status = asStr(body.status) as PartnerApplicationStatus;
+  if (status) {
+    if (!allowedStatus.includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status value.' },
+        { status: 400 }
+      );
+    }
+    updates.status = status;
+  }
+
+  // Optional review notes
+  const reviewNotes = asStr(body.reviewNotes);
+  if (reviewNotes) updates.reviewNotes = reviewNotes;
+
+  // Optional offer details — full replacement, snapshot from Deal Calculator
+  if (body.offerDetails && typeof body.offerDetails === 'object') {
+    const o = body.offerDetails as Record<string, unknown>;
+    const num = (v: unknown, fallback = 0) => {
+      const n = typeof v === 'number' ? v : parseFloat(String(v));
+      return Number.isFinite(n) ? n : fallback;
+    };
+    const mode = asStr(o.offerMode) as PropertyOfferMode;
+    const allowedMode: PropertyOfferMode[] = ['percentage', 'fixed', 'hybrid'];
+    if (!allowedMode.includes(mode)) {
+      return NextResponse.json(
+        { error: 'Invalid offerMode.' },
+        { status: 400 }
+      );
+    }
+    const verdict = asStr(o.verdict) as 'profitable' | 'tight' | 'loss';
+    updates.offerDetails = {
+      pods: num(o.pods),
+      occupancyHours: num(o.occupancyHours),
+      hourlyRate: num(o.hourlyRate),
+      investorSharePct: num(o.investorSharePct, 60),
+      naplooGrossSharePct: num(o.naplooGrossSharePct, 40),
+      operatingCostPct: num(o.operatingCostPct, 10),
+      offerMode: mode,
+      propertyPct: o.propertyPct != null ? num(o.propertyPct) : undefined,
+      fixedRent: o.fixedRent != null ? num(o.fixedRent) : undefined,
+      hybridBase: o.hybridBase != null ? num(o.hybridBase) : undefined,
+      hybridPct: o.hybridPct != null ? num(o.hybridPct) : undefined,
+      monthlyGrossRevenue: num(o.monthlyGrossRevenue),
+      monthlyInvestorPayout: num(o.monthlyInvestorPayout),
+      monthlyNaplooGross: num(o.monthlyNaplooGross),
+      monthlyOperatingCost: num(o.monthlyOperatingCost),
+      monthlyPropertyPayout: num(o.monthlyPropertyPayout),
+      monthlyNaplooNet: num(o.monthlyNaplooNet),
+      naplooMarginPct: num(o.naplooMarginPct),
+      yearlyNaplooNet: num(o.yearlyNaplooNet),
+      verdict: ['profitable', 'tight', 'loss'].includes(verdict) ? verdict : 'tight',
+      notes: asStr(o.notes) || undefined,
+      savedBy: asStr(o.savedBy) || undefined,
+      savedAt: new Date().toISOString(),
+    };
+  }
+
+  if (
+    updates.status === undefined &&
+    updates.reviewNotes === undefined &&
+    updates.offerDetails === undefined
+  ) {
+    return NextResponse.json(
+      { error: 'No updatable fields provided (status, reviewNotes, or offerDetails).' },
+      { status: 400 }
+    );
+  }
+
+  list[idx] = { ...list[idx], ...updates };
   await writeAll(list);
   return NextResponse.json({ ok: true, application: list[idx] });
 }

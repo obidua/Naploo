@@ -17,9 +17,9 @@ import {
   UserPlus, Layers, Megaphone, BookOpen,
   Lock, Shield, Wallet, BedDouble, Hotel,
   Percent, Tag, Gift, Network, Hash,
-  Ban, Edit, Trash2, Plus, ChevronLeft, Copy, Eye,
+  Ban, Edit, Trash2, Plus, Minus, ChevronLeft, Copy, Eye,
   CircleCheck, CircleDot, AlertCircle, Clock, CheckCircle,
-  MessageSquare
+  MessageSquare, Calculator, TrendingUp, TrendingDown
 } from 'lucide-react';
 
 // ============================
@@ -148,6 +148,7 @@ const sidebarSections: { title: string; items: { id: AdminPage; label: string; i
     title: 'Operations',
     items: [
       { id: 'commissions', label: 'Commission Config', icon: Percent },
+      { id: 'deal-calculator', label: 'Deal Calculator', icon: Calculator },
       { id: 'staff', label: 'Staff', icon: Shield },
       { id: 'naploo-team', label: 'Naploo team', icon: Shield, href: '/admin/team' },
       { id: 'marketing', label: 'Marketing', icon: Megaphone },
@@ -304,6 +305,19 @@ export default function AdminDashboard() {
     }
   }, [adminAuth]);
 
+  // Cross-view navigation (Applications -> Deal Calculator with seed)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      if (detail.page) setActivePage(detail.page as AdminPage);
+      if (detail.seed && typeof window !== 'undefined') {
+        sessionStorage.setItem('naploo-deal-seed', JSON.stringify(detail.seed));
+      }
+    };
+    window.addEventListener('naploo-admin-nav', handler);
+    return () => window.removeEventListener('naploo-admin-nav', handler);
+  }, []);
+
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
     // Real authentication against the backend (JWT) with admin role gate
     const res = await authApi.login(email, password);
@@ -433,6 +447,7 @@ export default function AdminDashboard() {
           {activePage === 'applications' && <ApplicationsView />}
           {activePage === 'reviews' && <ReviewsView />}
           {activePage === 'commissions' && <CommissionsView />}
+          {activePage === 'deal-calculator' && <DealCalculatorView />}
           {activePage === 'staff' && <StaffView />}
           {activePage === 'analytics' && <AnalyticsView />}
           {activePage === 'marketing' && <MarketingView />}
@@ -1178,6 +1193,31 @@ interface PartnerApplicationRow {
   howDidYouHear?: string;
   ip?: string;
   userAgent?: string;
+  offerDetails?: {
+    pods: number;
+    occupancyHours: number;
+    hourlyRate: number;
+    investorSharePct: number;
+    naplooGrossSharePct: number;
+    operatingCostPct: number;
+    offerMode: 'percentage' | 'fixed' | 'hybrid';
+    propertyPct?: number;
+    fixedRent?: number;
+    hybridBase?: number;
+    hybridPct?: number;
+    monthlyGrossRevenue: number;
+    monthlyInvestorPayout: number;
+    monthlyNaplooGross: number;
+    monthlyOperatingCost: number;
+    monthlyPropertyPayout: number;
+    monthlyNaplooNet: number;
+    naplooMarginPct: number;
+    yearlyNaplooNet: number;
+    verdict: 'profitable' | 'tight' | 'loss';
+    notes?: string;
+    savedBy?: string;
+    savedAt: string;
+  };
 }
 
 function ApplicationsView() {
@@ -1518,12 +1558,45 @@ function ApplicationsView() {
               ]} />
             </div>
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-center justify-between gap-3 sticky bottom-0">
-              <button
-                onClick={() => removeApp(selected.id)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Delete
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => removeApp(selected.id)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+                <button
+                  onClick={() => {
+                    // Estimate pods from sqft if not provided: ~60 sqft per pod set (2 pods) → 1 pod per ~30 sqft
+                    const sqft = parseFloat(selected.availableSpaceSqft) || 0;
+                    const seededPods =
+                      parseInt(selected.estimatedPods || '0') ||
+                      Math.max(2, Math.floor(sqft / 30));
+                    window.dispatchEvent(
+                      new CustomEvent('naploo-admin-nav', {
+                        detail: {
+                          page: 'deal-calculator',
+                          seed: {
+                            applicationId: selected.id,
+                            applicationNumber: selected.applicationNumber,
+                            propertyName: selected.propertyName,
+                            city: selected.city,
+                            state: selected.state,
+                            propertyType: selected.propertyType,
+                            pods: seededPods,
+                            sqft,
+                            existing: selected.offerDetails || null,
+                          },
+                        },
+                      })
+                    );
+                    setSelected(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg"
+                >
+                  <Calculator className="w-3.5 h-3.5" /> Calculate Offer
+                </button>
+              </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => updateStatus(selected.id, 'under-review')} className="px-3 py-2 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg">Mark Under Review</button>
                 <button onClick={() => updateStatus(selected.id, 'approved')} className="px-3 py-2 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg">Approve</button>
@@ -1865,3 +1938,498 @@ function SettingsView() {
     </div>
   );
 }
+
+// ============================
+// DEAL CALCULATOR VIEW
+// Helps admin model how much of Naploo's 40% share can be offered
+// to a property owner (hotel / coworking / bus stand / etc.) as
+// percentage, fixed rent, or hybrid \u2014 with profitability check.
+// ============================
+type DealSeed = {
+  applicationId?: string;
+  applicationNumber?: string;
+  propertyName?: string;
+  city?: string;
+  state?: string;
+  propertyType?: string;
+  pods?: number;
+  sqft?: number;
+  existing?: PartnerApplicationRow['offerDetails'] | null;
+};
+
+type OfferMode = 'percentage' | 'fixed' | 'hybrid';
+
+function fmtINR(n: number): string {
+  if (!Number.isFinite(n)) return '\u20b90';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 10000000) return `${sign}\u20b9${(abs / 10000000).toFixed(2)} Cr`;
+  if (abs >= 100000) return `${sign}\u20b9${(abs / 100000).toFixed(2)} L`;
+  return `${sign}\u20b9${Math.round(abs).toLocaleString('en-IN')}`;
+}
+
+function computeScenario(opts: {
+  monthlyGross: number;
+  monthlyNaplooGross: number;
+  monthlyOpsCost: number;
+  monthlyPropertyPayout: number;
+}) {
+  const { monthlyGross, monthlyNaplooGross, monthlyOpsCost, monthlyPropertyPayout } = opts;
+  const monthlyNaplooNet = monthlyNaplooGross - monthlyOpsCost - monthlyPropertyPayout;
+  const naplooMarginPct = monthlyGross > 0 ? (monthlyNaplooNet / monthlyGross) * 100 : 0;
+  const yearlyNaplooNet = monthlyNaplooNet * 12;
+  let verdict: 'profitable' | 'tight' | 'loss';
+  if (monthlyNaplooNet <= 0) verdict = 'loss';
+  else if (naplooMarginPct < 8) verdict = 'tight';
+  else verdict = 'profitable';
+  return { monthlyNaplooNet, naplooMarginPct, yearlyNaplooNet, verdict };
+}
+
+function DealCalculatorView() {
+  // Seed (if launched from Applications detail modal)
+  const [seed, setSeed] = useState<DealSeed | null>(null);
+
+  // Revenue inputs
+  const [pods, setPods] = useState(4);
+  const [occupancyHours, setOccupancyHours] = useState(16);
+  const [hourlyRate, setHourlyRate] = useState(150);
+
+  // Split inputs
+  const [investorSharePct, setInvestorSharePct] = useState(60);
+  const [operatingCostPct, setOperatingCostPct] = useState(10);
+
+  // Offer mode + per-mode params
+  const [offerMode, setOfferMode] = useState<OfferMode>('percentage');
+  const [propertyPct, setPropertyPct] = useState(10);
+  const [fixedRent, setFixedRent] = useState(15000);
+  const [hybridBase, setHybridBase] = useState(5000);
+  const [hybridPct, setHybridPct] = useState(5);
+
+  // Notes + save state
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+
+  // Hydrate seed from sessionStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const raw = sessionStorage.getItem('naploo-deal-seed');
+    if (!raw) return;
+    try {
+      const s = JSON.parse(raw) as DealSeed;
+      setSeed(s);
+      if (s.pods && s.pods > 0) setPods(s.pods);
+      if (s.existing) {
+        const e = s.existing;
+        setPods(e.pods || s.pods || 4);
+        setOccupancyHours(e.occupancyHours || 16);
+        setHourlyRate(e.hourlyRate || 150);
+        setInvestorSharePct(e.investorSharePct || 60);
+        setOperatingCostPct(e.operatingCostPct || 10);
+        setOfferMode(e.offerMode || 'percentage');
+        if (e.propertyPct != null) setPropertyPct(e.propertyPct);
+        if (e.fixedRent != null) setFixedRent(e.fixedRent);
+        if (e.hybridBase != null) setHybridBase(e.hybridBase);
+        if (e.hybridPct != null) setHybridPct(e.hybridPct);
+        if (e.notes) setNotes(e.notes);
+      }
+      sessionStorage.removeItem('naploo-deal-seed');
+    } catch { /* noop */ }
+  }, []);
+
+  const naplooGrossSharePct = Math.max(0, Math.min(100, 100 - investorSharePct));
+
+  // Core calc
+  const calc = useMemo(() => {
+    const dailyGross = pods * occupancyHours * hourlyRate;
+    const monthlyGross = dailyGross * 30;
+    const yearlyGross = dailyGross * 365;
+    const monthlyInvestor = monthlyGross * (investorSharePct / 100);
+    const monthlyNaplooGross = monthlyGross * (naplooGrossSharePct / 100);
+    const monthlyOpsCost = monthlyGross * (operatingCostPct / 100);
+
+    const scenarios = {
+      percentage: (() => {
+        const payout = monthlyGross * (propertyPct / 100);
+        const r = computeScenario({ monthlyGross, monthlyNaplooGross, monthlyOpsCost, monthlyPropertyPayout: payout });
+        return { ...r, monthlyPropertyPayout: payout, label: `${propertyPct}% of Gross` };
+      })(),
+      fixed: (() => {
+        const payout = fixedRent;
+        const r = computeScenario({ monthlyGross, monthlyNaplooGross, monthlyOpsCost, monthlyPropertyPayout: payout });
+        return { ...r, monthlyPropertyPayout: payout, label: `${fmtINR(fixedRent)}/mo Rent` };
+      })(),
+      hybrid: (() => {
+        const payout = hybridBase + monthlyGross * (hybridPct / 100);
+        const r = computeScenario({ monthlyGross, monthlyNaplooGross, monthlyOpsCost, monthlyPropertyPayout: payout });
+        return { ...r, monthlyPropertyPayout: payout, label: `${fmtINR(hybridBase)} + ${hybridPct}%` };
+      })(),
+    } as const;
+
+    const active = scenarios[offerMode];
+    // Best scenario by Naploo net (highest)
+    const bestKey = (Object.keys(scenarios) as OfferMode[]).reduce((best, k) =>
+      scenarios[k].monthlyNaplooNet > scenarios[best].monthlyNaplooNet ? k : best, 'percentage' as OfferMode);
+
+    return {
+      dailyGross,
+      monthlyGross,
+      yearlyGross,
+      monthlyInvestor,
+      monthlyNaplooGross,
+      monthlyOpsCost,
+      scenarios,
+      active,
+      bestKey,
+    };
+  }, [pods, occupancyHours, hourlyRate, investorSharePct, naplooGrossSharePct, operatingCostPct, offerMode, propertyPct, fixedRent, hybridBase, hybridPct]);
+
+  const saveOffer = async () => {
+    if (!seed?.applicationId) return;
+    const adminKey = typeof window !== 'undefined' ? localStorage.getItem('naploo-admin-api-key') : '';
+    if (!adminKey) {
+      setSaveMsg('Admin key missing. Open Applications and unlock first.');
+      return;
+    }
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      const body = {
+        id: seed.applicationId,
+        offerDetails: {
+          pods,
+          occupancyHours,
+          hourlyRate,
+          investorSharePct,
+          naplooGrossSharePct,
+          operatingCostPct,
+          offerMode,
+          propertyPct: offerMode === 'percentage' ? propertyPct : undefined,
+          fixedRent: offerMode === 'fixed' ? fixedRent : undefined,
+          hybridBase: offerMode === 'hybrid' ? hybridBase : undefined,
+          hybridPct: offerMode === 'hybrid' ? hybridPct : undefined,
+          monthlyGrossRevenue: calc.monthlyGross,
+          monthlyInvestorPayout: calc.monthlyInvestor,
+          monthlyNaplooGross: calc.monthlyNaplooGross,
+          monthlyOperatingCost: calc.monthlyOpsCost,
+          monthlyPropertyPayout: calc.active.monthlyPropertyPayout,
+          monthlyNaplooNet: calc.active.monthlyNaplooNet,
+          naplooMarginPct: calc.active.naplooMarginPct,
+          yearlyNaplooNet: calc.active.yearlyNaplooNet,
+          verdict: calc.active.verdict,
+          notes,
+        },
+      };
+      const res = await fetch('/api/partner-applications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        setSaveMsg('Offer saved to application.');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setSaveMsg(err.error || 'Failed to save offer.');
+      }
+    } catch {
+      setSaveMsg('Network error.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const verdictBadge = (v: 'profitable' | 'tight' | 'loss') => {
+    if (v === 'profitable') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-50 text-green-700"><TrendingUp className="w-3 h-3" /> Profitable</span>;
+    if (v === 'tight') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700"><AlertCircle className="w-3 h-3" /> Tight</span>;
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700"><TrendingDown className="w-3 h-3" /> Loss</span>;
+  };
+
+  const reset = () => {
+    setSeed(null);
+    setPods(4);
+    setOccupancyHours(16);
+    setHourlyRate(150);
+    setInvestorSharePct(60);
+    setOperatingCostPct(10);
+    setOfferMode('percentage');
+    setPropertyPct(10);
+    setFixedRent(15000);
+    setHybridBase(5000);
+    setHybridPct(5);
+    setNotes('');
+    setSaveMsg(null);
+  };
+
+  return (
+    <div className="max-w-7xl space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-violet-50 via-white to-primary-50 border border-primary-100 rounded-2xl p-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-primary-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+              <Calculator className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">Property Owner Deal Calculator</h2>
+              <p className="text-sm text-slate-500 mt-0.5 max-w-2xl">
+                Model what offer to give a property owner from Naploo&apos;s {naplooGrossSharePct}% share (after paying investor {investorSharePct}%). Compare percentage, fixed rent, and hybrid scenarios side-by-side.
+              </p>
+            </div>
+          </div>
+          <button onClick={reset} className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg">
+            <RefreshCw className="w-3.5 h-3.5" /> Reset
+          </button>
+        </div>
+
+        {seed && (
+          <div className="mt-4 flex items-center gap-3 bg-white border border-primary-200 rounded-xl px-4 py-3">
+            <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center">
+              <FileText className="w-4 h-4 text-primary-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-400">Calculating for application</p>
+              <p className="text-sm font-semibold text-slate-800 truncate">
+                <span className="font-mono text-primary-600">{seed.applicationNumber}</span>
+                <span className="mx-2 text-slate-300">|</span>
+                {seed.propertyName}
+                {seed.city && <span className="text-slate-500 font-normal"> &middot; {seed.city}, {seed.state}</span>}
+              </p>
+            </div>
+            <button onClick={() => setSeed(null)} className="p-1.5 hover:bg-gray-100 rounded-lg" title="Unlink application">
+              <X className="w-4 h-4 text-slate-400" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Top stats: gross revenue snapshot */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StatCard label="Daily Gross Revenue" value={fmtINR(calc.dailyGross)} icon={IndianRupee} color="from-blue-500 to-indigo-600" />
+        <StatCard label="Monthly Gross Revenue" value={fmtINR(calc.monthlyGross)} icon={IndianRupee} color="from-violet-500 to-purple-600" />
+        <StatCard label={`Investor Payout (${investorSharePct}%)`} value={fmtINR(calc.monthlyInvestor)} icon={Wallet} color="from-amber-500 to-orange-600" />
+        <StatCard label={`Naploo Gross (${naplooGrossSharePct}%)`} value={fmtINR(calc.monthlyNaplooGross)} icon={TrendingUp} color="from-emerald-500 to-green-600" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* LEFT: Inputs */}
+        <div className="lg:col-span-1 space-y-4">
+          {/* Revenue Assumptions */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 mb-1">Revenue Assumptions</h3>
+            <p className="text-[11px] text-slate-400 mb-4">Pods, occupancy, and rate per hour drive total gross revenue.</p>
+
+            <NumberSlider label="Number of Pods" value={pods} min={1} max={50} step={1} onChange={setPods} suffix=" pods" />
+            <NumberSlider label="Daily Occupancy Hours" value={occupancyHours} min={4} max={24} step={1} onChange={setOccupancyHours} suffix=" hrs" />
+            <NumberSlider label="Hourly Rate per Pod" value={hourlyRate} min={50} max={500} step={10} onChange={setHourlyRate} prefix="\u20b9" />
+          </div>
+
+          {/* Revenue Split */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 mb-1">Revenue Split & Costs</h3>
+            <p className="text-[11px] text-slate-400 mb-4">Investor gets {investorSharePct}% (per lease policy). Naploo keeps {naplooGrossSharePct}% which covers ops + property owner payout.</p>
+
+            <NumberSlider label="Investor Share %" value={investorSharePct} min={35} max={75} step={1} onChange={setInvestorSharePct} suffix="%" />
+            <NumberSlider label="Operating Cost %" value={operatingCostPct} min={3} max={25} step={1} onChange={setOperatingCostPct} suffix="% of gross" hint="Housekeeping, electricity, internet, support" />
+          </div>
+
+          {/* Offer Mode */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 mb-3">Offer to Property Owner</h3>
+            <div className="grid grid-cols-3 gap-1.5 bg-gray-50 p-1 rounded-xl mb-4">
+              {(['percentage', 'fixed', 'hybrid'] as OfferMode[]).map(m => (
+                <button
+                  key={m}
+                  onClick={() => setOfferMode(m)}
+                  className={`px-2 py-2 text-[11px] font-semibold rounded-lg transition capitalize ${offerMode === m ? 'bg-white shadow text-primary-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  {m === 'percentage' ? '% Share' : m === 'fixed' ? 'Fixed Rent' : 'Hybrid'}
+                </button>
+              ))}
+            </div>
+
+            {offerMode === 'percentage' && (
+              <NumberSlider label="Property Owner %" value={propertyPct} min={1} max={30} step={1} onChange={setPropertyPct} suffix="% of gross" hint="Paid out of Naploo's share" />
+            )}
+            {offerMode === 'fixed' && (
+              <NumberSlider label="Monthly Rent" value={fixedRent} min={0} max={200000} step={1000} onChange={setFixedRent} prefix="\u20b9" hint="Flat amount regardless of revenue" />
+            )}
+            {offerMode === 'hybrid' && (
+              <>
+                <NumberSlider label="Base Monthly Rent" value={hybridBase} min={0} max={100000} step={500} onChange={setHybridBase} prefix="\u20b9" />
+                <NumberSlider label="+ Revenue Share %" value={hybridPct} min={0} max={20} step={1} onChange={setHybridPct} suffix="% of gross" />
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT: Scenarios + Recommendation */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(['percentage', 'fixed', 'hybrid'] as OfferMode[]).map(mode => {
+              const sc = calc.scenarios[mode];
+              const isActive = offerMode === mode;
+              const isBest = calc.bestKey === mode;
+              return (
+                <div
+                  key={mode}
+                  className={`relative rounded-2xl border-2 p-5 transition cursor-pointer ${
+                    isActive ? 'border-primary-500 bg-primary-50/30 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'
+                  }`}
+                  onClick={() => setOfferMode(mode)}
+                >
+                  {isBest && (
+                    <span className="absolute -top-2 left-4 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-gradient-to-r from-violet-500 to-primary-600 text-white shadow">
+                      Best Net
+                    </span>
+                  )}
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{mode === 'percentage' ? 'Percentage' : mode === 'fixed' ? 'Fixed Rent' : 'Hybrid'}</p>
+                      <p className="text-sm font-semibold text-slate-700 mt-0.5">{sc.label}</p>
+                    </div>
+                    {verdictBadge(sc.verdict)}
+                  </div>
+                  <div className="mt-3 space-y-1.5 text-[11px]">
+                    <ScRow label="Property gets" value={fmtINR(sc.monthlyPropertyPayout) + ' /mo'} />
+                    <ScRow label="Naploo gross" value={fmtINR(calc.monthlyNaplooGross) + ' /mo'} />
+                    <ScRow label="- Ops cost" value={'-' + fmtINR(calc.monthlyOpsCost)} muted />
+                    <ScRow label="- Property" value={'-' + fmtINR(sc.monthlyPropertyPayout)} muted />
+                    <div className="border-t border-dashed border-gray-200 my-2" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Naploo Net /mo</span>
+                      <span className={`text-base font-bold ${sc.monthlyNaplooNet > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {fmtINR(sc.monthlyNaplooNet)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-slate-400">Margin of gross</span>
+                      <span className={sc.naplooMarginPct >= 8 ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'}>
+                        {sc.naplooMarginPct.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-slate-400">Yearly net</span>
+                      <span className="font-semibold text-slate-700">{fmtINR(sc.yearlyNaplooNet)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Recommendation */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-500" /> Recommendation
+            </h3>
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 text-sm">
+              <p className="text-slate-700">
+                Based on inputs, <span className="font-bold text-emerald-700 capitalize">{calc.bestKey === 'fixed' ? 'Fixed Rent' : calc.bestKey === 'hybrid' ? 'Hybrid' : 'Percentage'}</span> gives the highest Naploo net at{' '}
+                <span className="font-bold">{fmtINR(calc.scenarios[calc.bestKey].monthlyNaplooNet)}/month</span>{' '}
+                ({calc.scenarios[calc.bestKey].naplooMarginPct.toFixed(1)}% margin).
+              </p>
+              <p className="text-[11px] text-slate-500 mt-2">
+                <strong>Tip:</strong> When monthly gross revenue is volatile, prefer a lower percentage share so property payout scales with revenue. Use fixed rent only when occupancy is predictable.
+              </p>
+            </div>
+          </div>
+
+          {/* Notes + Save */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 mb-3">Notes & Save</h3>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Internal notes for this offer (negotiation points, contingencies, etc.)"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 resize-none"
+            />
+            <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
+              <p className="text-[11px] text-slate-400">
+                {seed?.applicationId
+                  ? <>Saving will attach this offer snapshot to <span className="font-mono text-primary-600">{seed.applicationNumber}</span>.</>
+                  : 'Open an application from the Applications tab and click "Calculate Offer" to save against it.'}
+              </p>
+              {saveMsg && (
+                <p className={`text-xs font-semibold ${saveMsg.includes('saved') ? 'text-emerald-600' : 'text-red-600'}`}>{saveMsg}</p>
+              )}
+              <button
+                onClick={saveOffer}
+                disabled={!seed?.applicationId || saving}
+                className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-violet-500 to-primary-600 rounded-lg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+              >
+                {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                {saving ? 'Saving...' : 'Save Offer to Application'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NumberSlider({
+  label, value, min, max, step, onChange, prefix = '', suffix = '', hint,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  prefix?: string;
+  suffix?: string;
+  hint?: string;
+}) {
+  return (
+    <div className="mb-4 last:mb-0">
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="text-xs font-medium text-slate-600">{label}</label>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => onChange(Math.max(min, value - step))} className="w-6 h-6 rounded-md bg-gray-50 hover:bg-gray-100 text-slate-500 inline-flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+          <input
+            type="number"
+            value={value}
+            min={min}
+            max={max}
+            step={step}
+            onChange={e => {
+              const v = parseFloat(e.target.value);
+              if (Number.isFinite(v)) onChange(Math.max(min, Math.min(max, v)));
+            }}
+            className="w-20 px-2 py-1 text-xs font-semibold text-center bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-primary-500"
+          />
+          <button onClick={() => onChange(Math.min(max, value + step))} className="w-6 h-6 rounded-md bg-gray-50 hover:bg-gray-100 text-slate-500 inline-flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+        </div>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        className="w-full h-1.5 bg-gray-100 rounded-full appearance-none cursor-pointer accent-primary-500"
+      />
+      <div className="flex items-center justify-between mt-1">
+        <span className="text-[10px] text-slate-400">{prefix}{min}{suffix}</span>
+        <span className="text-[10px] text-slate-400">{prefix}{max}{suffix}</span>
+      </div>
+      {hint && <p className="text-[10px] text-slate-400 mt-1 italic">{hint}</p>}
+    </div>
+  );
+}
+
+function ScRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className={muted ? 'text-slate-400' : 'text-slate-500'}>{label}</span>
+      <span className={muted ? 'text-slate-400' : 'text-slate-700 font-medium'}>{value}</span>
+    </div>
+  );
+}
+
+// NOTE: Calculator import lives at the top of the file with the other lucide imports.
+
+// Import Calculator from lucide-react (added to the icons import at the top of this file).
