@@ -6,9 +6,9 @@ import Image from 'next/image';
 import ImageSlider from '@/components/ui/ImageSlider';
 import { useState } from 'react';
 import { 
-  Building2, TrendingUp, Users, Clock, Settings, ChevronRight, 
-  CheckCircle, MapPin, Zap, Shield, Wallet, BarChart3, 
-  Phone, Mail, ArrowRight, Sparkles, Hotel, Home, Store
+  Building2, TrendingUp, Settings, 
+  CheckCircle, Zap, Shield, Wallet, BarChart3, 
+  Mail, ArrowRight, Sparkles, Hotel, Home, Store
 } from 'lucide-react';
 
 const benefits = [
@@ -122,10 +122,10 @@ const testimonials = [
 ];
 
 const stats = [
-  { value: '500+', label: 'Partner Properties' },
-  { value: '₹2Cr+', label: 'Partner Earnings' },
-  { value: '40%', label: 'Revenue Share' },
-  { value: '14 Days', label: 'Setup Time' }
+  { value: 'Up to 40%', label: 'Revenue Share' },
+  { value: '₹0', label: 'Upfront for Partner' },
+  { value: '14 Days', label: 'Avg. Setup Time' },
+  { value: '48 hrs', label: 'Application Response' }
 ];
 
 // Hero images for slider
@@ -138,20 +138,90 @@ const heroImages = [
 ];
 
 export default function PartnerPage() {
-  const [formData, setFormData] = useState({
-    name: '',
+  const initialForm = {
+    // Contact
+    fullName: '',
     email: '',
     phone: '',
+    whatsapp: '',
+    // Property
+    propertyName: '',
     propertyType: '',
+    ownershipStatus: '',
+    yearEstablished: '',
+    totalRooms: '',
+    starRating: '',
+    // Location
+    addressLine1: '',
+    addressLine2: '',
     city: '',
-    spaceSize: '',
-    message: ''
-  });
+    state: '',
+    pincode: '',
+    landmark: '',
+    googleMapsUrl: '',
+    // Space
+    availableSpaceSqft: '',
+    spaceLocation: '',
+    estimatedPods: '',
+    powerBackup: '',
+    hasWifi: false,
+    hasAc: false,
+    hasWashroom: false,
+    hasParking: false,
+    has24x7Access: false,
+    hasSecurity: false,
+    // Footfall
+    monthlyFootfall: '',
+    primaryGuestType: '',
+    peakSeason: '',
+    nearbyTransit: '',
+    // Commercial
+    preferredModel: '',
+    expectedRevenueShare: '',
+    gstNumber: '',
+    panNumber: '',
+    // Misc
+    message: '',
+    howDidYouHear: '',
+    consent: false,
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState(initialForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<
+    { ok: true; applicationNumber: string } | { ok: false; error: string } | null
+  >(null);
+
+  const update = <K extends keyof typeof initialForm>(key: K, value: (typeof initialForm)[K]) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log(formData);
+    if (submitting) return;
+    setResult(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/partner-applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        setResult({ ok: true, applicationNumber: data.applicationNumber });
+        setFormData(initialForm);
+        if (typeof window !== 'undefined') {
+          window.scrollTo({ top: document.getElementById('partner-form')?.offsetTop ?? 0, behavior: 'smooth' });
+        }
+      } else {
+        setResult({ ok: false, error: data?.error || 'Submission failed. Please try again.' });
+      }
+    } catch {
+      setResult({ ok: false, error: 'Network error. Please check your connection and retry.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -167,20 +237,23 @@ export default function PartnerPage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 px-4 py-2 rounded-full text-white mb-6">
+              <div className="inline-flex items-center gap-2 bg-green-300/20 backdrop-blur-sm border border-green-200/40 px-4 py-2 rounded-full text-green-100 mb-6">
                 <Building2 className="w-4 h-4" />
-                <span className="text-sm font-medium">Partnership Program</span>
+                <span className="text-sm font-medium">Partnership Program · Now Live</span>
               </div>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                Turn Your Space Into
+                Turn Your Space Into a
                 <span className="block gradient-text">Revenue Machine</span>
               </h1>
 
               <p className="text-lg text-white/80 mb-8 max-w-lg">
-                Partner with Naploo and earn passive income from your unused spaces. 
-                Zero investment, full support, and guaranteed monthly payouts.
+                Partner with Naploo and earn passive income from unused spaces in your hotel, hostel, homestay or commercial property. We install premium sleeping pods, you keep a share of every booking.
               </p>
+
+              <div className="mb-6 bg-white/10 border border-white/20 rounded-xl p-3 text-sm text-white/80">
+                Submit your property details below — our partnerships team will review and reach out within <strong className="text-white">48 hours</strong>. Prefer to own the pods yourself? <a href="https://biduapods.com/products" target="_blank" rel="noopener noreferrer" className="text-yellow-200 underline">Buy from BIDUA Pods</a> and keep 100%.
+              </div>
 
               {/* Stats Row */}
               <div className="flex flex-wrap gap-6 mb-8">
@@ -197,7 +270,7 @@ export default function PartnerPage() {
                   href="#partner-form" 
                   className="inline-flex items-center justify-center gap-2 bg-white text-primary-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg"
                 >
-                  Become a Partner
+                  Submit Property Details
                   <ArrowRight className="w-5 h-5" />
                 </a>
                 <a 
@@ -307,7 +380,7 @@ export default function PartnerPage() {
               Benefits of <span className="gradient-text">Partnership</span>
             </h2>
             <p className="text-slate-500 max-w-2xl mx-auto">
-              Join 500+ property owners who are earning passive income with zero investment
+              Why hotels, hostels and homestays across India are partnering with Naploo
             </p>
           </div>
 
@@ -412,165 +485,546 @@ export default function PartnerPage() {
       {/* Partner Form Section */}
       <section id="partner-form" className="py-20 relative bg-violet-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <span className="inline-block px-4 py-2 bg-primary-50 border border-primary-200 text-primary-600 rounded-full text-sm font-medium mb-4">
-                Get Started
+          <div className="grid lg:grid-cols-5 gap-12">
+            <div className="lg:col-span-2">
+              <span className="inline-block px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-full text-sm font-medium mb-4">
+                Submit Property Details
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
                 Ready to <span className="gradient-text">Partner</span> With Us?
               </h2>
               <p className="text-slate-500 mb-8">
-                Fill out the form and our partnership team will reach out to you within 24 hours.
+                Fill out the form with your property details. Our partnerships team reviews every submission and reaches out within 48 hours with the best-fit revenue model.
               </p>
 
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary-50 border border-primary-200 rounded-xl flex items-center justify-center">
-                    <Phone className="w-6 h-6 text-primary-600" />
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-slate-400 text-sm">Call Us</p>
-                    <p className="text-slate-800 font-semibold">+91 98765 43210</p>
+                    <p className="text-slate-800 font-semibold text-sm">Zero upfront for partners</p>
+                    <p className="text-slate-500 text-xs">We provide pods, installation, maintenance & support.</p>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-violet-50 border border-violet-200 rounded-xl flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-violet-600" />
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-primary-50 border border-primary-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-5 h-5 text-primary-600" />
                   </div>
                   <div>
-                    <p className="text-slate-400 text-sm">Email Us</p>
-                    <p className="text-slate-800 font-semibold">partners@naploo.com</p>
+                    <p className="text-slate-800 font-semibold text-sm">Up to 40% revenue share</p>
+                    <p className="text-slate-500 text-xs">Monthly payouts directly to your bank account.</p>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-violet-50 border border-violet-200 rounded-xl flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-violet-600" />
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-violet-50 border border-violet-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-5 h-5 text-violet-600" />
                   </div>
                   <div>
-                    <p className="text-slate-400 text-sm">Visit Us</p>
-                    <p className="text-slate-800 font-semibold">Delhi NCR, India</p>
+                    <p className="text-slate-800 font-semibold text-sm">Live within 14 days</p>
+                    <p className="text-slate-500 text-xs">From site survey to first booking, fast & hassle-free.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-yellow-50 border border-yellow-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs">Questions?</p>
+                    <Link href="/contact" className="text-slate-800 font-semibold text-sm hover:text-primary-600">Contact our team</Link>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Form */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-slate-600 text-sm mb-2">Full Name</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
-                      placeholder="John Doe"
-                      required
-                    />
+            {/* Advanced Form */}
+            <div className="lg:col-span-3 bg-white border border-gray-200 rounded-2xl shadow-sm p-6 sm:p-8">
+              {result?.ok ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-green-50 border border-green-200 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
-                  <div>
-                    <label className="block text-slate-600 text-sm mb-2">Phone Number</label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
-                      placeholder="+91 98765 43210"
-                      required
-                    />
+                  <h3 className="text-2xl font-bold text-slate-800 mb-2">Application Received!</h3>
+                  <p className="text-slate-500 mb-4">
+                    Thank you. Your application has been submitted successfully.
+                  </p>
+                  <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-xl px-4 py-2 mb-6">
+                    <span className="text-xs text-slate-500">Reference</span>
+                    <span className="font-mono font-semibold text-primary-700 text-sm">{result.applicationNumber}</span>
                   </div>
+                  <p className="text-sm text-slate-500 mb-6">
+                    Our partnerships team will review your details and reach out within <strong>48 hours</strong>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setResult(null)}
+                    className="inline-flex items-center justify-center gap-2 bg-white border border-gray-200 text-slate-700 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition"
+                  >
+                    Submit Another Property
+                  </button>
                 </div>
+              ) : (
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {result && !result.ok && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">
+                    {result.error}
+                  </div>
+                )}
 
+                {/* Section 1: Contact */}
                 <div>
-                  <label className="block text-slate-600 text-sm mb-2">Email Address</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
-                    placeholder="john@example.com"
-                    required
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-slate-600 text-sm mb-2">Property Type</label>
-                    <select
-                      value={formData.propertyType}
-                      onChange={(e) => setFormData({...formData, propertyType: e.target.value})}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:border-primary-500 transition"
-                      required
-                    >
-                      <option value="" className="bg-white">Select Type</option>
-                      <option value="hotel" className="bg-white">Hotel</option>
-                      <option value="homestay" className="bg-white">Homestay</option>
-                      <option value="hostel" className="bg-white">Hostel</option>
-                      <option value="mall" className="bg-white">Mall / Shopping Center</option>
-                      <option value="airport" className="bg-white">Airport</option>
-                      <option value="coworking" className="bg-white">Co-working Space</option>
-                      <option value="other" className="bg-white">Other</option>
-                    </select>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-7 h-7 rounded-lg bg-primary-100 text-primary-700 text-xs font-bold flex items-center justify-center">1</div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Owner / Contact</h3>
                   </div>
-                  <div>
-                    <label className="block text-slate-600 text-sm mb-2">City</label>
-                    <select
-                      value={formData.city}
-                      onChange={(e) => setFormData({...formData, city: e.target.value})}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:border-primary-500 transition"
-                      required
-                    >
-                      <option value="" className="bg-white">Select City</option>
-                      <option value="delhi" className="bg-white">Delhi NCR</option>
-                      <option value="mumbai" className="bg-white">Mumbai</option>
-                      <option value="bangalore" className="bg-white">Bangalore</option>
-                      <option value="hyderabad" className="bg-white">Hyderabad</option>
-                      <option value="chennai" className="bg-white">Chennai</option>
-                      <option value="kolkata" className="bg-white">Kolkata</option>
-                      <option value="pune" className="bg-white">Pune</option>
-                      <option value="other" className="bg-white">Other</option>
-                    </select>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Full Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text" required value={formData.fullName}
+                        onChange={(e) => update('fullName', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="Rajesh Kumar"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Phone <span className="text-red-500">*</span></label>
+                      <input
+                        type="tel" required value={formData.phone}
+                        onChange={(e) => update('phone', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="+91 98765 43210"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Email <span className="text-red-500">*</span></label>
+                      <input
+                        type="email" required value={formData.email}
+                        onChange={(e) => update('email', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="owner@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">WhatsApp (optional)</label>
+                      <input
+                        type="tel" value={formData.whatsapp}
+                        onChange={(e) => update('whatsapp', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="Same as phone if blank"
+                      />
+                    </div>
                   </div>
                 </div>
 
+                {/* Section 2: Property */}
                 <div>
-                  <label className="block text-slate-600 text-sm mb-2">Available Space (sq ft)</label>
-                  <input
-                    type="text"
-                    value={formData.spaceSize}
-                    onChange={(e) => setFormData({...formData, spaceSize: e.target.value})}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
-                    placeholder="e.g., 500 sq ft"
-                  />
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center">2</div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Property Information</h3>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-slate-600 text-xs mb-1.5">Property / Business Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text" required value={formData.propertyName}
+                        onChange={(e) => update('propertyName', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="Hotel Sunrise / Sharma Homestay"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Property Type <span className="text-red-500">*</span></label>
+                      <select required value={formData.propertyType}
+                        onChange={(e) => update('propertyType', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-primary-500 transition">
+                        <option value="">Select Type</option>
+                        <option value="hotel">Hotel</option>
+                        <option value="homestay">Homestay</option>
+                        <option value="hostel">Hostel / Backpackers</option>
+                        <option value="resort">Resort</option>
+                        <option value="guesthouse">Guest House</option>
+                        <option value="mall">Mall / Shopping Center</option>
+                        <option value="airport">Airport</option>
+                        <option value="railway">Railway Station</option>
+                        <option value="bus-terminal">Bus Terminal</option>
+                        <option value="coworking">Co-working Space</option>
+                        <option value="hospital">Hospital</option>
+                        <option value="commercial">Commercial Building</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Ownership Status <span className="text-red-500">*</span></label>
+                      <select required value={formData.ownershipStatus}
+                        onChange={(e) => update('ownershipStatus', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-primary-500 transition">
+                        <option value="">Select</option>
+                        <option value="owner">Owner</option>
+                        <option value="long-lease">Long-term Lease</option>
+                        <option value="manager">Manager / Operator</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Year Established</label>
+                      <input
+                        type="text" value={formData.yearEstablished}
+                        onChange={(e) => update('yearEstablished', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="2018"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Total Existing Rooms / Units</label>
+                      <input
+                        type="text" value={formData.totalRooms}
+                        onChange={(e) => update('totalRooms', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="e.g., 24"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Star Rating (if any)</label>
+                      <select value={formData.starRating}
+                        onChange={(e) => update('starRating', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-primary-500 transition">
+                        <option value="">Not applicable</option>
+                        <option value="budget">Budget / Unrated</option>
+                        <option value="2">2 Star</option>
+                        <option value="3">3 Star</option>
+                        <option value="4">4 Star</option>
+                        <option value="5">5 Star</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
+                {/* Section 3: Location */}
                 <div>
-                  <label className="block text-slate-600 text-sm mb-2">Message (Optional)</label>
-                  <textarea
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    rows={4}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition resize-none"
-                    placeholder="Tell us about your property..."
-                  />
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-7 h-7 rounded-lg bg-cyan-100 text-cyan-700 text-xs font-bold flex items-center justify-center">3</div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Location</h3>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-slate-600 text-xs mb-1.5">Address Line 1 <span className="text-red-500">*</span></label>
+                      <input
+                        type="text" required value={formData.addressLine1}
+                        onChange={(e) => update('addressLine1', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="Building / Plot, Street"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-slate-600 text-xs mb-1.5">Address Line 2</label>
+                      <input
+                        type="text" value={formData.addressLine2}
+                        onChange={(e) => update('addressLine2', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="Area / Sector"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">City <span className="text-red-500">*</span></label>
+                      <input
+                        type="text" required value={formData.city}
+                        onChange={(e) => update('city', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="Mumbai"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">State <span className="text-red-500">*</span></label>
+                      <input
+                        type="text" required value={formData.state}
+                        onChange={(e) => update('state', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="Maharashtra"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Pincode <span className="text-red-500">*</span></label>
+                      <input
+                        type="text" required value={formData.pincode}
+                        onChange={(e) => update('pincode', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="400001"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Nearest Landmark</label>
+                      <input
+                        type="text" value={formData.landmark}
+                        onChange={(e) => update('landmark', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="Near Airport Metro"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-slate-600 text-xs">Google Maps URL (optional)</label>
+                        <a
+                          href="https://www.google.com/maps"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-primary-600 hover:text-primary-700 hover:underline"
+                          title="Open Google Maps, find your property, tap Share → Copy link, paste it here"
+                        >
+                          Pin on Maps →
+                        </a>
+                      </div>
+                      <input
+                        type="url" value={formData.googleMapsUrl}
+                        onChange={(e) => update('googleMapsUrl', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="https://maps.app.goo.gl/... or https://maps.google.com/?q=..."
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Open Google Maps → search your property → tap <strong>Share</strong> → <strong>Copy link</strong> → paste here. Helps our team verify location instantly.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 4: Space & Amenities */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-7 h-7 rounded-lg bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center">4</div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Space &amp; Amenities</h3>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Available Space (sq ft) <span className="text-red-500">*</span></label>
+                      <input
+                        type="text" required value={formData.availableSpaceSqft}
+                        onChange={(e) => update('availableSpaceSqft', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="e.g., 500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Space Location <span className="text-red-500">*</span></label>
+                      <select required value={formData.spaceLocation}
+                        onChange={(e) => update('spaceLocation', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-primary-500 transition">
+                        <option value="">Select</option>
+                        <option value="lobby">Lobby</option>
+                        <option value="rooftop">Rooftop</option>
+                        <option value="basement">Basement</option>
+                        <option value="floor">Dedicated Floor</option>
+                        <option value="annexe">Annexe / Separate Block</option>
+                        <option value="garage">Garage / Parking</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Estimated Pods You Can Host</label>
+                      <input
+                        type="text" value={formData.estimatedPods}
+                        onChange={(e) => update('estimatedPods', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="e.g., 6 pods"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Power Backup</label>
+                      <select value={formData.powerBackup}
+                        onChange={(e) => update('powerBackup', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-primary-500 transition">
+                        <option value="">Select</option>
+                        <option value="none">None</option>
+                        <option value="inverter">Inverter</option>
+                        <option value="generator">Generator (Full)</option>
+                        <option value="partial">Partial Backup</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-2">Tick all amenities available at the proposed space:</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[
+                      ['hasWifi', 'High-speed Wi-Fi'],
+                      ['hasAc', 'Air Conditioning'],
+                      ['hasWashroom', 'Washroom Access'],
+                      ['hasParking', 'Parking'],
+                      ['has24x7Access', '24×7 Access'],
+                      ['hasSecurity', 'Security / CCTV'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-primary-300 transition">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(formData[key as keyof typeof formData])}
+                          onChange={(e) => update(key as keyof typeof initialForm, e.target.checked as never)}
+                          className="accent-primary-600 w-4 h-4"
+                        />
+                        <span className="text-xs text-slate-700">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section 5: Footfall & Operations */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center">5</div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Footfall &amp; Operations</h3>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Approx Monthly Footfall</label>
+                      <select value={formData.monthlyFootfall}
+                        onChange={(e) => update('monthlyFootfall', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-primary-500 transition">
+                        <option value="">Select range</option>
+                        <option value="<500">Less than 500</option>
+                        <option value="500-2000">500 – 2,000</option>
+                        <option value="2000-5000">2,000 – 5,000</option>
+                        <option value="5000-15000">5,000 – 15,000</option>
+                        <option value="15000+">15,000+</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Primary Guest Type</label>
+                      <select value={formData.primaryGuestType}
+                        onChange={(e) => update('primaryGuestType', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-primary-500 transition">
+                        <option value="">Select</option>
+                        <option value="business">Business Travellers</option>
+                        <option value="leisure">Leisure / Tourists</option>
+                        <option value="transit">Transit / Layover</option>
+                        <option value="medical">Medical Travellers</option>
+                        <option value="students">Students / Backpackers</option>
+                        <option value="mixed">Mixed</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Peak Season</label>
+                      <input
+                        type="text" value={formData.peakSeason}
+                        onChange={(e) => update('peakSeason', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="e.g., Oct–Feb"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Nearby Transit Hubs</label>
+                      <input
+                        type="text" value={formData.nearbyTransit}
+                        onChange={(e) => update('nearbyTransit', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="Airport 2km, Metro 500m"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 6: Commercial */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 text-xs font-bold flex items-center justify-center">6</div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Commercial Preferences</h3>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Preferred Model</label>
+                      <select value={formData.preferredModel}
+                        onChange={(e) => update('preferredModel', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-primary-500 transition">
+                        <option value="">Select</option>
+                        <option value="naploo-deploys">Naploo deploys pods (revenue share)</option>
+                        <option value="self-buy">I buy pods, Naploo manages (lease)</option>
+                        <option value="self-operate">I buy &amp; operate myself (100% revenue)</option>
+                        <option value="unsure">Not sure — recommend best fit</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Expected Revenue Share (%)</label>
+                      <input
+                        type="text" value={formData.expectedRevenueShare}
+                        onChange={(e) => update('expectedRevenueShare', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="e.g., 30%"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">GST Number (optional)</label>
+                      <input
+                        type="text" value={formData.gstNumber}
+                        onChange={(e) => update('gstNumber', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="22AAAAA0000A1Z5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">PAN (optional)</label>
+                      <input
+                        type="text" value={formData.panNumber}
+                        onChange={(e) => update('panNumber', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition"
+                        placeholder="ABCDE1234F"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 7: Misc */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center">7</div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Additional Details</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">Anything else about your property / vision</label>
+                      <textarea
+                        rows={4} value={formData.message}
+                        onChange={(e) => update('message', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-primary-500 transition resize-none"
+                        placeholder="Tell us about your property, goals, timelines, etc."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 text-xs mb-1.5">How did you hear about Naploo?</label>
+                      <select value={formData.howDidYouHear}
+                        onChange={(e) => update('howDidYouHear', e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-primary-500 transition">
+                        <option value="">Select</option>
+                        <option value="google">Google Search</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="referral">Referral</option>
+                        <option value="news">News / Media</option>
+                        <option value="event">Event / Conference</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <label className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 cursor-pointer">
+                      <input
+                        type="checkbox" required checked={formData.consent}
+                        onChange={(e) => update('consent', e.target.checked)}
+                        className="accent-primary-600 w-4 h-4 mt-0.5"
+                      />
+                      <span className="text-xs text-slate-600">
+                        I authorise Naploo to contact me regarding this application and agree to the <Link href="/terms" className="text-primary-600 hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>.
+                      </span>
+                    </label>
+                  </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary-500 to-violet-600 text-white py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="w-full bg-gradient-to-r from-primary-500 to-violet-600 text-white py-4 rounded-xl font-semibold hover:shadow-glow transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Submit Application
-                  <ArrowRight className="w-5 h-5" />
+                  {submitting ? 'Submitting…' : 'Submit Property Details'}
+                  {!submitting && <ArrowRight className="w-5 h-5" />}
                 </button>
 
                 <p className="text-slate-400 text-xs text-center">
-                  By submitting, you agree to our Terms of Service and Privacy Policy
+                  Our partnerships team typically responds within 48 hours.
                 </p>
               </form>
+              )}
             </div>
           </div>
         </div>
@@ -596,7 +1050,7 @@ export default function PartnerPage() {
               },
               {
                 q: 'What are the costs involved for partners?',
-                a: 'Zero! Naploo provides the pods, handles installation, maintenance, and customer service. You just provide the space.'
+                a: 'Zero. Naploo provides the pods, handles installation, maintenance, and customer service. You just provide the space. If you prefer to own the pods outright, you can also buy them directly from BIDUA Pods and run them yourself to earn 100% revenue.'
               },
               {
                 q: 'How do I receive my earnings?',

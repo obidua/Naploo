@@ -92,8 +92,8 @@ export const metadata: Metadata = {
     title: 'Naploo - Premium Sleep Pods in India',
     description: "Book futuristic sleeping pods by the hour. Starting ₹99/hour.",
     images: ['/Pods_Images/For Website main images/Main Pods Image.png'],
-    creator: '@naploo',
-    site: '@naploo',
+    creator: '@biduaind',
+    site: '@biduaind',
   },
   robots: {
     index: true,
@@ -128,10 +128,11 @@ const jsonLd = {
   url: 'https://naploo.com',
   logo: 'https://naploo.com/logo.png',
   sameAs: [
-    'https://twitter.com/naploo',
-    'https://instagram.com/naploo',
-    'https://facebook.com/naploo',
-    'https://linkedin.com/company/naploo',
+    'https://x.com/biduaind',
+    'https://www.instagram.com/biduaindustries/',
+    'https://www.facebook.com/profile.php?id=61591099795161',
+    'https://wa.me/919512921903',
+    'https://biduapods.com',
   ],
   contactPoint: {
     '@type': 'ContactPoint',

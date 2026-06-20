@@ -248,25 +248,29 @@ export default function ExplorePage() {
             
             <div className="relative z-10">
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                Own a Hotel or Homestay?
+                Own a Hotel, Hostel or Homestay?
               </h2>
-              <p className="text-white/80 mb-8 max-w-xl mx-auto">
-                Partner with Naploo to install futuristic sleep pods and increase your revenue. 
-                We provide the pods, you provide the space!
+              <p className="text-white/80 mb-2 max-w-xl mx-auto">
+                Partner with Naploo — we install premium sleep pods at your unused spaces with <strong className="text-white">zero upfront cost</strong>. You provide the space, we handle everything else, and you earn a monthly share of every booking.
+              </p>
+              <p className="text-white/70 text-sm mb-8 max-w-xl mx-auto">
+                Prefer to own pods outright? Buy directly from BIDUA Pods and run them yourself to keep <strong className="text-yellow-200">100% of revenue</strong>.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/partner"
                   className="inline-flex items-center justify-center px-8 py-3 bg-white text-primary-700 rounded-xl font-semibold hover:bg-gray-100 transition-all shadow-lg"
                 >
-                  Become a Partner
+                  Submit Property Details
                 </Link>
-                <Link
-                  href="/contact"
+                <a
+                  href="https://biduapods.com/products"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center px-8 py-3 bg-white/10 border border-white/20 rounded-xl text-white font-semibold hover:bg-white/20 transition-all"
                 >
-                  Contact Us
-                </Link>
+                  Buy Pods Now
+                </a>
               </div>
             </div>
           </div>

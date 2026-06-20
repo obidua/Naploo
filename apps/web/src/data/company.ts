@@ -43,6 +43,13 @@ export const OFFICES = [
   },
 ] as const;
 
+// Real, public BIDUA Industries social handles (parent company of Naploo).
+// Source: https://biduapods.com (footer).
 export const SOCIAL = {
-  // Add real handles here when ready.
+  twitter: 'https://x.com/biduaind',
+  twitterHandle: '@biduaind',
+  instagram: 'https://www.instagram.com/biduaindustries/',
+  instagramHandle: '@biduaindustries',
+  facebook: 'https://www.facebook.com/profile.php?id=61591099795161',
+  whatsapp: 'https://wa.me/919512921903',
 } as const;

@@ -140,7 +140,7 @@ const sidebarSections: { title: string; items: { id: AdminPage; label: string; i
     title: 'Support & Applications',
     items: [
       { id: 'tickets', label: 'Support Tickets', icon: Ticket, badge: 23 },
-      { id: 'applications', label: 'Applications', icon: FileText, badge: 7 },
+      { id: 'applications', label: 'Applications', icon: FileText },
       { id: 'reviews', label: 'Reviews', icon: Star },
     ],
   },
@@ -1132,29 +1132,423 @@ function TicketsView() {
 // ============================
 // APPLICATIONS VIEW
 // ============================
+interface PartnerApplicationRow {
+  id: string;
+  applicationNumber: string;
+  status: 'submitted' | 'under-review' | 'approved' | 'rejected';
+  reviewNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  whatsapp?: string;
+  propertyName: string;
+  propertyType: string;
+  ownershipStatus: string;
+  yearEstablished?: string;
+  totalRooms?: string;
+  starRating?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  landmark?: string;
+  googleMapsUrl?: string;
+  availableSpaceSqft: string;
+  spaceLocation: string;
+  estimatedPods?: string;
+  powerBackup?: string;
+  hasWifi?: boolean;
+  hasAc?: boolean;
+  hasWashroom?: boolean;
+  hasParking?: boolean;
+  has24x7Access?: boolean;
+  hasSecurity?: boolean;
+  monthlyFootfall?: string;
+  primaryGuestType?: string;
+  peakSeason?: string;
+  nearbyTransit?: string;
+  preferredModel?: string;
+  expectedRevenueShare?: string;
+  gstNumber?: string;
+  panNumber?: string;
+  message?: string;
+  howDidYouHear?: string;
+  ip?: string;
+  userAgent?: string;
+}
+
 function ApplicationsView() {
-  const D = useAdminData();
+  const [adminKey, setAdminKey] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    return window.localStorage.getItem('naploo-admin-api-key') || '';
+  });
+  const [keyInput, setKeyInput] = useState(adminKey);
+  const [apps, setApps] = useState<PartnerApplicationRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<PartnerApplicationRow | null>(null);
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const load = React.useCallback(async (key: string) => {
+    if (!key) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/partner-applications', {
+        headers: { 'x-admin-key': key },
+        cache: 'no-store',
+      });
+      if (res.status === 401) {
+        setError('Invalid admin key.');
+        setApps([]);
+      } else if (!res.ok) {
+        setError('Failed to load applications.');
+      } else {
+        const data = await res.json();
+        setApps(Array.isArray(data.applications) ? data.applications : []);
+      }
+    } catch {
+      setError('Network error.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (adminKey) load(adminKey);
+  }, [adminKey, load]);
+
+  const updateStatus = async (id: string, status: PartnerApplicationRow['status'], reviewNotes?: string) => {
+    if (!adminKey) return;
+    try {
+      const res = await fetch('/api/partner-applications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ id, status, reviewNotes }),
+      });
+      if (res.ok) {
+        await load(adminKey);
+        if (selected?.id === id) {
+          const data = await res.json();
+          setSelected(data.application || null);
+        }
+      }
+    } catch {
+      /* noop */
+    }
+  };
+
+  const removeApp = async (id: string) => {
+    if (!adminKey) return;
+    if (!window.confirm('Delete this application permanently?')) return;
+    try {
+      const res = await fetch(`/api/partner-applications?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-key': adminKey },
+      });
+      if (res.ok) {
+        setSelected(null);
+        await load(adminKey);
+      }
+    } catch {
+      /* noop */
+    }
+  };
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return apps.filter((a) => {
+      if (statusFilter !== 'all' && a.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        a.applicationNumber.toLowerCase().includes(q) ||
+        a.fullName.toLowerCase().includes(q) ||
+        a.email.toLowerCase().includes(q) ||
+        a.phone.toLowerCase().includes(q) ||
+        a.propertyName.toLowerCase().includes(q) ||
+        a.city.toLowerCase().includes(q) ||
+        a.state.toLowerCase().includes(q)
+      );
+    });
+  }, [apps, query, statusFilter]);
+
+  const thisMonthPrefix = new Date().toISOString().slice(0, 7);
+
+  if (!adminKey) {
+    return (
+      <div className="max-w-md mx-auto bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+        <div className="w-12 h-12 rounded-xl bg-primary-50 border border-primary-200 flex items-center justify-center mb-4">
+          <Lock className="w-6 h-6 text-primary-600" />
+        </div>
+        <h3 className="text-lg font-semibold text-slate-800 mb-1">Unlock Applications</h3>
+        <p className="text-sm text-slate-500 mb-4">Enter the admin API key to view partner property submissions.</p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const k = keyInput.trim();
+            if (!k) return;
+            window.localStorage.setItem('naploo-admin-api-key', k);
+            setAdminKey(k);
+          }}
+          className="space-y-3"
+        >
+          <input
+            type="password"
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+            placeholder="Admin API key"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary-500"
+          />
+          <button
+            type="submit"
+            className="w-full py-2.5 bg-gradient-to-r from-primary-500 to-violet-600 text-white text-sm font-semibold rounded-lg hover:opacity-90 transition"
+          >
+            Unlock
+          </button>
+          <p className="text-[10px] text-slate-400">Configured via <code>ADMIN_API_KEY</code> server env.</p>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <StatCard label="Total Applications" value={String(D.mockApplications.length)} icon={FileText} color="from-slate-500 to-gray-600" />
-        <StatCard label="Pending Review" value={String(D.mockApplications.filter(a => a.status === 'submitted' || a.status === 'under-review').length)} icon={Clock} color="from-amber-500 to-orange-500" />
-        <StatCard label="Approved" value={String(D.mockApplications.filter(a => a.status === 'approved').length)} icon={CheckCircle} color="from-green-500 to-emerald-500" />
-        <StatCard label="This Month" value={String(D.mockApplications.filter(a => a.createdAt.startsWith('2026-03')).length)} icon={Calendar} color="from-primary-500 to-violet-500" />
+        <StatCard label="Total Applications" value={String(apps.length)} icon={FileText} color="from-slate-500 to-gray-600" />
+        <StatCard label="Pending Review" value={String(apps.filter(a => a.status === 'submitted' || a.status === 'under-review').length)} icon={Clock} color="from-amber-500 to-orange-500" />
+        <StatCard label="Approved" value={String(apps.filter(a => a.status === 'approved').length)} icon={CheckCircle} color="from-green-500 to-emerald-500" />
+        <StatCard label="This Month" value={String(apps.filter(a => a.createdAt.startsWith(thisMonthPrefix)).length)} icon={Calendar} color="from-primary-500 to-violet-500" />
       </div>
-      <DataTable headers={[{ label: 'Application' }, { label: 'Business' }, { label: 'Type', align: 'center' }, { label: 'City' }, { label: 'Details' }, { label: 'Status', align: 'center' }, { label: 'Actions', align: 'right' }]}>
-        {D.mockApplications.map(a => (
+
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name, email, phone, property, city…"
+          className="flex-1 min-w-[240px] px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary-500"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary-500"
+        >
+          <option value="all">All Statuses</option>
+          <option value="submitted">Submitted</option>
+          <option value="under-review">Under Review</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <button
+          onClick={() => load(adminKey)}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+        </button>
+        <button
+          onClick={() => {
+            window.localStorage.removeItem('naploo-admin-api-key');
+            setAdminKey('');
+            setKeyInput('');
+            setApps([]);
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm hover:bg-gray-50 text-slate-500"
+        >
+          <Lock className="w-3.5 h-3.5" /> Lock
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4" /> {error}
+        </div>
+      )}
+
+      <DataTable headers={[{ label: 'Application' }, { label: 'Owner' }, { label: 'Property' }, { label: 'Location' }, { label: 'Space' }, { label: 'Status', align: 'center' }, { label: 'Actions', align: 'right' }]}>
+        {filtered.length === 0 && !loading && (
+          <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">No applications match the current filters.</td></tr>
+        )}
+        {filtered.map(a => (
           <tr key={a.id} className="hover:bg-gray-50/50 transition">
-            <td className="px-5 py-3"><p className="text-sm font-mono text-primary-600">{a.applicationNumber}</p><p className="text-[10px] text-slate-400">{a.createdAt}</p></td>
-            <td className="px-5 py-3"><p className="text-sm font-medium text-slate-700">{a.businessName}</p><p className="text-[10px] text-slate-400">{a.contactPerson} · {a.contactEmail}</p></td>
-            <td className="text-center"><StatusBadge status={a.type} map={{ partner: 'bg-violet-50 text-violet-600', investor: 'bg-emerald-50 text-emerald-600', franchise: 'bg-orange-50 text-orange-600' }} /></td>
-            <td className="px-5 py-3 text-sm text-slate-600">{a.city}, {a.state}</td>
-            <td className="px-5 py-3 text-[10px] text-slate-400 max-w-xs truncate">{a.businessType || a.investmentRange || ''} · {a.expectedPods || ''} pods<br/>{a.message || ''}</td>
-            <td className="text-center"><StatusBadge status={a.status} map={statusColors} /></td>
-            <td className="text-right px-5"><div className="flex items-center justify-end gap-1"><button className="px-2.5 py-1 text-[10px] font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100">View</button>{(a.status === 'submitted' || a.status === 'under-review') && <><button className="px-2.5 py-1 text-[10px] font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100">Approve</button><button className="px-2.5 py-1 text-[10px] font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100">Reject</button></>}</div></td>
+            <td className="px-5 py-3">
+              <p className="text-sm font-mono text-primary-600">{a.applicationNumber}</p>
+              <p className="text-[10px] text-slate-400">{new Date(a.createdAt).toLocaleString()}</p>
+            </td>
+            <td className="px-5 py-3">
+              <p className="text-sm font-medium text-slate-700">{a.fullName}</p>
+              <p className="text-[10px] text-slate-400">{a.email}</p>
+              <p className="text-[10px] text-slate-400">{a.phone}</p>
+            </td>
+            <td className="px-5 py-3">
+              <p className="text-sm font-medium text-slate-700">{a.propertyName}</p>
+              <p className="text-[10px] text-slate-400 capitalize">{a.propertyType.replace(/-/g, ' ')} · {a.ownershipStatus}</p>
+            </td>
+            <td className="px-5 py-3 text-sm text-slate-600">
+              {a.city}, {a.state}
+              <p className="text-[10px] text-slate-400">{a.pincode}</p>
+              <a
+                href={a.googleMapsUrl?.trim() || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([a.propertyName, a.addressLine1, a.city, a.state, a.pincode].filter(Boolean).join(', '))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[10px] text-primary-600 hover:text-primary-700 hover:underline mt-0.5"
+                title={a.googleMapsUrl ? 'Open submitted Google Maps link' : 'Search this address on Google Maps'}
+              >
+                <MapPin className="w-3 h-3" /> {a.googleMapsUrl ? 'Map' : 'Map (search)'}
+              </a>
+            </td>
+            <td className="px-5 py-3 text-sm text-slate-600">{a.availableSpaceSqft} sqft<p className="text-[10px] text-slate-400 capitalize">{a.spaceLocation}{a.estimatedPods ? ` · ~${a.estimatedPods}` : ''}</p></td>
+            <td className="text-center">
+              <StatusBadge status={a.status} map={{
+                'submitted': 'bg-blue-50 text-blue-600',
+                'under-review': 'bg-amber-50 text-amber-600',
+                'approved': 'bg-green-50 text-green-600',
+                'rejected': 'bg-red-50 text-red-600',
+              }} />
+            </td>
+            <td className="text-right px-5">
+              <div className="flex items-center justify-end gap-1">
+                <button onClick={() => setSelected(a)} className="px-2.5 py-1 text-[10px] font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100">View</button>
+                {(a.status === 'submitted' || a.status === 'under-review') && (
+                  <>
+                    {a.status === 'submitted' && (
+                      <button onClick={() => updateStatus(a.id, 'under-review')} className="px-2.5 py-1 text-[10px] font-medium text-amber-600 bg-amber-50 rounded-lg hover:bg-amber-100">Review</button>
+                    )}
+                    <button onClick={() => updateStatus(a.id, 'approved')} className="px-2.5 py-1 text-[10px] font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100">Approve</button>
+                    <button onClick={() => updateStatus(a.id, 'rejected')} className="px-2.5 py-1 text-[10px] font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100">Reject</button>
+                  </>
+                )}
+              </div>
+            </td>
           </tr>
         ))}
       </DataTable>
+
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelected(null)}>
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
+              <div>
+                <p className="text-xs text-slate-400">Application</p>
+                <p className="text-sm font-mono font-semibold text-primary-600">{selected.applicationNumber}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <StatusBadge status={selected.status} map={{
+                  'submitted': 'bg-blue-50 text-blue-600',
+                  'under-review': 'bg-amber-50 text-amber-600',
+                  'approved': 'bg-green-50 text-green-600',
+                  'rejected': 'bg-red-50 text-red-600',
+                }} />
+                <button onClick={() => setSelected(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4 text-slate-400" /></button>
+              </div>
+            </div>
+            <div className="p-6 space-y-6 text-sm">
+              <DetailGroup title="Owner / Contact" items={[
+                ['Full Name', selected.fullName],
+                ['Email', selected.email],
+                ['Phone', selected.phone],
+                ['WhatsApp', selected.whatsapp || '—'],
+              ]} />
+              <DetailGroup title="Property" items={[
+                ['Property Name', selected.propertyName],
+                ['Type', selected.propertyType],
+                ['Ownership', selected.ownershipStatus],
+                ['Year Established', selected.yearEstablished || '—'],
+                ['Existing Rooms/Units', selected.totalRooms || '—'],
+                ['Star Rating', selected.starRating || '—'],
+              ]} />
+              <DetailGroup title="Location" items={[
+                ['Address', [selected.addressLine1, selected.addressLine2].filter(Boolean).join(', ')],
+                ['City / State', `${selected.city}, ${selected.state} — ${selected.pincode}`],
+                ['Landmark', selected.landmark || '—'],
+                [
+                  'Google Maps',
+                  (() => {
+                    const direct = selected.googleMapsUrl?.trim();
+                    const fallback = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([selected.propertyName, selected.addressLine1, selected.addressLine2, selected.landmark, selected.city, selected.state, selected.pincode].filter(Boolean).join(', '))}`;
+                    const href = direct || fallback;
+                    return (
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-primary-600 hover:text-primary-700 hover:underline">
+                        <MapPin className="w-3.5 h-3.5" />
+                        {direct ? 'Open submitted link' : 'Open in Google Maps (address search)'}
+                      </a>
+                    );
+                  })(),
+                ],
+              ]} />
+              <DetailGroup title="Space & Amenities" items={[
+                ['Available Space', `${selected.availableSpaceSqft} sqft`],
+                ['Space Location', selected.spaceLocation],
+                ['Estimated Pods', selected.estimatedPods || '—'],
+                ['Power Backup', selected.powerBackup || '—'],
+                ['Wi-Fi', selected.hasWifi ? 'Yes' : 'No'],
+                ['AC', selected.hasAc ? 'Yes' : 'No'],
+                ['Washroom', selected.hasWashroom ? 'Yes' : 'No'],
+                ['Parking', selected.hasParking ? 'Yes' : 'No'],
+                ['24×7 Access', selected.has24x7Access ? 'Yes' : 'No'],
+                ['Security/CCTV', selected.hasSecurity ? 'Yes' : 'No'],
+              ]} />
+              <DetailGroup title="Footfall & Operations" items={[
+                ['Monthly Footfall', selected.monthlyFootfall || '—'],
+                ['Primary Guests', selected.primaryGuestType || '—'],
+                ['Peak Season', selected.peakSeason || '—'],
+                ['Nearby Transit', selected.nearbyTransit || '—'],
+              ]} />
+              <DetailGroup title="Commercial" items={[
+                ['Preferred Model', selected.preferredModel || '—'],
+                ['Expected Revenue Share', selected.expectedRevenueShare || '—'],
+                ['GST', selected.gstNumber || '—'],
+                ['PAN', selected.panNumber || '—'],
+              ]} />
+              {selected.message && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Message</p>
+                  <p className="text-sm text-slate-700 bg-gray-50 border border-gray-100 rounded-lg p-3 whitespace-pre-wrap">{selected.message}</p>
+                </div>
+              )}
+              <DetailGroup title="Meta" items={[
+                ['Source', selected.howDidYouHear || '—'],
+                ['Submitted', new Date(selected.createdAt).toLocaleString()],
+                ['Last Updated', new Date(selected.updatedAt).toLocaleString()],
+                ['IP', selected.ip || '—'],
+              ]} />
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-center justify-between gap-3 sticky bottom-0">
+              <button
+                onClick={() => removeApp(selected.id)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => updateStatus(selected.id, 'under-review')} className="px-3 py-2 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg">Mark Under Review</button>
+                <button onClick={() => updateStatus(selected.id, 'approved')} className="px-3 py-2 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg">Approve</button>
+                <button onClick={() => updateStatus(selected.id, 'rejected')} className="px-3 py-2 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg">Reject</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetailGroup({ title, items }: { title: string; items: Array<[string, React.ReactNode]> }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{title}</p>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+        {items.map(([k, v]) => (
+          <div key={k} className="flex flex-col">
+            <dt className="text-[10px] text-slate-400 uppercase tracking-wide">{k}</dt>
+            <dd className="text-sm text-slate-700 break-words">{v}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }

@@ -66,3 +66,7 @@ apps/partner/ios/
 
 # Expo
 .expo/
+
+# Local runtime data (partner applications, etc.)
+apps/web/.data/
+docs/*.pdf

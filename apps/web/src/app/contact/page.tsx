@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import {
   Phone, Mail, MapPin, Clock, Send, MessageSquare,
-  Twitter, Instagram, Linkedin, Youtube, ArrowRight
+  Twitter, Instagram, Facebook, MessageCircle, ArrowRight
 } from 'lucide-react';
-import { COMPANY, EMAILS, PHONES, ADDRESS } from '@/data/company';
+import { COMPANY, EMAILS, PHONES, ADDRESS, SOCIAL } from '@/data/company';
 
 const contactMethods = [
   {
@@ -298,14 +298,17 @@ export default function ContactPage() {
                 <h3 className="text-slate-800 font-semibold mb-4">Follow Us</h3>
                 <div className="flex gap-4">
                   {[
-                    { icon: Twitter, href: '#' },
-                    { icon: Instagram, href: '#' },
-                    { icon: Linkedin, href: '#' },
-                    { icon: Youtube, href: '#' }
+                    { icon: Twitter, href: SOCIAL.twitter, label: 'X (Twitter)' },
+                    { icon: Instagram, href: SOCIAL.instagram, label: 'Instagram' },
+                    { icon: Facebook, href: SOCIAL.facebook, label: 'Facebook' },
+                    { icon: MessageCircle, href: SOCIAL.whatsapp, label: 'WhatsApp' }
                   ].map((social, index) => (
                     <a
                       key={index}
                       href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={social.label}
                       className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center hover:bg-primary-50 hover:text-primary-600 transition-all duration-300 text-slate-400"
                     >
                       <social.icon className="w-5 h-5" />

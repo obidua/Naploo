@@ -33,7 +33,7 @@ export function generateMetadata(
       title,
       description,
       images: [defaultImage],
-      creator: '@naploo',
+      creator: '@biduaind',
     },
     robots: options.noIndex ? { index: false, follow: true } : { index: true, follow: true },
     alternates: { canonical: url },
